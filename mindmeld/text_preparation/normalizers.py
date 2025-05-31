@@ -274,7 +274,7 @@ class RegexNormalizerRuleFactory:
 
     @staticmethod
     def get_regex_normalizers(regex_norm_rules):
-        """A static method to get a RegexNormalizerRule from regex_norm_rules.
+        '''A static method to get a RegexNormalizerRule from regex_norm_rules.
 
         Args:
             regex_norm_rules (List[Dict], optional): Regex normalization rules represented as
@@ -286,7 +286,7 @@ class RegexNormalizerRuleFactory:
         Returns:
             regex_normalizer_rules (List[RegexNormalizerRule]): List of RegexNormalizerRule ojects
                 created from the regex_norm_rules_provided.
-        """
+        '''
         return [
             RegexNormalizerRule(pattern=r["pattern"], replacement=r["replacement"])
             for r in regex_norm_rules

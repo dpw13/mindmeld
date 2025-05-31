@@ -677,11 +677,11 @@ def extract_ngrams(lengths=(1,), thresholds=(1,), **kwargs):
                     # We never want to differentiate between number tokens.
                     # We may need to convert number words too, like "eighty".
                     token = tokens[index]
-                    tok = re.sub('\d','0',token)
+                    tok = re.sub(r"\d",'0',token)
                     ngram.append(tok)
 
                     if kwargs.get(ENABLE_STEMMING, False):
-                        tok_stemmed = re.sub('\d','0',stemmed_tokens[index])
+                        tok_stemmed = re.sub(r"\d",'0',stemmed_tokens[index])
                         stemmed_ngram.append(tok_stemmed)
 
                 joined_ngram = " ".join(ngram)

@@ -15,7 +15,7 @@
 This module contains the Config class.
 """
 import copy
-import imp
+import importlib
 import logging
 import os
 import warnings
@@ -972,13 +972,16 @@ def _expand_group_config(group_config):
             expanded[dep_type.replace("|", "--")] = config
     return expanded
 
-
 def _get_config_module(app_path):
     module_path = path.get_config_module_path(app_path)
 
-    config_module = imp.load_source(
-        "config_module_" + os.path.basename(app_path), module_path
-    )
+    # Thanks to
+    # https://github.com/conan-io/conan/issues/3441#issuecomment-419810150
+    # for the migration to importlib
+    spec = importlib.util.spec_from_file_location("config_module_" + os.path.basename(app_path), module_path)
+    config_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config_module)
+
     return config_module
 
 

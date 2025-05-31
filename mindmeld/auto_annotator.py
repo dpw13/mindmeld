@@ -149,7 +149,7 @@ class Annotator(ABC):
         """
         if rule["entities"].strip() in ["*", ".*", ".+"]:
             return ["*"]
-        entities = re.sub("[()]", "", rule["entities"]).split("|")
+        entities = re.sub(r"[()]", "", rule["entities"]).split("|")
         valid_entities = []
         for entity in entities:
             entity = entity.strip()

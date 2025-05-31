@@ -1,0 +1,2 @@
+# Rebuild me for modern OS
+docker pull mindmeldworkbench/duckling:master && docker run -ti -d -p 0.0.0.0:7151:7151 mindmeldworkbench/duckling:master
