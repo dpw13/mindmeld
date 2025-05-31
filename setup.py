@@ -21,19 +21,18 @@ requirements = [
     "future~=0.17",
     "pycountry",  # uses calendar versioning
     "nltk~=3.2",
-    "numpy~=1.15",
+    "numpy<2.0",
     "pip>=9.0.1",
     "py~=1.4",
     "python-dateutil~=2.6",
     "pytz",  # uses calendar versioning
     "scipy>=0.13.3,<2.0",
-    'scikit-learn>=0.18.1,<0.20; python_version < "3.7"',
-    'scikit-learn~=1.0.2; python_version >= "3.7"',
+    "scikit-learn<1.4",
     "requests>=2.20.1,<3.0",
     "tqdm~=4.15",
     "immutables~=0.9",
     "pyyaml>=5.1.1",
-    "spacy~=2.3,!=2.3.6",  # avoid 2.3.6 because it was yanked from PyPI
+    "spacy<4.0",
     "mypy>=0.782",
     "marshmallow~=3.7.1",
     # We currently depend on an older flask, which requires an older version of jinja, which doesn't pin its version of
@@ -41,7 +40,7 @@ requirements = [
     # As a stop gap, we'll pin our version of markupsafe to that last 2.0 version. Longer term we need to update
     # our flask dependency, and likely move it to an extra
     "markupsafe==2.0.1",
-    'torch~=1.10.0; python_version>="3.6"',
+    "torch<2.3",
     'pytorch-crf~=0.7.2',
     "protobuf~=3.19.4"
 ]
