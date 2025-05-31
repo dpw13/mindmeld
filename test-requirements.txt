@@ -1,8 +1,8 @@
-coverage==4.2
+coverage<4.4
 flake8<3.7
 pylint~=2.6.0
-pytest>=5.4.0
-pytest-cov==2.4.0
+pytest>=5.4,<7.0
+pytest-cov<2.5
 tox==2.6.0
 mock==2.0.0
 pytest-mock>=1.6.2

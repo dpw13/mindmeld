@@ -510,7 +510,7 @@ class RasaConverter(Converter):
         """
         current_line = None
         for i, line in enumerate(file_lines):
-            if len(re.findall("def {action}".format(action=current_action), line)) > 0:
+            if len(re.findall(r"def {action}".format(action=current_action), line)) > 0:
                 current_line = i
                 break
 

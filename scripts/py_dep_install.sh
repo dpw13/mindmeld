@@ -9,7 +9,7 @@ pushd $REPO_DIR
 
 pip install --upgrade pip
 pip install .
-pip install -r test-requirements.txt
+pip install -U -r test-requirements.txt
 if [ "$MM_EXTRAS" == "true" ]; then
   pip install -r extras-requirements.txt
 fi

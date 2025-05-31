@@ -443,7 +443,7 @@ class DialogflowConverter(Converter):
             is_slot_template = False
             for resp in replies:
                 template = resp
-                slots = re.findall("\$([\w\-\_]+)", resp)
+                slots = re.findall(r"\$([\w\-\_]+)", resp)
                 for slot in slots:
                     template = template.replace(
                         "$" + slot, "{" + slot.replace("-", "_") + "}"

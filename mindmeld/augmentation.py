@@ -190,7 +190,7 @@ class Augmentor(ABC):
         Args:
             query (str): Generated query to be validated.
         """
-        pattern = re.compile("^.*[a-zA-Z0-9].*$")
+        pattern = re.compile(r"^.*[a-zA-Z0-9].*$")
         return pattern.search(query) and True
 
     def _get_processed_queries_to_paraphrase(self, path):

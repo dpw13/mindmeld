@@ -1,2 +1,5 @@
 # Rebuild me for modern OS
 docker pull mindmeldworkbench/duckling:master && docker run -ti -d -p 0.0.0.0:7151:7151 mindmeldworkbench/duckling:master
+
+# mindmeld_init.sh may do this for us...
+docker run -d -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.8.0

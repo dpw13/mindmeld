@@ -27,7 +27,7 @@ requirements = [
     "python-dateutil~=2.6",
     "pytz",  # uses calendar versioning
     "scipy>=0.13.3,<2.0",
-    "scikit-learn<1.4",
+    "scikit-learn<1.5",
     "requests>=2.20.1,<3.0",
     "tqdm~=4.15",
     "immutables~=0.9",
@@ -50,9 +50,9 @@ setup_requirements = ["pytest-runner~=2.11", "setuptools>=36"]
 test_requirements = [
     "flake8<3.7",
     "pylint<3.1",
-    "pytest<3.9.0",
-    "pytest-cov==2.4.0",
-    "pytest-asyncio==0.8.0",
+    "pytest>=5.4,<7.0",
+    "pytest-cov<2.5",
+    "pytest-asyncio<0.9",
     "black>=19.10b0 ; python_version >= '3.6'",
 ]
 
