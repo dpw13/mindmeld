@@ -3,8 +3,10 @@ import logging
 import ssl
 import aiohttp
 import requests
+from typing import Any, Dict, Tuple
 
 from .request import Params
+from ..components import DialogueResponder
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +34,7 @@ class CustomAction:
         self._private_key = self._config.get("private_key")
         self.merge = merge
 
-    def get_json_payload(self, request, responder):
+    def get_json_payload(self, request: requests.Request, responder: DialogueResponder) -> Dict[str, Any]:
         request_json = dict(request)
         responder_json = dict(responder)
         return {
@@ -41,7 +43,7 @@ class CustomAction:
             "action": self._name,
         }
 
-    def invoke(self, request, responder, async_mode=False):
+    def invoke(self, request: requests.Request, responder: DialogueResponder, async_mode=False) -> bool:
         """Invoke the custom action with Request and Responder and return True if the action is
         executed successfully, False otherwise. Upon successful execution, we update the Frame
         and Directives of the Responder object.
@@ -73,7 +75,7 @@ class CustomAction:
             )
             return False
 
-    async def invoke_async(self, request, responder):
+    async def invoke_async(self, request: requests.Request, responder: DialogueResponder) -> bool:
         """Asynchronously invoke the custom action with Request and Responder and return True if
         the action is executed successfully, False otherwise. Upon successful execution, we update
         the Frame and Directives of the Responder object.
@@ -87,15 +89,15 @@ class CustomAction:
         """
         return await self.invoke(request, responder, async_mode=True)
 
-    def _process(self, json_data, responder):
+    def _process(self, json_data, responder: DialogueResponder) -> bool:
         status_code, result_json = self.post(json_data)
         return self._process_post_response(status_code, result_json, responder)
 
-    async def _process_async(self, json_data, responder):
+    async def _process_async(self, json_data, responder: DialogueResponder) -> bool:
         status_code, result_json = await self.post_async(json_data)
         return self._process_post_response(status_code, result_json, responder)
 
-    def _process_post_response(self, status_code, result_json, responder):
+    def _process_post_response(self, status_code: int, result_json: Any, responder: DialogueResponder) -> bool:
         if status_code == 200:
             for field in RESPONSE_FIELDS:
                 if field not in result_json:
@@ -130,7 +132,7 @@ class CustomAction:
             )
             return False
 
-    def post(self, json_data):
+    def post(self, json_data: Any) -> Tuple[int, Any]:
         if self._public_key and self._private_key:
             result = requests.post(
                 url=self.url, json=json_data, cert=(self._public_key, self._private_key)
@@ -144,7 +146,7 @@ class CustomAction:
         else:
             return result.status_code, {}
 
-    async def post_async(self, json_data):
+    async def post_async(self, json_data: Any) -> Tuple[int, Any]:
         ssl_context = None
         if self._cert:
             ssl_context = ssl.create_default_context(cafile=self._cert)
@@ -176,7 +178,7 @@ class CustomActionSequence:
     def __init__(self, actions, config, merge=True):
         self.actions = [CustomAction(action, config, merge=merge) for action in actions]
 
-    def invoke(self, request, responder):
+    def invoke(self, request: requests.Request, responder: DialogueResponder) -> bool:
         for action in self.actions:
             result = action.invoke(request, responder)
             if not result:
@@ -184,7 +186,7 @@ class CustomActionSequence:
                 return False
         return True
 
-    async def invoke_async(self, request, responder):
+    async def invoke_async(self, request: requests.Request, responder: DialogueResponder):
         for action in self.actions:
             result = await action.invoke_async(request, responder)
             if not result:
@@ -199,11 +201,11 @@ class CustomActionSequence:
         return "action_seq=" + str(self.actions)
 
 
-def invoke_custom_action(name, config, request, responder, merge=True):
+def invoke_custom_action(name: str, config: Dict, request: requests.Request, responder: DialogueResponder, merge=True) -> CustomAction:
     return CustomAction(name, config, merge=merge).invoke(request, responder)
 
 
-async def invoke_custom_action_async(name, config, request, responder, merge=True):
+async def invoke_custom_action_async(name: str, config: Dict, request: requests.Request, responder: DialogueResponder, merge=True) -> CustomAction:
     return await CustomAction(name, config, merge=merge).invoke_async(
         request, responder
     )

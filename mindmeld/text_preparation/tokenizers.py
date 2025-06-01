@@ -232,7 +232,7 @@ class WhiteSpaceTokenizer(Tokenizer):
 class SpacyTokenizer(Tokenizer):
     """A Tokenizer that uses Spacy to split text into tokens."""
 
-    def __init__(self, language, spacy_model_size="sm"):
+    def __init__(self, language: str, spacy_model_size: str = "sm"):
         """Initializes a SpacyTokenizer.
 
         Args:
@@ -242,9 +242,9 @@ class SpacyTokenizer(Tokenizer):
         self.spacy_model = SpacyModelFactory.get_spacy_language_model(
             language, spacy_model_size, disable=["tagger", "parser", "ner", "attribute_ruler", "lemmatizer"]
         )
-        assert self.spacy_model.pipeline == []
+        assert len(self.spacy_model.pipeline) == 0
 
-    def tokenize(self, text):
+    def tokenize(self, text: str):
         """
         Args:
             text (str): Input text.

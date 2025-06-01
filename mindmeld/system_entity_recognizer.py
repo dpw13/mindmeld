@@ -15,6 +15,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import Any, Dict, Iterable, Tuple
 
 import pycountry
 import requests
@@ -264,7 +265,7 @@ class DucklingRecognizer(SystemEntityRecognizer):
             DucklingRecognizer(url=url)
         return DucklingRecognizer._instance
 
-    def get_response(self, data):
+    def get_response(self, data: Dict[str, Any]) -> Tuple[Any, int]:
         """
         Send a post request to Duckling, data is a dictionary with field `text`.
         Return a tuple consisting the JSON response and a response code.
@@ -300,13 +301,13 @@ class DucklingRecognizer(SystemEntityRecognizer):
 
     def parse(
         self,
-        sentence,
-        dimensions=None,
-        language=None,
-        locale=None,
-        time_zone=None,
-        timestamp=None,
-    ):
+        sentence: str,
+        dimensions: Iterable[str]=None,
+        language: str=None,
+        locale: str=None,
+        time_zone: str=None,
+        timestamp: int=None,
+    ) -> Tuple[Any, int]:
         """Calls System Entity Recognizer service API to extract numerical entities from a sentence.
 
         Args:
@@ -567,13 +568,13 @@ class DucklingRecognizer(SystemEntityRecognizer):
 
     def get_candidates_for_text(
         self,
-        text,
-        entity_types=None,
-        locale=None,
-        language=None,
-        time_zone=None,
-        timestamp=None,
-    ):
+        text: str,
+        entity_types: Iterable[str]=None,
+        locale: str=None,
+        language: str=None,
+        time_zone: str=None,
+        timestamp: int=None,
+    ) -> Iterable[Dict]:
         """Identifies candidate system entities in the given text.
 
         Args:
@@ -624,7 +625,7 @@ def _construct_interval_helper(interval_item):
     return from_, to_
 
 
-def duckling_item_to_entity(item):
+def duckling_item_to_entity(item: Dict[str, Any]) -> Entity:
     """Converts an item from the output of duckling into an Entity
 
     Args:

@@ -16,6 +16,7 @@ import importlib
 import logging
 import subprocess
 import spacy
+from typing import Any, Iterable
 
 from ..constants import (
     SPACY_WEB_TRAINED_LANGUAGES,
@@ -30,7 +31,7 @@ class SpacyModelFactory:
     """Spacy (Language) Model Factory Class"""
 
     @staticmethod
-    def get_spacy_language_model(language, spacy_model_size="lg", disable=()):
+    def get_spacy_language_model(language: str, spacy_model_size="lg", disable: Iterable[str] = ()):
         """Get a Spacy Language model.
 
         Args:
@@ -50,7 +51,7 @@ class SpacyModelFactory:
         return SpacyModelFactory._load_model(spacy_model_name, disable)
 
     @staticmethod
-    def validate_spacy_language(language):
+    def validate_spacy_language(language: str) -> None:
         """Check if the language is valid.
 
         Args:
@@ -60,7 +61,7 @@ class SpacyModelFactory:
             raise ValueError("Spacy does not currently support: {!r}.".format(language))
 
     @staticmethod
-    def validate_spacy_model_size(spacy_model_size):
+    def validate_spacy_model_size(spacy_model_size: str) -> None:
         """Check if the model size is valid.
 
         Args:
@@ -74,7 +75,7 @@ class SpacyModelFactory:
             )
 
     @staticmethod
-    def _load_model(spacy_model_name, disable=()):
+    def _load_model(spacy_model_name: str, disable: Iterable[str] = ()) -> spacy.Language:
         """Load Spacy English model. Download if needed.
 
         Args:
@@ -97,7 +98,7 @@ class SpacyModelFactory:
             return language_module.load(disable=disable)
 
     @staticmethod
-    def _get_spacy_model_name(language, spacy_model_size):
+    def _get_spacy_model_name(language: str, spacy_model_size: str) -> str:
         """Get the name of a Spacy Model.
 
         Args:
@@ -111,7 +112,7 @@ class SpacyModelFactory:
         return f"{language}_core_{model_type}_{spacy_model_size}"
 
     @staticmethod
-    def _download_spacy_model(spacy_model_name):
+    def _download_spacy_model(spacy_model_name: str) -> None:
         """Download Spacy Model.
 
         Args:
@@ -130,7 +131,7 @@ class SpacyModelFactory:
         )
 
     @staticmethod
-    def _import_spacy_model(spacy_model_name):
+    def _import_spacy_model(spacy_model_name: str) -> Any:
         """Attempt to Imort the Spacy Model.
 
         Args:

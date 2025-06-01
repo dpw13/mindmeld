@@ -15,6 +15,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
+from typing import Dict, Self
 
 from .components._config import get_language_config
 from .core import TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED, TEXT_FORM_RAW, Query
@@ -23,7 +24,7 @@ from .system_entity_recognizer import (
     NoOpSystemEntityRecognizer,
     SystemEntityRecognizer,
 )
-from .text_preparation.text_preparation_pipeline import TextPreparationPipelineFactory
+from .text_preparation.text_preparation_pipeline import TextPreparationPipeline, TextPreparationPipelineFactory
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +44,10 @@ class QueryFactory:
 
     def __init__(
         self,
-        text_preparation_pipeline=None,
-        locale=None,
-        language=None,
-        system_entity_recognizer=None,
+        text_preparation_pipeline: TextPreparationPipeline=None,
+        locale: str=None,
+        language: str=None,
+        system_entity_recognizer: SystemEntityRecognizer=None,
         duckling=False,
     ):
         self.text_preparation_pipeline = text_preparation_pipeline
@@ -64,8 +65,8 @@ class QueryFactory:
             self.system_entity_recognizer = NoOpSystemEntityRecognizer.get_instance()
 
     def create_query(
-        self, text, time_zone=None, timestamp=None, locale=None, language=None
-    ):
+        self, text: str, time_zone: str=None, timestamp: int=None, locale: str=None, language: str=None
+    ) -> Query:
         """Creates a query with the given text.
 
         Args:
@@ -141,7 +142,7 @@ class QueryFactory:
         )
         return query
 
-    def normalize(self, text):
+    def normalize(self, text: str) -> str:
         """Normalizes the given text.
 
         Args:
@@ -157,11 +158,11 @@ class QueryFactory:
 
     @staticmethod
     def create_query_factory(
-        app_path,
-        text_preparation_pipeline=None,
-        system_entity_recognizer=None,
+        app_path: str,
+        text_preparation_pipeline: TextPreparationPipeline=None,
+        system_entity_recognizer: SystemEntityRecognizer=None,
         duckling=False,
-    ):
+    ) -> Self:
         """Creates a query factory for the application.
 
         Args:

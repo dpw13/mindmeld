@@ -24,6 +24,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor, wait
 from copy import deepcopy
 from multiprocessing import cpu_count
+from typing import Any, Dict, Iterable, Self, Tuple
 from weakref import WeakValueDictionary
 
 from tqdm import tqdm
@@ -42,7 +43,7 @@ from .role_classifier import RoleClassifier
 from .schemas import validate_locale_code_with_ref_language_code, _validate_mask_nlp
 from .. import path
 from ..constants import SYSTEM_ENTITY_PREFIX
-from ..core import Bunch, ProcessedQuery, QueryEntity, Entity, NestedEntity
+from ..core import Bunch, ProcessedQuery, Query, QueryEntity, Entity, NestedEntity
 from ..exceptions import (
     AllowedNlpClassesKeyError,
     MindMeldImportError,
@@ -112,7 +113,7 @@ class Processor(ABC):
     instance_map = WeakValueDictionary()
     """The map of identity to instance."""
 
-    def __init__(self, app_path, resource_loader=None, config=None):
+    def __init__(self, app_path: str, resource_loader: ResourceLoader=None, config: Dict=None):
         """Initializes a processor
 
         Args:
@@ -134,7 +135,7 @@ class Processor(ABC):
         self.config = get_nlp_config(app_path, config)
         Processor.instance_map[id(self)] = self
 
-    def build(self, incremental=False, label_set=None):
+    def build(self, incremental=False, label_set: str=None) -> None:
         """Builds all the natural language processing models for this processor and its children.
 
         Args:
@@ -145,7 +146,7 @@ class Processor(ABC):
         self._build_recursive(incremental=incremental, label_set=label_set)
         self.load()
 
-    def _build_recursive(self, incremental=False, label_set=None):
+    def _build_recursive(self, incremental=False, label_set: str=None) -> None:
         """Builds all the natural language processing models for this processor and its children.
 
         Args:
@@ -159,25 +160,26 @@ class Processor(ABC):
             self._dump()
             self.unload()
 
+        child: Self
         for child in self._children.values():
             # We pass the incremental_timestamp to children processors
             child.incremental_timestamp = self.incremental_timestamp
             child._build_recursive(incremental=incremental, label_set=label_set)
 
     @property
-    def incremental_timestamp(self):
+    def incremental_timestamp(self) -> str:
         """The incremental timestamp of this processor (str)."""
         return self._incremental_timestamp
 
     @incremental_timestamp.setter
-    def incremental_timestamp(self, ts):
+    def incremental_timestamp(self, ts: str):
         self._incremental_timestamp = ts
 
     @abstractmethod
-    def _build(self, incremental=False, label_set=None, load_cached=True):
+    def _build(self, incremental=False, label_set: str=None, load_cached=True):
         raise NotImplementedError
 
-    def dump(self):
+    def dump(self) -> None:
         """Saves all the natural language processing models for this processor and its children to
         disk."""
         self._dump()
@@ -188,13 +190,13 @@ class Processor(ABC):
         self.dirty = False
 
     @abstractmethod
-    def _dump(self):
+    def _dump(self) -> None:
         raise NotImplementedError
 
-    def unload(self):
+    def unload(self) -> None:
         raise NotImplementedError
 
-    def load(self, incremental_timestamp=None):
+    def load(self, incremental_timestamp: str=None) -> None:
         """Loads all the natural language processing models for this processor and its children
         from disk.
 
@@ -210,10 +212,10 @@ class Processor(ABC):
         self.dirty = False
 
     @abstractmethod
-    def _load(self, incremental_timestamp=None):
+    def _load(self, incremental_timestamp: str=None) -> None:
         raise NotImplementedError
 
-    def evaluate(self, print_stats=False, label_set=None):
+    def evaluate(self, print_stats=False, label_set: str=None) -> None:
         """Evaluates all the natural language processing models for this processor and its
         children.
 
@@ -232,7 +234,7 @@ class Processor(ABC):
     def _evaluate(self, print_stats, label_set="test"):
         raise NotImplementedError
 
-    def _check_ready(self):
+    def _check_ready(self) -> None:
         if not self.ready:
             raise ProcessorError(
                 "Processor not ready, models must be built or loaded first."
@@ -240,13 +242,13 @@ class Processor(ABC):
 
     def process(
         self,
-        query_text,
-        allowed_nlp_classes=None,
-        locale=None,
-        language=None,
-        time_zone=None,
-        timestamp=None,
-        dynamic_resource=None,
+        query_text: str | Iterable[str],
+        allowed_nlp_classes: Dict=None,
+        locale: str=None,
+        language: str=None,
+        time_zone: str=None,
+        timestamp: int=None,
+        dynamic_resource: Dict=None,
         verbose=False,
     ):
         """Processes the given query using the full hierarchy of natural language processing models \
@@ -290,8 +292,8 @@ class Processor(ABC):
         ).to_dict()
 
     def process_query(
-        self, query, allowed_nlp_classes=None, dynamic_resource=None, verbose=False
-    ):
+        self, query, allowed_nlp_classes: Dict=None, dynamic_resource: Dict=None, verbose=False
+    ) -> ProcessedQuery:
         """Processes the given query using the full hierarchy of natural language processing models \
         trained for this application.
 
@@ -312,7 +314,7 @@ class Processor(ABC):
         """
         raise NotImplementedError
 
-    def _process_list(self, items, func, *args, **kwargs):
+    def _process_list(self, items: Iterable, func: str, *args, **kwargs) -> Tuple:
         """Processes a list of items in parallel if possible using the executor.
         Args:
             items (list): Items to process.
@@ -350,8 +352,8 @@ class Processor(ABC):
         return tuple([getattr(self, func)(itm, *args, **kwargs) for itm in items])
 
     def create_query(
-        self, query_text, locale=None, language=None, time_zone=None, timestamp=None
-    ):
+        self, query_text: str | Iterable[str], locale: str=None, language: str=None, time_zone: str=None, timestamp: int=None
+    ) -> Query:
         """Creates a query with the given text.
 
         Args:
@@ -399,7 +401,7 @@ class NaturalLanguageProcessor(Processor):
         domain_classifier (DomainClassifier): The domain classifier for this application.
     """
 
-    def __init__(self, app_path, resource_loader=None, config=None, progress_bar=None):
+    def __init__(self, app_path: str, resource_loader: ResourceLoader=None, config: Dict=None, progress_bar=None):
         """Initializes a natural language processor object
 
         Args:
@@ -578,8 +580,8 @@ class NaturalLanguageProcessor(Processor):
             return domain, domain_proba
 
     def process_query(
-        self, query, allowed_nlp_classes=None, dynamic_resource=None, verbose=False
-    ):
+        self, query, allowed_nlp_classes: Dict[str, Any] = None, dynamic_resource: Dict[str, Any]=None, verbose=False
+    ) -> ProcessedQuery:
         """Processes the given query using the full hierarchy of natural language processing models \
         trained for this application.
 
@@ -1078,7 +1080,7 @@ class IntentProcessor(Processor):
     """
 
     def __init__(
-        self, app_path, domain, intent, resource_loader=None, progress_bar=None
+        self, app_path: str, domain: str, intent: str, resource_loader: ResourceLoader=None, progress_bar=None
     ):
         """Initializes an intent processor object
 
@@ -1142,7 +1144,7 @@ class IntentProcessor(Processor):
 
         return _processors
 
-    def _build(self, incremental=False, label_set=None, load_cached=True):
+    def _build(self, incremental=False, label_set=None, load_cached=True) -> None:
         """Builds the models for this intent"""
 
         # Should we call .fit() when there are zero entity_types?

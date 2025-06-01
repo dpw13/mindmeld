@@ -12,16 +12,15 @@ import pytest
 from mindmeld.auto_annotator import MultiLingualAnnotator
 from mindmeld._util import get_pattern
 
-
 @pytest.fixture(scope="module")
-def en_mla(kwik_e_mart_app_path):
+def en_mla(kwik_e_mart_app_path: str) -> MultiLingualAnnotator:
     return MultiLingualAnnotator(
         app_path=kwik_e_mart_app_path, language="en", translator="NoOpTranslator"
     )
 
 
 @pytest.fixture(scope="module")
-def es_mla(kwik_e_mart_app_path):
+def es_mla(kwik_e_mart_app_path: str) -> MultiLingualAnnotator:
     return MultiLingualAnnotator(
         app_path=kwik_e_mart_app_path,
         language="es",
@@ -31,7 +30,7 @@ def es_mla(kwik_e_mart_app_path):
 
 
 @pytest.fixture(scope="module")
-def fr_mla(kwik_e_mart_app_path):
+def fr_mla(kwik_e_mart_app_path: str) -> MultiLingualAnnotator:
     return MultiLingualAnnotator(
         app_path=kwik_e_mart_app_path,
         language="fr",
@@ -41,9 +40,12 @@ def fr_mla(kwik_e_mart_app_path):
 
 
 def _check_match(
-    annotator, query, entity_type, body=None, value=None, unit=None, grain=None
+    annotator: MultiLingualAnnotator, query: str, entity_type: str, body: str=None, value: str=None, unit=None, grain=None
 ):
-    query_entity = annotator.parse(query, entity_types=[entity_type])[0]
+    entities = annotator.parse(query, entity_types=[entity_type])
+    assert entities is not None
+    assert len(entities) > 0
+    query_entity = entities[0]
     if body:
         assert body == query_entity.entity.text
     if unit:
@@ -67,7 +69,7 @@ def _check_match(
         ("5th", "5th", 5),
     ],
 )
-def test_en_ordinal_parse(en_mla, query, body, value):
+def test_en_ordinal_parse(en_mla, query: str, body: str, value: str):
     _check_match(en_mla, query, "sys_ordinal", body, value, None, None)
 
 

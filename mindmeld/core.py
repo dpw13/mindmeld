@@ -14,11 +14,10 @@
 """This module contains a collection of the core data structures used in MindMeld."""
 from copy import deepcopy
 import logging
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Iterable, Tuple, Any, Self
 import immutables
 
 from .constants import SYSTEM_ENTITY_PREFIX
-
 
 TEXT_FORM_RAW = 0
 TEXT_FORM_PROCESSED = 1
@@ -99,26 +98,26 @@ class Span:
 
     __slots__ = ["start", "end"]
 
-    def __init__(self, start, end):
+    def __init__(self, start: int, end: int):
         assert start <= end, "Span 'start' must be less than or equal to 'end'"
         self.start = start
         self.end = end
 
-    def to_cache(self):
+    def to_cache(self) -> Dict[str, int]:
         return {
             "start": self.start,
             "end": self.end
         }
 
     @staticmethod
-    def from_cache(obj):
+    def from_cache(obj: Dict) -> Self:
         return Span(**obj)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, int]:
         """Converts the span into a dictionary"""
         return {"start": self.start, "end": self.end}
 
-    def slice(self, obj):
+    def slice(self, obj: Iterable) -> Any:
         """Returns the slice of the object for this span
 
         Args:
@@ -129,7 +128,7 @@ class Span:
         """
         return obj[self.start : self.end + 1]
 
-    def shift(self, offset):
+    def shift(self, offset: int) -> Self:
         """Shifts a span by offset
 
         Args:
@@ -138,12 +137,12 @@ class Span:
         """
         return Span(self.start + offset, self.end + offset)
 
-    def has_overlap(self, other):
+    def has_overlap(self, other: Self) -> bool:
         """Determines whether two spans overlap."""
         return self.end >= other.start and other.end >= self.start
 
     @staticmethod
-    def get_largest_non_overlapping_candidates(spans):
+    def get_largest_non_overlapping_candidates(spans: Iterable[Tuple[int]]) -> Iterable[Tuple[int]]:
         """Finds the set of the largest non-overlapping candidates.
 
         Args:
@@ -231,15 +230,15 @@ class Query:
 
     def __init__(
         self,
-        raw_text,
-        processed_text,
-        normalized_tokens,
+        raw_text: str,
+        processed_text: str,
+        normalized_tokens: Iterable[Dict[str, Any]],
         char_maps,
-        locale=None,
-        language=None,
-        time_zone=None,
-        timestamp=None,
-        stemmed_tokens=None,
+        locale: str=None,
+        language: str=None,
+        time_zone: str=None,
+        timestamp: int=None,
+        stemmed_tokens: Iterable[str]=None,
     ):
         """Creates a query object
 
@@ -255,7 +254,7 @@ class Query:
         norm_text = " ".join([t["entity"] for t in self._normalized_tokens])
         self._texts = (raw_text, processed_text, norm_text)
         self._char_maps = char_maps
-        self.system_entity_candidates = ()
+        self.system_entity_candidates: Tuple[Entity] = ()
         self._locale = locale
         self._language = language
         self._time_zone = time_zone
@@ -281,7 +280,7 @@ class Query:
         }
 
     @staticmethod
-    def char_maps_from_cache(obj):
+    def char_maps_from_cache(obj) -> Dict[Tuple, Dict[int, Any]]:
         result = {}
         for k,v in obj.items():
             # Convert string key back into tuple
@@ -291,7 +290,7 @@ class Query:
         return result
 
     @staticmethod
-    def from_cache(obj):
+    def from_cache(obj: Dict) -> Self:
         system_entity_candidates = obj.pop("system_entity_candidates")
         obj["char_maps"] = Query.char_maps_from_cache(obj["char_maps"])
         result = Query(**obj)
@@ -301,22 +300,22 @@ class Query:
         return result
 
     @property
-    def text(self):
+    def text(self) -> str:
         """The original input text"""
         return self._texts[TEXT_FORM_RAW]
 
     @property
-    def processed_text(self):
+    def processed_text(self) -> str:
         """The input text after it has been preprocessed"""
         return self._texts[TEXT_FORM_PROCESSED]
 
     @property
-    def normalized_text(self):
+    def normalized_text(self) -> str:
         """The normalized input text"""
         return self._texts[TEXT_FORM_NORMALIZED]
 
     @property
-    def stemmed_text(self):
+    def stemmed_text(self) -> str:
         """The stemmed input text"""
         return " ".join(self.stemmed_tokens)
 
@@ -356,7 +355,7 @@ class Query:
         """
         return self._normalized_tokens
 
-    def get_text_form(self, form):
+    def get_text_form(self, form: int) -> str:
         """Programmatically retrieves text by form
 
         Args:
@@ -495,15 +494,15 @@ class ProcessedQuery:
 
     def __init__(
         self,
-        query,
-        domain=None,
-        intent=None,
-        entities=None,
+        query: Query,
+        domain: str=None,
+        intent: str=None,
+        entities: Iterable=None,
         is_gold=False,
-        nbest_transcripts_queries=None,
-        nbest_transcripts_entities=None,
-        nbest_aligned_entities=None,
-        confidence=None,
+        nbest_transcripts_queries: Iterable=None,
+        nbest_transcripts_entities: Iterable=None,
+        nbest_aligned_entities: Iterable=None,
+        confidence: Dict=None,
     ):
         self.query = query
         self.domain = domain
@@ -515,7 +514,7 @@ class ProcessedQuery:
         self.nbest_aligned_entities = nbest_aligned_entities
         self.confidence = confidence
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         """Converts the processed query into a dictionary"""
         base = {
             "text": self.query.text,
@@ -544,7 +543,7 @@ class ProcessedQuery:
             base["confidences"] = self.confidence
         return base
 
-    def to_cache(self):
+    def to_cache(self) -> Dict[str, Any]:
         obj = {
             "query": self.query.to_cache(),
             "domain": self.domain,
@@ -568,7 +567,7 @@ class ProcessedQuery:
         return obj
 
     @staticmethod
-    def from_cache(obj):
+    def from_cache(obj: Dict[str, Any]) -> Self:
         obj["query"] = Query.from_cache(obj["query"])
         obj["entities"] = [Entity.from_cache_typed(e) for e in obj["entities"]]
         if "nbest_transcripts_queries" in obj:
@@ -607,6 +606,114 @@ class ProcessedQuery:
         )
 
 
+
+class Entity:
+    """An Entity is any important piece of text that provides more information about the user
+    intent.
+
+    Attributes:
+        text (str): The text contents that span the entity
+        type (str): The type of the entity
+        role (str): The role of the entity
+        value (dict): The resolved value of the entity
+        display_text (str): A human readable text representation of the entity for use in natural
+            language responses.
+        confidence (float): A confidence value from 0 to 1 about how confident the entity
+            recognizer was for the given class label.
+        is_system_entity (bool): True if the entity is a system entity
+    """
+
+    # TODO: look into using __slots__
+
+    def __init__(
+        self,
+        text: str,
+        entity_type: str,
+        role: str=None,
+        value: Dict[str, Iterable]=None,
+        display_text: str=None,
+        confidence: float=None,
+    ):
+        self.text = text
+        self.type = entity_type
+        self.role = role
+        self.value = value
+        self.display_text = display_text
+        self.confidence = confidence
+        self.is_system_entity = self.__class__.is_system_entity(entity_type)
+
+    @staticmethod
+    def value_to_cache(value: Dict[str, Any]):
+        result = value
+        if value is not None:
+            result = value.copy()
+            if "children" in value:
+                result["children"] = [e.to_cache() for e in value["children"]]
+        return result
+
+    def to_cache(self) -> Dict[str, Any]:
+        return {
+            "class": self.__class__.__name__,
+            "text": self.text,
+            "entity_type": self.type,
+            "role": self.role,
+            "value": self.value_to_cache(self.value),
+            "display_text": self.display_text,
+            "confidence": self.confidence
+        }
+
+    @staticmethod
+    def from_cache(obj: Dict[str, Any]) -> Self:
+        if "children" in obj:
+            obj["children"] = [Entity.from_cache_typed(e) for e in obj["children"]]
+        return Entity(**obj)
+
+    @staticmethod
+    def from_cache_typed(obj) -> Self:
+        """
+        Function to instantiate a cached Entity by the class type
+        which was serialized when it's to_cache() function was called.
+        """
+        entity_class = obj.pop("class")
+        return Entity.entity_class_map[entity_class].from_cache(obj)
+
+    @staticmethod
+    def is_system_entity(entity_type: str) -> bool:  # pylint: disable=method-hidden
+        """Checks whether the provided entity type is a MindMeld-recognized system entity.
+
+        Args:
+            entity_type (str): An entity type
+
+        Returns:
+            bool: True if the entity is a system entity type, else False
+        """
+        return entity_type.startswith(SYSTEM_ENTITY_PREFIX)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Converts the entity into a dictionary"""
+        base = {"text": self.text, "type": self.type, "role": self.role}
+        for field in ["value", "display_text", "confidence"]:
+            value = getattr(self, field)
+            if value is not None:
+                base[field] = value
+
+        return base
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+    def __ne__(self, other):
+        if isinstance(other, self.__class__):
+            return not self.__eq__(other)
+        return NotImplemented
+
+    def __repr__(self):
+        text = self.display_text or self.text
+        return "<{} {!r} ({!r})>".format(self.__class__.__name__, text, self.type)
+
+
 class NestedEntity:
     """An entity with the context of the query it came from, along with \
         information like the entity's parent and children.
@@ -623,7 +730,7 @@ class NestedEntity:
         children (tuple of NestedEntity): A tuple of children nested entities
     """
 
-    def __init__(self, texts, spans, token_spans, entity, children=None):
+    def __init__(self, texts: Iterable[str], spans: Iterable[Span], token_spans: Iterable[Span], entity: Entity, children: Iterable[Self]=None):
         self._texts = texts
         self._spans = spans
         self._token_spans = token_spans
@@ -637,7 +744,7 @@ class NestedEntity:
         else:
             self.children = None
 
-    def to_cache(self):
+    def to_cache(self) -> Dict[str, Any]:
         obj = {
             "class": self.__class__.__name__,
             "texts": self._texts,
@@ -650,7 +757,7 @@ class NestedEntity:
         return obj
 
     @staticmethod
-    def from_cache(obj):
+    def from_cache(obj: Dict[str, Any]) -> Self:
         obj["spans"] = [Span.from_cache(s) for s in obj["spans"]]
         obj["token_spans"] = [Span.from_cache(s) for s in obj["token_spans"]]
         obj["entity"] = Entity.from_cache_typed(obj["entity"])
@@ -658,7 +765,7 @@ class NestedEntity:
             obj["children"] = [Entity.from_cache_typed(e) for e in obj["children"]]
         return NestedEntity(**obj)
 
-    def with_children(self, children):
+    def with_children(self, children) -> Self:
         """Creates a copy of this entity with the provided children"""
         return self.__class__(
             self._texts, self._spans, self._token_spans, self.entity, children
@@ -667,13 +774,13 @@ class NestedEntity:
     @classmethod
     def from_query(
         cls,
-        query,
-        span=None,
+        query: Query,
+        span: Span=None,
         normalized_span=None,
-        entity_type=None,
-        role=None,
-        entity=None,
-        parent_offset=None,
+        entity_type: str=None,
+        role: str=None,
+        entity: Entity=None,
+        parent_offset: int=None,
         children=None,
     ):
         """Creates an entity node using a parent entity node
@@ -696,7 +803,7 @@ class NestedEntity:
 
         """
 
-        def _get_token_start(full_norm_text, span_out):
+        def _get_token_start(full_norm_text: str, span_out: Span) -> int:
             """ Calculate the start of a token using the normalized tokens
             combined as a string and delimited by space.
 
@@ -716,7 +823,7 @@ class NestedEntity:
                     tok_start += 1
             return tok_start
 
-        def _get_form_details(query_span, offset, form_in, form_out):
+        def _get_form_details(query_span: Span, offset: int, form_in: int, form_out: int) -> Tuple[str, Span, Span]:
             """ Get the transformed text, transformed text span, and token index span
             for a given text token. By default, the normalized text form is used when
             calculating the token index span as it accounts for custom tokenization.
@@ -796,7 +903,7 @@ class NestedEntity:
         return cls(texts, spans, tok_spans, entity, children)
 
     @staticmethod
-    def get_largest_non_overlapping_entities(candidates, get_span_func):
+    def get_largest_non_overlapping_entities(candidates: Iterable[Span], get_span_func) -> Iterable[Span]:
         """
         This function filters out overlapping entity spans
 
@@ -818,7 +925,7 @@ class NestedEntity:
                     break
         return final_candidates
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         """Converts the query entity into a dictionary"""
         base = self.entity.to_dict()
         base["span"] = self.span.to_dict()
@@ -923,113 +1030,6 @@ class QueryEntity(NestedEntity):
         end (int): The character index end of the text range that was processed into this
             entity. This index is based on the normalized text of the query passed in.
     """
-
-
-class Entity:
-    """An Entity is any important piece of text that provides more information about the user
-    intent.
-
-    Attributes:
-        text (str): The text contents that span the entity
-        type (str): The type of the entity
-        role (str): The role of the entity
-        value (dict): The resolved value of the entity
-        display_text (str): A human readable text representation of the entity for use in natural
-            language responses.
-        confidence (float): A confidence value from 0 to 1 about how confident the entity
-            recognizer was for the given class label.
-        is_system_entity (bool): True if the entity is a system entity
-    """
-
-    # TODO: look into using __slots__
-
-    def __init__(
-        self,
-        text,
-        entity_type,
-        role=None,
-        value=None,
-        display_text=None,
-        confidence=None,
-    ):
-        self.text = text
-        self.type = entity_type
-        self.role = role
-        self.value = value
-        self.display_text = display_text
-        self.confidence = confidence
-        self.is_system_entity = self.__class__.is_system_entity(entity_type)
-
-    @staticmethod
-    def value_to_cache(value):
-        result = value
-        if value is not None:
-            result = value.copy()
-            if "children" in value:
-                result["children"] = [e.to_cache() for e in value["children"]]
-        return result
-
-    def to_cache(self):
-        return {
-            "class": self.__class__.__name__,
-            "text": self.text,
-            "entity_type": self.type,
-            "role": self.role,
-            "value": self.value_to_cache(self.value),
-            "display_text": self.display_text,
-            "confidence": self.confidence
-        }
-
-    @staticmethod
-    def from_cache(obj):
-        if "children" in obj:
-            obj["children"] = [Entity.from_cache_typed(e) for e in obj["children"]]
-        return Entity(**obj)
-
-    @staticmethod
-    def from_cache_typed(obj):
-        """
-        Function to instantiate a cached Entity by the class type
-        which was serialized when it's to_cache() function was called.
-        """
-        entity_class = obj.pop("class")
-        return Entity.entity_class_map[entity_class].from_cache(obj)
-
-    @staticmethod
-    def is_system_entity(entity_type):  # pylint: disable=method-hidden
-        """Checks whether the provided entity type is a MindMeld-recognized system entity.
-
-        Args:
-            entity_type (str): An entity type
-
-        Returns:
-            bool: True if the entity is a system entity type, else False
-        """
-        return entity_type.startswith(SYSTEM_ENTITY_PREFIX)
-
-    def to_dict(self):
-        """Converts the entity into a dictionary"""
-        base = {"text": self.text, "type": self.type, "role": self.role}
-        for field in ["value", "display_text", "confidence"]:
-            value = getattr(self, field)
-            if value is not None:
-                base[field] = value
-
-        return base
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        return NotImplemented
-
-    def __ne__(self, other):
-        if isinstance(other, self.__class__):
-            return not self.__eq__(other)
-        return NotImplemented
-
-    def __repr__(self):
-        text = self.display_text or self.text
-        return "<{} {!r} ({!r})>".format(self.__class__.__name__, text, self.type)
 
 
 Entity.entity_class_map = {

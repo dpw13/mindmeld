@@ -15,7 +15,7 @@ import os
 import re
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List
+from typing import Any, Dict, Iterable, List
 from tqdm import tqdm
 from .resource_loader import ResourceLoader
 from .components._config import (
@@ -29,7 +29,7 @@ from .system_entity_recognizer import (
     duckling_item_to_query_entity,
 )
 from .markup import load_query, dump_queries
-from .core import Entity, Span, QueryEntity, _get_overlap, NestedEntity
+from .core import Entity, Span, ProcessedQuery, QueryEntity, _get_overlap, NestedEntity
 from .exceptions import MarkupError
 from .models.helpers import register_annotator
 from .constants import (
@@ -124,7 +124,7 @@ class Annotator(ABC):
         return file_entities_map
 
     @staticmethod
-    def _get_pattern(rule):
+    def _get_pattern(rule: Dict[str, str]) -> str:
         """Convert a rule represented as a dictionary with the keys "domains", "intents",
         "entities" into a regex pattern.
 
@@ -137,7 +137,7 @@ class Annotator(ABC):
         pattern = [rule[x] for x in ["domains", "intents", "files"]]
         return ".*/" + "/".join(pattern)
 
-    def _get_entities(self, rule):
+    def _get_entities(self, rule: Dict[str, str]) -> List[str]:
         """Process the entities specified in a rule dictionary. Check if they are valid
         for the given annotator.
 
@@ -161,14 +161,14 @@ class Annotator(ABC):
 
     @property
     @abstractmethod
-    def supported_entity_types(self):
+    def supported_entity_types(self) -> Iterable[str]:
         """
         Returns:
             supported_entity_types (list): List of supported entity types.
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def valid_entity_check(self, entity):
+    def valid_entity_check(self, entity: str) -> bool:
         """Determine if an entity type is valid.
 
         Args:
@@ -180,7 +180,7 @@ class Annotator(ABC):
         entity = entity.lower().strip()
         return entity in self.supported_entity_types
 
-    def annotate(self):
+    def annotate(self) -> None:
         """Annotate data."""
         if not self.annotation_rules:
             logger.warning(
@@ -190,7 +190,7 @@ class Annotator(ABC):
             return
         self._modify_queries(action=AnnotatorAction.ANNOTATE)
 
-    def unannotate(self):
+    def unannotate(self) -> None:
         """Unannotate data."""
         if not self.unannotate:
             logger.warning(
@@ -231,7 +231,7 @@ class Annotator(ABC):
                 outfile.close()
 
     @staticmethod
-    def _get_processed_queries(file_path, query_factory):
+    def _get_processed_queries(file_path: str, query_factory: QueryFactory) -> List[ProcessedQuery]:
         """Converts queries in a given path to processed queries.
         Skips and presents a warning if loading the query creates an error.
 
@@ -259,7 +259,7 @@ class Annotator(ABC):
                 logger.warning("Skipping query. Error in processing: %s", query)
         return processed_queries
 
-    def _annotate_query(self, processed_query, entity_types):
+    def _annotate_query(self, processed_query: ProcessedQuery, entity_types: Iterable):
         """Updates the entities of a processed query with newly
         annotated entities.
 
@@ -277,7 +277,7 @@ class Annotator(ABC):
         )
         processed_query.entities = tuple(final_entities)
 
-    def _get_annotated_entities(self, processed_query, entity_types=None):
+    def _get_annotated_entities(self, processed_query: ProcessedQuery, entity_types=None) -> List:
         """Creates a list of query entities after parsing the text of a
         processed query.
 
@@ -299,7 +299,7 @@ class Annotator(ABC):
         )
 
     @staticmethod
-    def _item_to_query_entity(item, processed_query):
+    def _item_to_query_entity(item: Dict[str, Any], processed_query: ProcessedQuery) -> QueryEntity:
         """Converts an item returned from parse into a query entity.
 
         Args:
@@ -322,7 +322,7 @@ class Annotator(ABC):
         return query_entity
 
     @staticmethod
-    def _resolve_conflicts(target_entities, other_entities):
+    def _resolve_conflicts(target_entities: List[QueryEntity], other_entities: Iterable[QueryEntity]) -> Iterable[QueryEntity]:
         """Resolve overlaps between existing entities and newly annotad entities.
 
         Args:
@@ -344,7 +344,7 @@ class Annotator(ABC):
         return target_entities
 
     # pylint: disable=R0201
-    def _unannotate_query(self, processed_query, remove_entities):
+    def _unannotate_query(self, processed_query: ProcessedQuery, remove_entities: Iterable) -> None:
         """Removes specified entities in a processed query. If all entities are being
         removed, this function will not remove entities that the annotator does not support
         unless it is explicitly specified to do so in the config with the param
@@ -365,7 +365,7 @@ class Annotator(ABC):
         processed_query.entities = tuple(keep_entities)
 
     @abstractmethod
-    def parse(self, sentence, **kwargs):
+    def parse(self, sentence: str, **kwargs) -> Iterable[QueryEntity]:
         """Extract entities from a sentence. Detected entities should be
         represented as dictionaries with the following keys: "body", "start"
         (start index), "end" (end index), "value", "dim" (entity type).
@@ -410,7 +410,7 @@ class SpacyAnnotator(Annotator):
         )
 
     @property
-    def supported_entity_types(self):  # pylint: disable=W0236
+    def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
         """This function generates a list of supported entities for the given language.
         These entities labels are mapped to MindMeld sys_entities.
         The "misc" spacy entity is skipped since the category too broad to be
@@ -456,7 +456,7 @@ class SpacyAnnotator(Annotator):
                 filtered_entities.append(entity)
         return filtered_entities
 
-    def parse(self, sentence, entity_types=None, **kwargs):
+    def parse(self, sentence: str, entity_types: Iterable[str]=None, **kwargs) -> List[QueryEntity]:
         """Extracts entities from a sentence. Detected entities should are
         represented as dictionaries with the following keys: "body", "start"
         (start index), "end" (end index), "value", "dim" (entity type).
@@ -493,7 +493,7 @@ class SpacyAnnotator(Annotator):
             "person": self._resolve_person,
         }
 
-        entities = []
+        entities: List[Dict[str, Any]] = []
         for entity in spacy_entities:
             if entity["dim"] in ["per", "persName"]:
                 entity["dim"] = "person"
@@ -821,7 +821,7 @@ class BootstrapAnnotator(Annotator):
         self.nlp = NaturalLanguageProcessor(self.app_path)
         self.nlp.build()
 
-    def parse(self, sentence, entity_types, domain: str, intent: str, **kwargs):
+    def parse(self, sentence, entity_types: Iterable, domain: str, intent: str, **kwargs) -> Iterable[QueryEntity]:
         """
         Args:
             sentence (str): Sentence to detect entities.
@@ -836,7 +836,7 @@ class BootstrapAnnotator(Annotator):
         response = self.nlp.process(
             sentence, allowed_nlp_classes={domain: {intent: {}}}, verbose=True
         )
-        entities = []
+        entities: List[Dict] = []
         for i, entity in enumerate(response["entities"]):
             if not entity_types or entity["type"] in entity_types:
                 entity_confidence = response["confidences"]["entities"][i][
@@ -877,7 +877,7 @@ class BootstrapAnnotator(Annotator):
         ]
 
     @property
-    def supported_entity_types(self):  # pylint: disable=W0236
+    def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
         """
         Returns:
             supported_entity_types (list): List of supported entity types.
@@ -953,7 +953,7 @@ class NoTranslationDucklingAnnotator(Annotator):
         ]
 
     @property
-    def supported_entity_types(self):  # pylint: disable=W0236
+    def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
         """
         Returns:
             supported_entity_types (list): List of supported entity types.
@@ -1038,7 +1038,7 @@ class TranslationDucklingAnnotator(Annotator):
             locale=ENGLISH_US_LOCALE,
         )
 
-    def parse(self, sentence, entity_types=None, **kwargs):
+    def parse(self, sentence: str, entity_types: Iterable=None, **kwargs) -> Iterable[QueryEntity]:
         """Implements a heuristic to match English entities detected by Spacy on the
         translated non-English sentence against the non-English entities detected by
         Duckling on the non-English sentence.
@@ -1098,7 +1098,7 @@ class TranslationDucklingAnnotator(Annotator):
         ]
 
     @property
-    def supported_entity_types(self):  # pylint: disable=W0236
+    def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
         """
         Returns:
             supported_entity_types (list): List of supported entity types.
@@ -1154,7 +1154,7 @@ class MultiLingualAnnotator(Annotator):
                 locale=self.locale,
             )
 
-    def _get_duckling_annotator(self):
+    def _get_duckling_annotator(self) -> Annotator:
         if self.translator != NoOpTranslator.__name__:
             return TranslationDucklingAnnotator(
                 app_path=self.app_path,
@@ -1169,7 +1169,7 @@ class MultiLingualAnnotator(Annotator):
             locale=self.locale,
         )
 
-    def parse(self, sentence, entity_types=None, **kwargs):
+    def parse(self, sentence: str, entity_types: Iterable[str]=None, **kwargs) -> Iterable[QueryEntity]:
         """
         Args:
             sentence (str): Sentence to detect entities.
@@ -1192,7 +1192,7 @@ class MultiLingualAnnotator(Annotator):
         return merged_entities
 
     @property
-    def supported_entity_types(self):  # pylint: disable=W0236
+    def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
         """
         Returns:
             supported_entity_types (list): List of supported entity types.

@@ -22,13 +22,14 @@ import re
 import time
 from collections import Counter
 from copy import deepcopy
+from typing import Iterable
 
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 from . import markup, path
 from .constants import DEFAULT_TRAIN_SET_REGEX
-from .core import Entity
+from .core import Entity, ProcessedQuery
 from .exceptions import MindMeldError
 from .gazetteer import Gazetteer
 from .models.helpers import (CHAR_NGRAM_FREQ_RSC, ENABLE_STEMMING, GAZETTEER_RSC, QUERY_FREQ_RSC,
@@ -194,10 +195,10 @@ class ProcessedQueryList:
         lists of ProcessedQuery objects
         """
 
-        def __init__(self, queries):
+        def __init__(self, queries: Iterable[ProcessedQuery]):
             self.queries = queries
 
-        def get(self, row_id):
+        def get(self, row_id: int) -> ProcessedQuery:
             return self.queries[row_id]
 
         def get_raw_query(self, row_id):
@@ -224,7 +225,7 @@ class ResourceLoader:
     assumes all helpers to be instance methods.
     """
 
-    def __init__(self, app_path, query_factory, query_cache=None):
+    def __init__(self, app_path: str, query_factory: QueryFactory, query_cache: QueryCache=None):
         self.app_path = app_path
         self.query_factory = query_factory
 
