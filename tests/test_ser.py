@@ -87,7 +87,7 @@ def test_duration(query, predicted_texts, predicted_values, conversion):
         (
             "set alarm for this morning",
             ["this morning"],
-            ["2018-12-13T00:00:00.000-08:00"],
+            ["2018-12-13T04:00:00.000-08:00"],
             ["2018-12-13T12:00:00.000-08:00"],
         ),
         (
