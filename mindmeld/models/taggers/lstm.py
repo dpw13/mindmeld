@@ -14,12 +14,15 @@ import logging
 import math
 import os
 import re
+from typing import Any, Dict, Iterable, Tuple
 
 import joblib
 import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import LabelBinarizer
 
+from ...core import Query
+from ..model import ModelConfig
 from .embeddings import CharacterSequenceEmbedding, WordSequenceEmbedding
 from .taggers import Tagger, extract_sequence_features
 
@@ -196,7 +199,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
 
             self.saver = tf.train.Saver()
 
-    def extract_features(self, examples, config, resources, y=None, fit=True):
+    def extract_features(self, examples: Iterable[Query], config: ModelConfig, resources, y=None, fit=True) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], None]:
         """Transforms a list of examples into features that are then used by the
         deep learning model.
 
@@ -252,7 +255,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         groups = None
         return x_sequence_embeddings_arr, encoded_labels, groups
 
-    def setup_model(self, config):
+    def setup_model(self, config: Dict[str, Any]):
         self.set_params(**config.params)
         self.label_encoder = LabelBinarizer()
         self.gaz_encoder = LabelBinarizer()

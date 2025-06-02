@@ -16,16 +16,18 @@ This module contains all code required to perform sequence tagging.
 """
 import copy
 import logging
+from typing import Any, Iterable, Dict, Tuple, Self
 
 from ...core import (
     TEXT_FORM_NORMALIZED,
     TEXT_FORM_RAW,
+    Query,
     QueryEntity,
     Span,
     _sort_by_lowest_time_grain,
 )
 from ...markup import MarkupError
-from ...system_entity_recognizer import SystemEntityResolutionError
+from ...system_entity_recognizer import SystemEntityRecognizer, SystemEntityResolutionError
 from ..helpers import ENABLE_STEMMING, get_feature_extractor
 
 logger = logging.getLogger(__name__)
@@ -67,7 +69,7 @@ class Tagger:
         attributes = self.__dict__.copy()
         return attributes
 
-    def fit(self, X, y):
+    def fit(self, X, y) -> Self:
         """Trains the model. X and y are the format of what is returned by extract_features. There is no
         restriction on their type or content. X should be the fully processed data with extracted
         features that are ready to be used to train the model. y should be a list of classes as
@@ -82,7 +84,7 @@ class Tagger:
         """
         raise NotImplementedError
 
-    def predict(self, X, dynamic_resource=None):
+    def predict(self, X: Iterable[Iterable[Dict]], dynamic_resource=None) -> Iterable:
         """Predicts the labels from a feature matrix X. Again X is the format of what is returned by
         extract_features.
 
@@ -93,7 +95,7 @@ class Tagger:
         """
         raise NotImplementedError
 
-    def get_params(self, deep=True):
+    def get_params(self, deep=True) -> Dict:
         """Gets a dictionary of all of the current model parameters and their values
 
         Args:
@@ -115,11 +117,11 @@ class Tagger:
         """
         raise NotImplementedError
 
-    def setup_model(self, config):
+    def setup_model(self, config: Dict[str, Any]):
         """"Not implemented."""
         raise NotImplementedError
 
-    def extract_features(self, examples, config, resources):
+    def extract_features(self, examples: Iterable[Query], config: "ModelConfig", resources: Dict) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], Iterable]:
         """Extracts all features from a list of MindMeld examples. Processes the data and returns the
         features in the format that is expected as an input to fit(). Note that the MindMeld config
         and resources are passed in each time to make the underlying model implementation stateless.
@@ -140,7 +142,7 @@ class Tagger:
         """
         raise NotImplementedError
 
-    def extract_and_predict(self, examples, config, resources):
+    def extract_and_predict(self, examples: Iterable[Query], config: "ModelConfig", resources: Dict) -> Iterable:
         """Does both feature extraction and prediction. Often necessary for sequence models when the
         prediction of the previous example is used as a feature for the next example. If this is
         not the case, extract is simply called before predict here. Note that the MindMeld config
@@ -160,7 +162,7 @@ class Tagger:
         y = self.predict(X)
         return y
 
-    def predict_proba(self, examples, config, resources):
+    def predict_proba(self, examples, config: "ModelConfig", resources):
         """
         Args:
             examples (list of mindmeld.core.Query): A list of queries to extract features for and
@@ -215,7 +217,7 @@ class Tagger:
         pass
 
 
-def get_tags_from_entities(query, entities, scheme="IOB"):
+def get_tags_from_entities(query: Query, entities: Iterable[QueryEntity], scheme="IOB") -> Iterable[str]:
     """Get joint app and system IOB tags from a query's entities.
 
     Args:
@@ -237,7 +239,7 @@ def get_tags_from_entities(query, entities, scheme="IOB"):
     return tags
 
 
-def _get_tags_from_entities(query, entities, scheme="IOB"):
+def _get_tags_from_entities(query: Query, entities: Iterable[QueryEntity], scheme="IOB"):
     normalized_tokens = query.normalized_tokens
     iobs = [O_TAG for _ in normalized_tokens]
     types = ["" for _ in normalized_tokens]
@@ -263,7 +265,7 @@ def _get_tags_from_entities(query, entities, scheme="IOB"):
     return iobs, types
 
 
-def get_entities_from_tags(query, tags, system_entity_recognizer):
+def get_entities_from_tags(query: Query, tags: Iterable[str], system_entity_recognizer: SystemEntityRecognizer) -> Iterable[QueryEntity]:
     """From a set of joint IOB tags, parse the app and system entities.
 
     This performs the reverse operation of get_tags_from_entities.

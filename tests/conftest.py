@@ -9,13 +9,13 @@ Configurations for tests. Include shared fixtures here.
 # pylint: disable=locally-disabled,redefined-outer-name
 import asyncio
 import codecs
-from distutils.util import strtobool
 import os
 import sys
 import warnings
 
 import pytest
 
+from mindmeld.strtobool import strtobool
 from mindmeld.converter.rasa import RasaConverter
 from mindmeld.converter.dialogflow import DialogflowConverter
 from mindmeld.components import NaturalLanguageProcessor, QuestionAnswerer
@@ -92,7 +92,7 @@ def home_assistant_app_path():
 
 
 @pytest.fixture(scope="session")
-def kwik_e_mart_nlp(kwik_e_mart_app_path):
+def kwik_e_mart_nlp(kwik_e_mart_app_path: str) -> NaturalLanguageProcessor:
     """Provides a built processor instance"""
     nlp = NaturalLanguageProcessor(app_path=kwik_e_mart_app_path)
     nlp.build()
@@ -101,7 +101,7 @@ def kwik_e_mart_nlp(kwik_e_mart_app_path):
 
 
 @pytest.fixture(scope="session")
-def food_ordering_nlp(food_ordering_app_path):
+def food_ordering_nlp(food_ordering_app_path: str) -> NaturalLanguageProcessor:
     """Provides a built processor instance"""
     nlp = NaturalLanguageProcessor(app_path=food_ordering_app_path)
     nlp.build()
@@ -110,7 +110,7 @@ def food_ordering_nlp(food_ordering_app_path):
 
 
 @pytest.fixture
-def home_assistant_nlp(home_assistant_app_path):
+def home_assistant_nlp(home_assistant_app_path: str) -> NaturalLanguageProcessor:
     """Provides a built processor instance"""
     nlp = NaturalLanguageProcessor(app_path=home_assistant_app_path)
     nlp.build()

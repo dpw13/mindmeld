@@ -39,7 +39,7 @@ from .active_learning.alp import ActiveLearningPipelineFactory
 from .augmentation import AugmentorFactory, register_all_augmentors
 from .auto_annotator import register_all_annotators
 from . import markup, path
-from ._util import blueprint
+from .blueprint import blueprint
 from ._version import current as __version__
 from .components import Conversation, QuestionAnswerer
 from .components._config import (

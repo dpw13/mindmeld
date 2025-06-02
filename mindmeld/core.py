@@ -497,7 +497,7 @@ class ProcessedQuery:
         query: Query,
         domain: str=None,
         intent: str=None,
-        entities: Iterable=None,
+        entities: Iterable["Entity"]=None,
         is_gold=False,
         nbest_transcripts_queries: Iterable=None,
         nbest_transcripts_entities: Iterable=None,
@@ -507,7 +507,7 @@ class ProcessedQuery:
         self.query = query
         self.domain = domain
         self.intent = intent
-        self.entities = None if entities is None else tuple(entities)
+        self.entities: Iterable[Entity] = None if entities is None else tuple(entities)
         self.is_gold = is_gold
         self.nbest_transcripts_queries = nbest_transcripts_queries
         self.nbest_transcripts_entities = nbest_transcripts_entities
@@ -949,32 +949,32 @@ class NestedEntity:
         return self._texts[TEXT_FORM_NORMALIZED]
 
     @property
-    def span(self):
+    def span(self) -> Span:
         """The span of original input text span"""
         return self._spans[TEXT_FORM_RAW]
 
     @property
-    def processed_span(self):
+    def processed_span(self) -> Span:
         """The span of the preprocessed text span"""
         return self._spans[TEXT_FORM_PROCESSED]
 
     @property
-    def normalized_span(self):
+    def normalized_span(self) -> Span:
         """The span of the normalized text span"""
         return self._spans[TEXT_FORM_NORMALIZED]
 
     @property
-    def token_span(self):
+    def token_span(self) -> Span:
         """The token_span of original input text span"""
         return self._token_spans[TEXT_FORM_RAW]
 
     @property
-    def processed_token_span(self):
+    def processed_token_span(self) -> Span:
         """The token_span of the preprocessed text span"""
         return self._token_spans[TEXT_FORM_PROCESSED]
 
     @property
-    def normalized_token_span(self):
+    def normalized_token_span(self) -> Span:
         """The token_span of the normalized text span"""
         return self._token_spans[TEXT_FORM_NORMALIZED]
 

@@ -14,7 +14,6 @@
 """
 This module contains the query cache implementation.
 """
-from distutils.util import strtobool
 from functools import lru_cache
 from hashlib import sha256
 import json
@@ -24,6 +23,7 @@ import sqlite3
 
 from .path import GEN_FOLDER, QUERY_CACHE_DB_PATH
 from .core import ProcessedQuery
+from .strtobool import strtobool
 
 logger = logging.getLogger(__name__)
 

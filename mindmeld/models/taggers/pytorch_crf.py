@@ -7,6 +7,7 @@ from copy import copy
 from itertools import chain
 from random import randint
 from tempfile import NamedTemporaryFile
+from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 import torch
@@ -94,7 +95,7 @@ def diag_concat_coo_tensors(tensors):
     return torch.sparse_coo_tensor(indices=torch.stack([row, col]), values=value, size=sparse_sizes).coalesce()
 
 
-def stratify_input(X, y):
+def stratify_input(X: List[Iterable[Dict]], y: List[Iterable[str]]) -> Tuple[Iterable, Iterable, Iterable[Tuple]]:
     """Gets the input and labels ready for stratification into train and dev data. Stratification is done
     based on the presence of unique labels for each sequence. It also duplicates the unique samples across input and labels
     to ensure that it doesn't fail with scikit-learn's train_test_split.
@@ -109,7 +110,7 @@ def stratify_input(X, y):
         stratify_tuples (list): Unique label for each example which will be the value used for stratification..
     """
 
-    def get_unique_tuple(label):
+    def get_unique_tuple(label: Iterable[str]) -> Tuple[str]:
         return tuple(sorted(list(set(label))))
 
     stratify_tuples = [get_unique_tuple(label) for label in y]
@@ -549,7 +550,7 @@ class CRFModel(nn.Module):
                                       shuffle=is_train, collate_fn=collate_tensors_and_masks)
         return torch_dataloader
 
-    def fit(self, X, y):
+    def fit(self, X: Iterable[Iterable[Dict]], y: Iterable[Iterable[str]]):
         """Trains the entire PyTorch CRF model.
 
         Args:
@@ -562,7 +563,15 @@ class CRFModel(nn.Module):
         stratify_tuples = None
         if self.stratify_train_val_split:
             X, y, stratify_tuples = stratify_input(X, y)
+        assert len(X) == len(y)
+        assert len(y) == len(stratify_tuples)
 
+        # Explicitly set the dtype since we're dealing with tuples. For at least some versions
+        # of scikit-learn, passing a simple array of tuples causes numpy to throw errors as
+        # the array appears to have non-homogenous size.
+        stratify_tuples = np.asarray(stratify_tuples, dtype=tuple)
+        # Just for testing
+        #check_array(stratify_tuples, input_name="y", ensure_2d=False, dtype=tuple)
         # TODO: Rewrite our own train_test_split function to handle FileBackedList and avoid duplicating unique labels
         train_X, dev_X, train_y, dev_y = train_test_split(X, y, test_size=self.dev_split_ratio,
                                                           stratify=stratify_tuples, random_state=self.random_state)
@@ -705,7 +714,7 @@ class CRFModel(nn.Module):
 
         return marginals_dict
 
-    def predict(self, X):
+    def predict(self, X: Iterable[Iterable[Dict]]) -> Iterable[Iterable]:
         """Gets predicted labels for the data.
 
         Args:

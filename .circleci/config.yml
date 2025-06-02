@@ -193,7 +193,7 @@ definitions:
           name: Food ordering blueprint kb setup
           # run this even when linting fails
           when: always
-          command: python -c "from mindmeld._util import Blueprint; Blueprint.setup_kb(name='food_ordering', app_path='./food_ordering')"
+          command: python -c "from mindmeld.blueprint import Blueprint; Blueprint.setup_kb(name='food_ordering', app_path='./food_ordering')"
 
       - store_test_results:
           path: /home/circleci/test-reports

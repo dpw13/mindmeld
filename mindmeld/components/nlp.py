@@ -184,6 +184,7 @@ class Processor(ABC):
         disk."""
         self._dump()
 
+        child: Self
         for child in self._children.values():
             child.dump()
 
@@ -205,6 +206,7 @@ class Processor(ABC):
         """
         self._load(incremental_timestamp=incremental_timestamp)
 
+        child: Self
         for child in self._children.values():
             child.load(incremental_timestamp=incremental_timestamp)
 
@@ -227,6 +229,7 @@ class Processor(ABC):
         """
         self._evaluate(print_stats, label_set)
 
+        child: Self
         for child in self._children.values():
             child.evaluate(print_stats, label_set=label_set)
 
@@ -464,7 +467,7 @@ class NaturalLanguageProcessor(Processor):
             pass
 
     @property
-    def domains(self):
+    def domains(self) -> Bunch:
         """The domains supported by this application."""
         return self._children
 

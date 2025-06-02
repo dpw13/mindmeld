@@ -15,6 +15,7 @@
 import logging
 import os
 import random
+from typing import Type
 
 import joblib
 
@@ -25,8 +26,10 @@ from .helpers import (
     get_seq_tag_accuracy_scorer,
     ingest_dynamic_gazetteer,
 )
-from .model import ModelConfig, Model, PytorchModel, AbstractModelFactory
+from .labels import LabelEncoder, EntityLabelEncoder
+from .model import Examples, Labels, ModelConfig, Model, PytorchModel, AbstractModelFactory
 from .nn_utils import get_token_classifier_cls, TokenClassificationType
+from .taggers.taggers import Tagger
 from .taggers.crf import CRFTagger
 from .taggers.memm import MemmModel
 from ..exceptions import MindMeldError
@@ -88,7 +91,7 @@ class TaggerModel(Model):
         "sys-candidates-seq": {"start_positions": [-1, 0, 1]},
     }
 
-    def __init__(self, config):
+    def __init__(self, config: ModelConfig):
         if not config.features:
             config_dict = config.to_dict()
             config_dict["features"] = TaggerModel.DEFAULT_FEATURES
@@ -99,6 +102,7 @@ class TaggerModel(Model):
         # Get model classifier and initialize
         self._clf = self._get_model_constructor()()
         self._clf.setup_model(self.config)
+        self._label_encoder: LabelEncoder = None
 
         self._no_entities = False
         self.types = None
@@ -118,7 +122,7 @@ class TaggerModel(Model):
 
         return attributes
 
-    def _get_model_constructor(self):
+    def _get_model_constructor(self) -> Type[Tagger]:
         """Returns the python class of the actual underlying model"""
         classifier_type = self.config.model_settings["classifier_type"]
         try:
@@ -137,7 +141,7 @@ class TaggerModel(Model):
             msg = "{}: Classifier type {!r} not recognized"
             raise ValueError(msg.format(self.__class__.__name__, classifier_type)) from e
 
-    def _fit(self, examples, labels, params=None):
+    def _fit(self, examples: Examples, labels: Labels, params=None) -> Tagger:
         """Trains a classifier without cross-validation.
 
         Args:
@@ -206,7 +210,7 @@ class TaggerModel(Model):
     def select_params(self, examples, labels, selection_settings=None):
         raise NotImplementedError
 
-    def fit(self, examples, labels, params=None):
+    def fit(self, examples: Examples, labels: Labels, params=None):
         """Trains the model.
 
         Args:
@@ -232,7 +236,7 @@ class TaggerModel(Model):
             )
             return self
         # Extract labels - label encoders are the same across all entity recognition models
-        self._label_encoder = get_label_encoder(self.config)
+        self._label_encoder: EntityLabelEncoder = get_label_encoder(self.config)
         y = self._label_encoder.encode(labels, examples=examples)
 
         # Extract features
@@ -467,6 +471,7 @@ class PytorchTaggerModel(PytorchModel):
     def __init__(self, config):
         super().__init__(config)
 
+        self._label_encoder: LabelEncoder = None
         self._no_entities = False
         self.types = None
 

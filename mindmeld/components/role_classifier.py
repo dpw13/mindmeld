@@ -24,7 +24,7 @@ from .classifier import Classifier, ClassifierConfig, ClassifierLoadError
 from ..constants import DEFAULT_TRAIN_SET_REGEX
 from ..core import Query
 from ..models import CLASS_LABEL_TYPE, ENTITY_EXAMPLE_TYPE, create_model, load_model
-from ..resource_loader import ProcessedQueryList
+from ..resource_loader import ProcessedQueryList, ResourceLoader
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class RoleClassifier(Classifier):
 
     CLF_TYPE = "role"
 
-    def __init__(self, resource_loader, domain, intent, entity_type):
+    def __init__(self, resource_loader: ResourceLoader, domain: str, intent: str, entity_type: str):
         """Initializes a role classifier
 
         Args:

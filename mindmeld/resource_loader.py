@@ -22,14 +22,14 @@ import re
 import time
 from collections import Counter
 from copy import deepcopy
-from typing import Iterable
+from typing import Any, Iterable, Self
 
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 from . import markup, path
 from .constants import DEFAULT_TRAIN_SET_REGEX
-from .core import Entity, ProcessedQuery
+from .core import Entity, ProcessedQuery, Query
 from .exceptions import MindMeldError
 from .gazetteer import Gazetteer
 from .models.helpers import (CHAR_NGRAM_FREQ_RSC, ENABLE_STEMMING, GAZETTEER_RSC, QUERY_FREQ_RSC,
@@ -48,16 +48,16 @@ class ProcessedQueryList:
     for a list of queries.
     """
 
-    def __init__(self, cache=None, elements=None):
+    def __init__(self, cache: "MemoryCache"=None, elements=None):
         self._cache = cache
         self.elements = elements or []
 
     @property
-    def cache(self):
+    def cache(self) -> "MemoryCache":
         return self._cache
 
     @cache.setter
-    def cache(self, cache):
+    def cache(self, cache: "MemoryCache"):
         self._cache = cache
 
     def append(self, query_id):
@@ -107,10 +107,10 @@ class ProcessedQueryList:
         )
 
     class Iterator:
-        def __init__(self, source, cached=False):
+        def __init__(self, source: "ProcessedQueryList", cached=False):
             self.source = source
             self.elements = source.elements
-            self.result_cache = [] if not cached else [None] * len(source)
+            self.result_cache: Iterable[Any] = [] if not cached else [None] * len(source)
             self.iter_idx = -1
 
         def __iter__(self):
@@ -143,15 +143,24 @@ class ProcessedQueryList:
                 self.result_cache = [self.result_cache[i] for i in indices]
 
     class RawQueryIterator(Iterator):
-        def __getitem__(self, key):
+        def __next__(self) -> str:
+            return super().__next__()
+
+        def __getitem__(self, key) -> str:
             return self.source.cache.get_raw_query(self.elements[key])
 
     class QueryIterator(Iterator):
-        def __getitem__(self, key):
+        def __next__(self) -> Query:
+            return super().__next__()
+
+        def __getitem__(self, key) -> Query:
             return self.source.cache.get_query(self.elements[key])
 
     class EntitiesIterator(Iterator):
-        def __getitem__(self, key):
+        def __next__(self) -> Iterable[Entity]:
+            return super().__next__()
+
+        def __getitem__(self, key) -> Iterable[Entity]:
             return self.source.cache.get_entities(self.elements[key])
 
     class DomainIterator(Iterator):
@@ -160,7 +169,10 @@ class ProcessedQueryList:
             cached = not isinstance(source.cache, ProcessedQueryList.MemoryCache)
             super().__init__(source, cached=cached)
 
-        def __getitem__(self, key):
+        def __next__(self) -> str:
+            return super().__next__()
+
+        def __getitem__(self, key) -> str:
             return self.source.cache.get_domain(self.elements[key])
 
     class IntentIterator(Iterator):
@@ -169,7 +181,10 @@ class ProcessedQueryList:
             cached = not isinstance(source.cache, ProcessedQueryList.MemoryCache)
             super().__init__(source, cached=cached)
 
-        def __getitem__(self, key):
+        def __next__(self) -> str:
+            return super().__next__()
+
+        def __getitem__(self, key) -> str:
             return self.source.cache.get_intent(self.elements[key])
 
     class ListIterator(Iterator):

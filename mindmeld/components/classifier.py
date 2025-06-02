@@ -18,12 +18,14 @@ import json
 import logging
 import os
 from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, Iterable
 
 from ..constants import DEFAULT_TEST_SET_REGEX, DEFAULT_TRAIN_SET_REGEX
 from ..core import Query
 from ..exceptions import ClassifierLoadError
+from ..models.model import Model
 from ..models import ModelConfig, create_model, load_model
-from ..resource_loader import ProcessedQueryList
+from ..resource_loader import ProcessedQuery, ProcessedQueryList, ResourceLoader
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +63,11 @@ class ClassifierConfig:
 
     def __init__(
         self,
-        model_type=None,
-        features=None,
-        model_settings=None,
-        params=None,
-        param_selection=None,
+        model_type: str=None,
+        features: Dict[str, Dict | Callable]=None,
+        model_settings: Dict=None,
+        params: Dict=None,
+        param_selection: Dict=None,
     ):
         """Initializes a classifier configuration"""
         for arg, val in {"model_type": model_type}.items():
@@ -77,7 +79,7 @@ class ClassifierConfig:
         self.params = params
         self.param_selection = param_selection
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         """Converts the model config object into a dict.
 
         Returns:
@@ -95,7 +97,7 @@ class ClassifierConfig:
         return "{}({})".format(self.__class__.__name__, args_str)
 
     @classmethod
-    def from_model_config(cls, model_config):
+    def from_model_config(cls, model_config: ModelConfig):
         config = model_config.to_dict()
         config.pop("example_type")
         config.pop("label_type")
@@ -129,7 +131,7 @@ class Classifier(ABC):
     CLF_TYPE = None
     """Classifier type (`str`)."""
 
-    def __init__(self, resource_loader):
+    def __init__(self, resource_loader: ResourceLoader):
         """Initializes a classifier
 
         Args:
@@ -143,11 +145,11 @@ class Classifier(ABC):
         self.hash = ""
 
     def fit(self,
-            queries=None,
-            label_set=None,
-            incremental_timestamp=None,
+            queries: Iterable[ProcessedQuery] | ProcessedQueryList=None,
+            label_set: str=None,
+            incremental_timestamp: str=None,
             load_cached=True,
-            **kwargs):
+            **kwargs) -> bool:
         """Trains a statistical model for classification using the provided training examples and
         model configuration.
 
@@ -213,7 +215,7 @@ class Classifier(ABC):
 
         # create model with given params
         model_config = self._get_model_config(**kwargs)
-        model = create_model(model_config)
+        model: Model = create_model(model_config)
 
         # resolve query set
         label_set = label_set or model_config.train_label_set or DEFAULT_TRAIN_SET_REGEX
@@ -255,7 +257,7 @@ class Classifier(ABC):
         self.dirty = True
         return True
 
-    def _resolve_queries(self, queries=None, label_set=None):
+    def _resolve_queries(self, queries: ProcessedQueryList | Iterable[ProcessedQueryList]=None, label_set=None) -> ProcessedQueryList:
         """
         Resolve queries and/or label_set into a ProcessedQueryList.
         queries is preferred over label_set.
@@ -274,7 +276,7 @@ class Classifier(ABC):
             queries = ProcessedQueryList.from_in_memory_list(queries)
         return queries
 
-    def predict(self, query, time_zone=None, timestamp=None, dynamic_resource=None):
+    def predict(self, query: Query | str, time_zone=None, timestamp=None, dynamic_resource=None):
         """Predicts a class label for the given query using the trained classification model
 
         Args:
@@ -395,7 +397,7 @@ class Classifier(ABC):
         return self._model.view_extracted_features(query, dynamic_resource)
 
     @staticmethod
-    def _get_model_config(loaded_config=None, **kwargs):
+    def _get_model_config(loaded_config=None, **kwargs) -> ModelConfig:
         """Updates the loaded configuration with runtime specified options, and creates a model
         configuration object with the final configuration dictionary. If an application config
         exists it should be passed in, if not the default config should be passed in.
@@ -467,7 +469,7 @@ class Classifier(ABC):
         self.config = None
         self.ready = False
 
-    def load(self, model_path):
+    def load(self, model_path: str):
         """Loads the trained classification model from disk
 
         Args:
@@ -500,7 +502,7 @@ class Classifier(ABC):
         self.dirty = False
 
     @staticmethod
-    def _load_hash(model_path):
+    def _load_hash(model_path: str) -> str:
         hash_path = model_path + ".hash"
         if not os.path.isfile(hash_path):
             return ""
@@ -509,7 +511,7 @@ class Classifier(ABC):
         return model_hash
 
     @abstractmethod
-    def _get_queries_from_label_set(self, label_set=DEFAULT_TRAIN_SET_REGEX):
+    def _get_queries_from_label_set(self, label_set: Iterable=DEFAULT_TRAIN_SET_REGEX):
         """Returns the set of queries loaded from the label_set
 
         Args:
@@ -521,7 +523,7 @@ class Classifier(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
-    def _get_examples_and_labels_hash(self, queries):
+    def _get_examples_and_labels_hash(self, queries: ProcessedQueryList):
         """Returns a hashed string representing the labeled queries
 
         Args:
@@ -530,7 +532,7 @@ class Classifier(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
-    def _get_examples_and_labels(self, queries):
+    def _get_examples_and_labels(self, queries: ProcessedQueryList):
         """Extracts examples and lables extracted from the queries
 
         Args:
@@ -542,7 +544,7 @@ class Classifier(ABC):
                 [0]: the examples, [1]: the labels
         """
 
-    def _get_model_hash(self, model_config, queries):
+    def _get_model_hash(self, model_config: ModelConfig, queries: ProcessedQueryList):
         """Returns a hash representing the inputs into the model
 
         Args:

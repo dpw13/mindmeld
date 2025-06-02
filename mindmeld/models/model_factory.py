@@ -17,10 +17,10 @@ appropriate models
 """
 
 import logging
-from typing import Union, Type
+from typing import Union, Type, Self
 
 from .helpers import register_model, ModelType
-from .model import ModelConfig, AbstractModel, AbstractModelFactory
+from .model import Model, ModelConfig, AbstractModel
 from .tagger_models import TaggerModelFactory
 from .text_models import TextModelFactory
 
@@ -37,7 +37,7 @@ class ModelFactory:
     dictionary object.
     """
 
-    def __new__(cls, config: Union[dict, ModelConfig]) -> Type[AbstractModel]:
+    def __new__(cls, config: Union[dict, ModelConfig]) -> Self:
         # method for backwards compatibility in ./helpers/create_model()
         return cls.create_model_from_config(config)
 
@@ -45,7 +45,7 @@ class ModelFactory:
     def create_model_from_config(
         cls,
         model_config: Union[dict, ModelConfig]
-    ) -> Type[AbstractModel]:
+    ) -> Model:
         """
         Instantiates and returns a valid model from the specified model configs
 
@@ -54,7 +54,7 @@ class ModelFactory:
                 instance of ModelConfig
 
         Returns:
-            model (Type[AbstractModel]): A text/tagger model instance
+            model (AbstractModel): A text/tagger model instance
 
         Raises:
             ValueError: When the configs are invalid
@@ -72,7 +72,7 @@ class ModelFactory:
         return model_class(model_config)
 
     @classmethod
-    def create_model_from_path(cls, path: str) -> Union[None, Type[AbstractModel]]:
+    def create_model_from_path(cls, path: str) -> None | Model:
         """
         Loads and returns a model from the specified path
 
@@ -166,7 +166,7 @@ class ModelFactory:
             raise ValueError(msg) from e
 
     @staticmethod
-    def _get_model_factory(model_type: ModelType) -> Type[AbstractModelFactory]:
+    def _get_model_factory(model_type: ModelType) -> Self:
         """
         Returns a factory based on the provided model type
 

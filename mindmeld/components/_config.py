@@ -15,7 +15,7 @@
 This module contains the Config class.
 """
 import copy
-import importlib
+import importlib.util
 import logging
 import os
 import warnings
@@ -972,7 +972,7 @@ def _expand_group_config(group_config):
             expanded[dep_type.replace("|", "--")] = config
     return expanded
 
-def _get_config_module(app_path):
+def _get_config_module(app_path: str):
     module_path = path.get_config_module_path(app_path)
 
     # Thanks to

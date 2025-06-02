@@ -9,8 +9,11 @@ Tests for `tagger` module.
 """
 # pylint: disable=locally-disabled,redefined-outer-name
 import pytest
+import logging
 
 from mindmeld.models.taggers import taggers
+from mindmeld.components.entity_recognizer import EntityRecognizer
+from mindmeld.components.nlp import NaturalLanguageProcessor
 
 # This index is the start index of when the time section of the full time format. For example:
 # 2013-02-12T11:30:00.000-02:00, index 8 onwards slices 11:30:00.000-02:00 from the full time
@@ -29,7 +32,7 @@ MINUTE_GRAIN_INDEX = 11
     ],
 )
 def test_get_entities_from_tags_where_tag_idx_in_sys_candidate(
-    kwik_e_mart_nlp, query, tags, expected_time
+    kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags, expected_time
 ):
     """Tests the behavior when the system entity tag index is
     within the system candidates spans"""
@@ -61,7 +64,7 @@ def test_get_entities_from_tags_where_tag_idx_in_sys_candidate(
     ],
 )
 def test_get_entities_from_tags_where_tag_idx_not_in_sys_candidate(
-    kwik_e_mart_nlp, query, tags
+    kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags
 ):
     """Tests the behavior when the system entity tag index is outside
     the system candidates spans"""
@@ -90,7 +93,7 @@ def test_get_entities_from_tags_where_tag_idx_not_in_sys_candidate(
     ],
 )
 def test_get_entities_from_tags_where_entity_truncated_by_new_entity(
-    kwik_e_mart_nlp, query, tags
+    kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags
 ):
     """Test the behavior when a new entity is directly after another entity"""
 
@@ -113,7 +116,7 @@ def test_get_entities_from_tags_where_entity_truncated_by_new_entity(
     ],
 )
 def test_get_entities_from_tags_where_sys_entity_between_entities(
-    kwik_e_mart_nlp, query, tags
+    kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags
 ):
     """Tests the behavior when a system entity is between two entities"""
 
@@ -134,7 +137,7 @@ def test_get_entities_from_tags_where_sys_entity_between_entities(
     ],
 )
 def test_get_entities_from_tags_where_entities_end_with_query_end(
-    kwik_e_mart_nlp, query, tags
+    kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags
 ):
     """Tests the behavior when the entity is at the end of a query"""
 
@@ -160,7 +163,7 @@ def test_get_entities_from_tags_where_entities_end_with_query_end(
         ),
     ],
 )
-def test_get_entities_from_tags_with_multi_token_entities(kwik_e_mart_nlp, query, tags):
+def test_get_entities_from_tags_with_multi_token_entities(kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags):
     """Tests the behavior with multi token entities"""
 
     processed_query = kwik_e_mart_nlp.create_query(query)
@@ -223,7 +226,7 @@ def test_get_entities_from_tags_with_multi_token_entities(kwik_e_mart_nlp, query
         (["O|", "O|", "B|A", "I|A"], ["O|", "O|", "B|A", "O|"], {"tn": 1, "be": 1}),
     ],
 )
-def test_get_boundary_counts(kwik_e_mart_nlp, expected, predicted, expected_counts):
+def test_get_boundary_counts(kwik_e_mart_nlp: NaturalLanguageProcessor, expected, predicted, expected_counts):
     predicted_counts = taggers.get_boundary_counts(
         expected, predicted, taggers.BoundaryCounts()
     ).to_dict()
@@ -255,7 +258,7 @@ def test_get_boundary_counts(kwik_e_mart_nlp, expected, predicted, expected_coun
     ],
 )
 def test_get_boundary_counts_sequential(
-    kwik_e_mart_nlp, expected, predicted, expected_counts
+    kwik_e_mart_nlp: NaturalLanguageProcessor, expected, predicted, expected_counts
 ):
     boundary_counts = taggers.BoundaryCounts()
     for expected_sequence, predicted_sequence in zip(expected, predicted):
@@ -274,7 +277,8 @@ def test_get_boundary_counts_sequential(
     [("memm", {"penalty": "l2", "C": 10000}), ("crf", {"feat_type": "dict"}),
      ("crf", {"feat_type": "hash"})],
 )
-def test_view_extracted_features(kwik_e_mart_nlp, model_type, params):
+def test_view_extracted_features(kwik_e_mart_nlp: NaturalLanguageProcessor, model_type, params, caplog):
+    caplog.set_level(logging.DEBUG)
     config = {
         "model_type": "tagger",
         "model_settings": {
@@ -291,7 +295,7 @@ def test_view_extracted_features(kwik_e_mart_nlp, model_type, params):
             },
         },
     }
-    er = (
+    er: EntityRecognizer = (
         kwik_e_mart_nlp.domains["store_info"]
             .intents["get_store_hours"]
             .entity_recognizer
@@ -315,7 +319,7 @@ def test_view_extracted_features(kwik_e_mart_nlp, model_type, params):
         ("Main st store hours", "crf", {"feat_type": "hash"})
     ],
 )
-def test_fetch_distribution(kwik_e_mart_nlp, query, model_type, params):
+def test_fetch_distribution(kwik_e_mart_nlp: NaturalLanguageProcessor, query, model_type, params):
     config = {
         "model_type": "tagger",
         "model_settings": {
@@ -332,7 +336,7 @@ def test_fetch_distribution(kwik_e_mart_nlp, query, model_type, params):
             },
         },
     }
-    er = (
+    er: EntityRecognizer = (
         kwik_e_mart_nlp.domains["store_info"]
             .intents["get_store_hours"]
             .entity_recognizer
@@ -350,7 +354,7 @@ def test_fetch_distribution(kwik_e_mart_nlp, query, model_type, params):
 
 @pytest.mark.no_extras
 @pytest.mark.no_tensorflow
-def test_lstm_er_model_no_tf(kwik_e_mart_nlp):
+def test_lstm_er_model_no_tf(kwik_e_mart_nlp: NaturalLanguageProcessor):
     config = {
         "model_type": "tagger",
         "model_settings": {
@@ -372,7 +376,7 @@ def test_lstm_er_model_no_tf(kwik_e_mart_nlp):
             },
         },
     }
-    er = (
+    er: EntityRecognizer = (
         kwik_e_mart_nlp.domains["store_info"]
             .intents["get_store_hours"]
             .entity_recognizer
@@ -389,7 +393,7 @@ def test_lstm_er_model_no_tf(kwik_e_mart_nlp):
 @pytest.mark.extras
 @pytest.mark.tensorflow
 @pytest.mark.xfail(strict=False)
-def test_lstm_er_model(kwik_e_mart_nlp):
+def test_lstm_er_model(kwik_e_mart_nlp: NaturalLanguageProcessor):
     config = {
         "model_type": "tagger",
         "model_settings": {
@@ -411,7 +415,7 @@ def test_lstm_er_model(kwik_e_mart_nlp):
             },
         },
     }
-    er = (
+    er: EntityRecognizer = (
         kwik_e_mart_nlp.domains["store_info"]
             .intents["get_store_hours"]
             .entity_recognizer

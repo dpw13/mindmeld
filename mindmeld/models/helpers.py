@@ -10,8 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 """This module contains some helper functions for the models package"""
+
 import enum
 import json
 import logging
@@ -19,21 +21,23 @@ import os
 import re
 from tempfile import mkstemp
 import numpy as np
+from collections.abc import Callable
+from typing import Any, Dict, Iterable, Type, Tuple, Generator
 
 import nltk
 from sklearn.metrics import make_scorer
 
 from ..gazetteer import Gazetteer
-from ..text_preparation.text_preparation_pipeline import TextPreparationPipelineFactory
+from ..text_preparation.text_preparation_pipeline import TextPreparationPipeline, TextPreparationPipelineFactory
 
 logger = logging.getLogger(__name__)
 
-FEATURE_MAP = {}
-MODEL_MAP = {}
-LABEL_MAP = {}
-EMBEDDER_MAP = {}
-ANNOTATOR_MAP = {}
-AUGMENTATION_MAP = {}
+FEATURE_MAP: Dict[str, Dict[str, Callable]] = {}
+MODEL_MAP: Dict[str, Type[ModelFactory]] = {}
+LABEL_MAP: Dict[str, Type[LabelEncoder]] = {}
+EMBEDDER_MAP: Dict[str, Type[Embedder]] = {}
+ANNOTATOR_MAP: Dict[str, Type[Annotator]] = {}
+AUGMENTATION_MAP: Dict[str, Type[Augmentor]] = {}
 
 # Example types
 QUERY_EXAMPLE_TYPE = "query"
@@ -74,7 +78,7 @@ class ModelType(enum.Enum):
     TAGGER_MODEL = "tagger"
 
 
-def create_model(config):
+def create_model(config: dict | ModelConfig) -> Model:
     """Creates a model instance using the provided configuration
 
     Args:
@@ -94,7 +98,7 @@ def create_model(config):
         raise ValueError(msg.format(config.model_type)) from e
 
 
-def load_model(path):
+def load_model(path: str) -> Model:
     """Loads a model from a specified path
 
     Args:
@@ -111,7 +115,7 @@ def load_model(path):
     return MODEL_MAP["auto"].create_model_from_path(path)
 
 
-def create_annotator(config):
+def create_annotator(config: Dict) -> Annotator:
     """Creates an annotator instance using the provided configuration
 
     Args:
@@ -134,7 +138,7 @@ def create_annotator(config):
         raise KeyError(msg.format(config["annotator_class"]))
 
 
-def get_feature_extractor(example_type, name):
+def get_feature_extractor(example_type: str, name: str) -> Callable:
     """Gets a feature extractor given the example type and name
 
     Args:
@@ -147,7 +151,7 @@ def get_feature_extractor(example_type, name):
     return FEATURE_MAP[example_type][name]
 
 
-def get_label_encoder(config):
+def get_label_encoder(config: "ModelConfig") -> "LabelEncoder":
     """Gets a label encoder given the label type from the config
 
     Args:
@@ -159,7 +163,7 @@ def get_label_encoder(config):
     return LABEL_MAP[config.label_type](config)
 
 
-def create_embedder_model(app_path, config):
+def create_embedder_model(app_path: str, config: Dict[str, Any]) -> "Embedder":
     """Creates and loads an embedder model
 
     Args:
@@ -194,7 +198,7 @@ def create_embedder_model(app_path, config):
         raise ValueError(msg.format(embedder_type)) from e
 
 
-def register_model(model_type, model_class):
+def register_model(model_type: str, model_class: Type[ModelFactory]) -> None:
     """Registers a model for use with `create_model()`
 
     Args:
@@ -205,7 +209,7 @@ def register_model(model_type, model_class):
     MODEL_MAP[model_type] = model_class
 
 
-def register_query_feature(feature_name):
+def register_query_feature(feature_name: str) -> Callable:
     """Registers query feature
 
     Args:
@@ -229,7 +233,7 @@ def register_entity_feature(feature_name):
     return register_feature(ENTITY_EXAMPLE_TYPE, feature_name=feature_name)
 
 
-def register_annotator(annotator_class_name, annotator_class):
+def register_annotator(annotator_class_name: str, annotator_class: Type[Annotator]) -> None:
     """Registers an Annotator class for use with `create_annotator()`
 
     Args:
@@ -239,7 +243,7 @@ def register_annotator(annotator_class_name, annotator_class):
     ANNOTATOR_MAP[annotator_class_name] = annotator_class
 
 
-def register_augmentor(augmentor_name, augmentor_class):
+def register_augmentor(augmentor_name: str, augmentor_class: Type[Augmentor]):
     """Registers an Annotator class for use with `create_annotator()`
 
     Args:
@@ -249,7 +253,7 @@ def register_augmentor(augmentor_name, augmentor_class):
     AUGMENTATION_MAP[augmentor_name] = augmentor_class
 
 
-def register_feature(feature_type, feature_name):
+def register_feature(feature_type: str, feature_name: str) -> Callable:
     """
     Decorator for adding feature extractor mappings to FEATURE_MAP
 
@@ -275,13 +279,13 @@ def register_feature(feature_type, feature_name):
     return add_feature
 
 
-def register_label(label_type, label_encoder):
+def register_label(label_type: str, label_encoder: Type[LabelEncoder]) -> None:
     """Register a label encoder for use with
     `get_label_encoder()`
 
     Args:
         label_type (str): The label type of the label encoder
-        label_encoder (LabelEncoder): The label encoder class to register
+        label_encoder (class): The label encoder class to register
 
     Raises:
         ValueError: If the label type is already registered
@@ -295,7 +299,7 @@ def register_label(label_type, label_encoder):
     LABEL_MAP[label_type] = label_encoder
 
 
-def register_embedder(embedder_type, embedder):
+def register_embedder(embedder_type: str, embedder: Type[Embedder]) -> None:
     if embedder_type in EMBEDDER_MAP:
         msg = "Embedder of type {!r} is already registered.".format(embedder_type)
         raise ValueError(msg)
@@ -303,7 +307,7 @@ def register_embedder(embedder_type, embedder):
     EMBEDDER_MAP[embedder_type] = embedder
 
 
-def mask_numerics(token):
+def mask_numerics(token: str) -> str:
     """Masks digit characters in a token
 
     Args:
@@ -318,7 +322,7 @@ def mask_numerics(token):
         return re.sub(r"\d", "8", token)
 
 
-def get_ngram(tokens, start, length):
+def get_ngram(tokens: Iterable[str], start: int, length: int) -> str:
     """Gets a ngram from a list of tokens.
 
     Handles out-of-bounds token positions with a special character.
@@ -341,7 +345,7 @@ def get_ngram(tokens, start, length):
     return " ".join(ngram_tokens)
 
 
-def get_ngrams_upto_n(tokens, n):
+def get_ngrams_upto_n(tokens: Iterable[str], n: int) -> Generator[Tuple[Tuple, Tuple[int, int]], Any, None]:
     """This function returns a generator that returns ngram tuples with length upto n
 
     Args:
@@ -358,7 +362,7 @@ def get_ngrams_upto_n(tokens, n):
             yield j, (idx, idx + length)
 
 
-def get_seq_accuracy_scorer():
+def get_seq_accuracy_scorer() -> Callable:
     """
     Returns a scorer that can be used by sklearn's GridSearchCV based on the
     sequence_accuracy_scoring method below.
@@ -366,7 +370,7 @@ def get_seq_accuracy_scorer():
     return make_scorer(score_func=sequence_accuracy_scoring)
 
 
-def get_seq_tag_accuracy_scorer():
+def get_seq_tag_accuracy_scorer() -> Callable:
     """
     Returns a scorer that can be used by sklearn's GridSearchCV based on the
     sequence_tag_accuracy_scoring method below.
@@ -374,7 +378,7 @@ def get_seq_tag_accuracy_scorer():
     return make_scorer(score_func=sequence_tag_accuracy_scoring)
 
 
-def sequence_accuracy_scoring(y_true, y_pred):
+def sequence_accuracy_scoring(y_true: Iterable[str], y_pred: Iterable[str]) -> float:
     """Accuracy score which calculates two sequences to be equal only if all of
         their predicted tags are equal.
 
@@ -397,7 +401,7 @@ def sequence_accuracy_scoring(y_true, y_pred):
     return float(matches) / float(total)
 
 
-def sequence_tag_accuracy_scoring(y_true, y_pred):
+def sequence_tag_accuracy_scoring(y_true: Iterable[str], y_pred: Iterable[str]) -> float:
     """Accuracy score which calculates the number of tags that were predicted
         correctly.
 
@@ -425,7 +429,7 @@ def sequence_tag_accuracy_scoring(y_true, y_pred):
     return float(matches) / float(total)
 
 
-def entity_seqs_equal(expected, predicted):
+def entity_seqs_equal(expected: Iterable, predicted: Iterable) -> bool:
     """
     Returns true if the expected entities and predicted entities all match, returns
     false otherwise. Note that for entity comparison, we compare that the span, text,
@@ -447,7 +451,7 @@ def entity_seqs_equal(expected, predicted):
     return True
 
 
-def merge_gazetteer_resource(resource, dynamic_resource, text_preparation_pipeline):
+def merge_gazetteer_resource(resource: Dict, dynamic_resource: Dict, text_preparation_pipeline: TextPreparationPipeline) -> Dict:
     """
     Returns a new resource that is a merge between the original resource and the dynamic
     resource passed in for only the gazetteer values
@@ -491,7 +495,7 @@ def merge_gazetteer_resource(resource, dynamic_resource, text_preparation_pipeli
     return return_obj
 
 
-def ingest_dynamic_gazetteer(resource, dynamic_resource=None, text_preparation_pipeline=None):
+def ingest_dynamic_gazetteer(resource: Dict, dynamic_resource: Dict=None, text_preparation_pipeline: TextPreparationPipeline=None) -> Dict:
     """Ingests dynamic gazetteers from the app and adds them to the resource
 
     Args:
@@ -514,7 +518,7 @@ def ingest_dynamic_gazetteer(resource, dynamic_resource=None, text_preparation_p
     return workspace_resource
 
 
-def requires(resource):
+def requires(resource: str) -> Callable:
     """
     Decorator to enforce the resource dependencies of the active feature extractors
 
@@ -577,7 +581,7 @@ class FileBackedList:
         return FileBackedList.Iterator(self)
 
     class Iterator:
-        def __init__(self, source):
+        def __init__(self, source: "FileBackedList"):
             self.source = source
             self.file_handle = open(source.filename, "r")
 

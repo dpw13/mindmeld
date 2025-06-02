@@ -636,7 +636,7 @@ def get_app_module_path(app_path):
 
 
 @safe_path
-def get_config_module_path(app_path):
+def get_config_module_path(app_path: str) -> str:
     """Gets the path to the configuration file (config.py) for a given application.
 
     Args:

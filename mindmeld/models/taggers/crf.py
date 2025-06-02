@@ -14,14 +14,17 @@
 """
 This module contains the CRF entity recognizer.
 """
-from distutils.util import strtobool
 import logging
 import os
 
 import numpy as np
+from typing import Any, Dict, Iterable, Tuple
 
 from .taggers import Tagger, extract_sequence_features
 from .pytorch_crf import CRFModel
+from ...models.model import ModelConfig
+from ...core import Query
+from ...strtobool import strtobool
 
 logger = logging.getLogger(__name__)
 
@@ -48,10 +51,10 @@ class CRFTagger(Tagger):
     def get_params(self, deep=True):
         return self._clf.get_params()
 
-    def predict(self, X, dynamic_resource=None):
+    def predict(self, X: Iterable[Iterable[Dict]], dynamic_resource=None):
         return self._clf.predict(X)
 
-    def predict_proba(self, examples, config, resources):
+    def predict_proba(self, examples: Iterable[Query], config: ModelConfig, resources: Dict):
         """
         Args:
             examples (list of mindmeld.core.Query): a list of queries to predict on
@@ -74,7 +77,7 @@ class CRFTagger(Tagger):
             marginal_tuples.append(query_marginal_tuples)
         return marginal_tuples
 
-    def predict_proba_distribution(self, examples, config, resources):
+    def predict_proba_distribution(self, examples: Iterable[Query], config: ModelConfig, resources: Dict):
         """
         Args:
             examples (list of mindmeld.core.Query): a list of queries to predict on
@@ -102,12 +105,12 @@ class CRFTagger(Tagger):
         return [[tag_maps, predictions]]
 
     def extract_features(self,
-                         examples,
-                         config,
-                         resources,
-                         y=None,
+                         examples: Iterable[Query],
+                         config: ModelConfig,
+                         resources: Dict,
+                         y: Iterable[Iterable[str]]=None,
                          fit=False,
-                         in_memory=STORE_CRF_FEATURES_IN_MEMORY):
+                         in_memory=STORE_CRF_FEATURES_IN_MEMORY) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], None]:
         """Transforms a list of examples into a feature matrix.
 
         Args:
@@ -117,7 +120,9 @@ class CRFTagger(Tagger):
             resources (dict): Resources which may be used for this model's feature extraction
 
         Returns:
-            (list of list of str): features in CRF suite format
+            X
+            y (list of list of str): features in CRF suite format
+            groups: None
         """
         # Extract features and classes
         feats = []
@@ -169,7 +174,7 @@ class CRFTagger(Tagger):
             new_X.append(feat_seq)
         return new_X
 
-    def setup_model(self, config):
+    def setup_model(self, config: Dict[str, Any]):
         self._feat_binner = FeatureBinner()
 
     @property

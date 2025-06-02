@@ -16,6 +16,7 @@ This module contains the entity recognizer component of the MindMeld natural lan
 """
 import logging
 import pickle
+from typing import Iterable, Set
 
 import joblib
 
@@ -23,7 +24,9 @@ from ._config import get_classifier_config
 from .classifier import Classifier, ClassifierConfig, ClassifierLoadError
 from ..constants import DEFAULT_TRAIN_SET_REGEX
 from ..core import Entity, Query
-from ..models import ENTITIES_LABEL_TYPE, QUERY_EXAMPLE_TYPE, create_model, load_model
+from ..models.model import Model
+from ..models import ENTITIES_LABEL_TYPE, QUERY_EXAMPLE_TYPE, ModelConfig, create_model, load_model
+from ..resource_loader import ProcessedQuery, ProcessedQueryList, ResourceLoader
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,7 @@ class EntityRecognizer(Classifier):
     CLF_TYPE = "entity"
     """The classifier type."""
 
-    def __init__(self, resource_loader, domain, intent):
+    def __init__(self, resource_loader: ResourceLoader, domain: str, intent: str):
         """Initializes an entity recognizer
 
         Args:
@@ -53,11 +56,11 @@ class EntityRecognizer(Classifier):
         super().__init__(resource_loader)
         self.domain = domain
         self.intent = intent
-        self.entity_types = set()
+        self.entity_types: Set[str] = set()
         # TODO: Deprecate the var self._model_config as the configs are already dumped by models
         self._model_config = None
 
-    def _get_model_config(self, **kwargs):  # pylint: disable=arguments-differ
+    def _get_model_config(self, **kwargs) -> ModelConfig:  # pylint: disable=arguments-differ
         """Gets a machine learning model configuration
 
         Returns:
@@ -73,7 +76,7 @@ class EntityRecognizer(Classifier):
         )
         return super()._get_model_config(loaded_config, **kwargs)
 
-    def get_entity_types(self, queries=None, label_set=None, **kwargs):
+    def get_entity_types(self, queries: ProcessedQueryList=None, label_set=None, **kwargs) -> Iterable[str]:
 
         if not label_set:
             label_set = self._get_model_config(**kwargs).train_label_set
@@ -86,6 +89,7 @@ class EntityRecognizer(Classifier):
         # Build entity types set
         entity_types = set()
         for label in labels:
+            # `entity` is probably a NestedEntity
             for entity in label:
                 entity_types.add(entity.entity.type)
 
@@ -133,7 +137,7 @@ class EntityRecognizer(Classifier):
             return False
 
         if self.entity_types:
-            model = create_model(self._model_config)
+            model: Model = create_model(self._model_config)
             model.initialize_resources(self._resource_loader, examples, labels)
             model.fit(examples, labels)
             self._model = model
@@ -190,7 +194,7 @@ class EntityRecognizer(Classifier):
         )
 
         # underlying model specific load
-        self._model = load_model(model_path)
+        self._model: Model = load_model(model_path)
 
         # classifier specific load
         try:
@@ -198,7 +202,7 @@ class EntityRecognizer(Classifier):
         except FileNotFoundError:  # backwards compatability for previous version's saved models
             er_data = joblib.load(model_path)
         self.entity_types = er_data["entity_types"]
-        self._model_config = er_data["model_config"]
+        self._model_config: ModelConfig = er_data["model_config"]
 
         # validate and register resources
         if self._model is not None:
@@ -264,7 +268,7 @@ class EntityRecognizer(Classifier):
         return tuple(sorted(prediction, key=lambda e: e.span.start))
 
     def predict_proba(
-        self, query, time_zone=None, timestamp=None, dynamic_resource=None
+        self, query: Query | str, time_zone: str=None, timestamp: int=None, dynamic_resource=None
     ):
         """Runs prediction on a given query and generates multiple entity tagging hypotheses with
         their associated probabilities using the trained entity recognition model
@@ -300,10 +304,10 @@ class EntityRecognizer(Classifier):
             label_set=label_set
         )
 
-    def _get_examples_and_labels(self, queries):
+    def _get_examples_and_labels(self, queries: ProcessedQueryList):
         return (queries.queries(), queries.entities())
 
-    def _get_examples_and_labels_hash(self, queries):
+    def _get_examples_and_labels_hash(self, queries: ProcessedQueryList):
         hashable_queries = (
             [self.domain + "###" + self.intent + "###entity###"]
             + sorted(list(queries.raw_queries()))

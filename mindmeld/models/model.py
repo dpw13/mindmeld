@@ -21,7 +21,7 @@ import os
 import pickle
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Union, Type, Dict, Any, Tuple, List, Pattern, Set
+from typing import Union, Type, Dict, Any, Tuple, Iterable, List, Pattern, Self, Set
 
 import joblib
 from sklearn.model_selection import (
@@ -164,7 +164,7 @@ class ModelConfig:
         """
         return json.dumps(self.to_dict(), sort_keys=True)
 
-    def resolve_config(self, new_config: "ModelConfig"):
+    def resolve_config(self, new_config: Self):
         """This method resolves any config incompatibility issues by
         loading the latest settings from the app config to the current config
 
@@ -416,9 +416,9 @@ class Model(AbstractModel):
     LIKELIHOOD_SCORING = "log_loss"
     ALLOWED_CLASSIFIER_TYPES: List[str] = NotImplemented
 
-    def __init__(self, config):
+    def __init__(self, config: ModelConfig):
         super().__init__(config)
-        self._label_encoder = get_label_encoder(self.config)
+        self._label_encoder: LabelEncoder = get_label_encoder(self.config)
         self._current_params = None
         self._clf = None
         self.cv_loss_ = None
@@ -429,7 +429,7 @@ class Model(AbstractModel):
     def _get_model_constructor(self):
         raise NotImplementedError
 
-    def _fit_cv(self, examples, labels, groups=None, selection_settings=None, fixed_params=None):
+    def _fit_cv(self, examples: Iterable, labels: Iterable, groups=None, selection_settings: Dict=None, fixed_params: Dict=None):
         """Called by the fit method when cross validation parameters are passed in. Runs cross
         validation and returns the best estimator and parameters.
 
@@ -556,7 +556,7 @@ class Model(AbstractModel):
     def _process_cv_best_params(best_params):
         return best_params
 
-    def select_params(self, examples, labels, selection_settings=None):
+    def select_params(self, examples: Iterable, labels: Iterable, selection_settings: Dict=None):
         """Selects the best set of hyper-parameters for a given set of examples and true labels
             through cross-validation
 
@@ -570,7 +570,7 @@ class Model(AbstractModel):
         """
         raise NotImplementedError
 
-    def _convert_params(self, param_grid, y, is_grid=True):
+    def _convert_params(self, param_grid: Dict, y: Iterable, is_grid=True):
         """Convert the params from the style given by the config to the style
         passed in to the actual classifier.
 
