@@ -252,7 +252,7 @@ async def test_async_middleware(dm):
     request = create_request("domain", "middle")
     response = create_responder(request)
     result = await dm.apply_handler(request, response)
-    dm.apply_handler(request, response)
+
     assert result.dialogue_state == "middleware_test"
     assert result.handler
 

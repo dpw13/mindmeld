@@ -182,7 +182,7 @@ async def test_custom_action_async():
 
     with patch("mindmeld.components.CustomAction.post_async") as mock_object:
 
-        async def mock_coroutine():
+        def mock_coroutine():
             return 200, {}
 
         mock_object.return_value = mock_coroutine()
@@ -204,7 +204,7 @@ async def test_invoke_custom_action_async():
 
     with patch("mindmeld.components.CustomAction.post_async") as mock_object:
 
-        async def mock_coroutine():
+        def mock_coroutine():
             return 200, {}
 
         mock_object.return_value = mock_coroutine()
@@ -281,7 +281,7 @@ async def test_custom_action_handler_async(home_assistant_nlp):
 
     with patch("mindmeld.components.CustomAction.post_async") as mock_object:
 
-        async def mock_coroutine():
+        def mock_coroutine():
             return 200, {"directives": [{"payload": "set-thermostat-action"}]}
 
         mock_object.return_value = mock_coroutine()
