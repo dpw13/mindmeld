@@ -13,25 +13,25 @@ requirements = [
     "attrs>=18.2",  # attrs has a stable API and does not use semver
     "Click~=7.1",
     "click-log==0.1.8",
-    "distro~=1.3",
+    "distro~=1.9",
     "elasticsearch~=7.14",
     "Flask>=1.1.3,<2",
     "Flask-Cors~=3.0",
-    "future~=0.17",
+    "future~=0.18",
     "pycountry",  # uses calendar versioning
-    "nltk~=3.2",
-    "numpy<2.0",
+    "nltk~=3.9",
+    "numpy~=2.2",
     "pip>=9.0.1",
-    "py~=1.4",
-    "python-dateutil~=2.6",
+    "py~=1.11",
+    "python-dateutil~=2.9",
     "pytz",  # uses calendar versioning
     "scipy>=0.13.3,<2.0",
-    "scikit-learn<1.5",
+    "scikit-learn~=1.6",
     "requests>=2.20.1,<3.0",
-    "tqdm~=4.15",
-    "immutables~=0.9",
+    "tqdm~=4.67",
+    "immutables~=0.21",
     "pyyaml>=5.1.1",
-    "spacy<4.0",
+    "spacy~=3.8",
     "mypy>=0.782",
     "marshmallow~=3.7.1",
     # We currently depend on an older flask, which requires an older version of jinja, which doesn't pin its version of
@@ -41,18 +41,18 @@ requirements = [
     "markupsafe==2.0.1",
     "torch~=2.7",
     "pytorch-crf~=0.7.2",
-    "protobuf~=3.19.4"
+    "protobuf~=6.0"
 ]
 
 setup_requirements = ["pytest-runner~=2.11", "setuptools>=36"]
 
 test_requirements = [
     "flake8<4.0",
-    "pylint~3.1",
+    "pylint~3.3",
     "pytest~=8.4",
     "pytest-cov~=6.1",
     "pytest-asyncio~=1.0",
-    "black>=19.10b0 ; python_version >= '3.6'",
+    "black>=19.10b0,<24.0 ; python_version >= '3.6'",
 ]
 
 setup(
