@@ -39,8 +39,8 @@ requirements = [
     # As a stop gap, we'll pin our version of markupsafe to that last 2.0 version. Longer term we need to update
     # our flask dependency, and likely move it to an extra
     "markupsafe==2.0.1",
-    "torch<2.3",
-    'pytorch-crf~=0.7.2',
+    "torch~=2.7",
+    "pytorch-crf~=0.7.2",
     "protobuf~=3.19.4"
 ]
 
@@ -49,9 +49,9 @@ setup_requirements = ["pytest-runner~=2.11", "setuptools>=36"]
 test_requirements = [
     "flake8<4.0",
     "pylint~3.1",
-    "pytest>=7.0",
-    "pytest-cov>=2.0",
-    "pytest-asyncio<1.0",
+    "pytest~=8.4",
+    "pytest-cov~=6.1",
+    "pytest-asyncio~=1.0",
     "black>=19.10b0 ; python_version >= '3.6'",
 ]
 
