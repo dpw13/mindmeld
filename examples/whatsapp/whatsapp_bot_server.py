@@ -32,7 +32,7 @@ class WhatsappBotServer:
 
         @self.app.route("/", methods=["POST"])
         def handle_message():  # pylint: disable=unused-variable
-            incoming_msg = request.values.get('Body', '').lower()
+            incoming_msg = request.values.get("Body", "").lower()
             resp = MessagingResponse()
             msg = resp.message()
 
@@ -45,10 +45,10 @@ class WhatsappBotServer:
         self.app.run(host=host, port=port)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = Flask(__name__)
     configure_logs()
-    server = WhatsappBotServer(name='whatsapp', app_path='.')
+    server = WhatsappBotServer(name="whatsapp", app_path=".")
     port_number = 8080
-    print('Running server on port {}...'.format(port_number))
-    server.run(host='localhost', port=port_number)
+    print("Running server on port {}...".format(port_number))
+    server.run(host="localhost", port=port_number)

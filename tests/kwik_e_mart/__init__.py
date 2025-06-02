@@ -19,8 +19,7 @@ def welcome(request, responder):
         prefix = "Hello. "
 
     responder.reply(
-        prefix + "I can help you find store hours "
-        "for your local Kwik-E-Mart. How can I help?"
+        prefix + "I can help you find store hours " "for your local Kwik-E-Mart. How can I help?"
     )
     responder.listen()
 
@@ -76,19 +75,13 @@ def default(request, responder):
 @app.dialogue_flow(domain="store_info", intent="get_store_hours")
 def send_store_hours(request, responder):
     active_store = None
-    store_entity = next(
-        (e for e in request.entities if e["type"] == "store_name"), None
-    )
+    store_entity = next((e for e in request.entities if e["type"] == "store_name"), None)
     if store_entity:
         try:
-            stores = app.question_answerer.get(
-                index="stores", id=store_entity["value"]["id"]
-            )
+            stores = app.question_answerer.get(index="stores", id=store_entity["value"]["id"])
         except TypeError:
             # failed to resolve entity
-            stores = app.question_answerer.get(
-                index="stores", store_name=store_entity["text"]
-            )
+            stores = app.question_answerer.get(index="stores", store_name=store_entity["text"])
         try:
             active_store = stores[0]
             responder.frame["target_store"] = active_store
@@ -103,8 +96,7 @@ def send_store_hours(request, responder):
         responder.slots["open_time"] = active_store["open_time"]
         responder.slots["close_time"] = active_store["close_time"]
         responder.reply(
-            "The {store_name} Kwik-E-Mart opens at {open_time} and "
-            "closes at {close_time}."
+            "The {store_name} Kwik-E-Mart opens at {open_time} and " "closes at {close_time}."
         )
         return
 
@@ -122,9 +114,7 @@ def send_store_hours(request, responder):
 def default_handler(request, responder):
     responder.frame["count"] = responder.frame.get("count", 0) + 1
     if responder.frame["count"] <= 3:
-        responder.reply(
-            "Sorry, I did not get you. Which store would you like to know about?"
-        )
+        responder.reply("Sorry, I did not get you. Which store would you like to know about?")
         responder.listen()
     else:
         responder.reply("Sorry I cannot help you. Please try again.")
@@ -157,18 +147,12 @@ form_store_phone = {
 @app.auto_fill(domain="store_info", intent="get_store_number", form=form_store_phone)
 def send_store_phone(request, responder):
     active_store = None
-    store_entity = next(
-        (e for e in request.entities if e["type"] == "store_name"), None
-    )
+    store_entity = next((e for e in request.entities if e["type"] == "store_name"), None)
     try:
-        stores = app.question_answerer.get(
-            index="stores", id=store_entity["value"][0]["id"]
-        )
+        stores = app.question_answerer.get(index="stores", id=store_entity["value"][0]["id"])
     except TypeError:
         # failed to resolve entity
-        stores = app.question_answerer.get(
-            index="stores", store_name=store_entity["text"]
-        )
+        stores = app.question_answerer.get(index="stores", store_name=store_entity["text"])
     try:
         active_store = stores[0]
     except IndexError:
@@ -178,7 +162,5 @@ def send_store_phone(request, responder):
     if active_store:
         responder.slots["store_name"] = active_store["store_name"]
         responder.slots["phone_number"] = active_store["phone_number"]
-        responder.reply(
-            "The {store_name} Kwik-E-Mart can be reached at {phone_number}."
-        )
+        responder.reply("The {store_name} Kwik-E-Mart can be reached at {phone_number}.")
         return

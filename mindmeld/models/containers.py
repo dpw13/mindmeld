@@ -57,6 +57,7 @@ class GloVeEmbeddingsContainer:
     `pretrained_path_or_name` instead of token dimension and filepath. Also deprecate these two
     arguments.
     """
+
     CONTAINER_LOOKUP = {}
 
     EMBEDDING_FILE_PATH_TEMPLATE = "glove.6B.{}d.txt"
@@ -92,7 +93,6 @@ class GloVeEmbeddingsContainer:
         return self._word_to_embedding
 
     def _download_embeddings_and_return_zip_handle(self):
-
         logger.info("Downloading embedding from %s", EMBEDDINGS_URL)
 
         # Make the folder that will contain the embeddings
@@ -100,7 +100,6 @@ class GloVeEmbeddingsContainer:
             os.makedirs(EMBEDDINGS_FOLDER_PATH)
 
         with TqdmUpTo(unit="B", unit_scale=True, miniters=1, desc=EMBEDDINGS_URL) as t:
-
             try:
                 urlretrieve(EMBEDDINGS_URL, EMBEDDINGS_FILE_PATH, reporthook=t.update_to)
 
@@ -117,7 +116,7 @@ class GloVeEmbeddingsContainer:
                 logger.info(
                     "Embedding file with %s dimensions not found in %s file path",
                     self.token_dimension,
-                    file_name
+                    file_name,
                 )
                 return
 
@@ -137,7 +136,6 @@ class GloVeEmbeddingsContainer:
 
     def _extract_embeddings(self):
         if self.model_id not in GloVeEmbeddingsContainer.CONTAINER_LOOKUP:
-
             file_location = self.token_pretrained_embedding_filepath
 
             if file_location and os.path.isfile(file_location):
@@ -147,12 +145,18 @@ class GloVeEmbeddingsContainer:
                     word_to_embedding = self._extract_and_map(embedding_file)
             else:
                 if file_location:
-                    logger.info("Provided file location %s does not exist.", str(file_location))
+                    logger.info(
+                        "Provided file location %s does not exist.",
+                        str(file_location),
+                    )
                 file_name = GloVeEmbeddingsContainer.EMBEDDING_FILE_PATH_TEMPLATE.format(
-                    self.token_dimension)
+                    self.token_dimension
+                )
                 if os.path.isfile(EMBEDDINGS_FILE_PATH):
-                    msg = f"Extracting embeddings from default folder location " \
-                          f"{EMBEDDINGS_FILE_PATH}."
+                    msg = (
+                        f"Extracting embeddings from default folder location "
+                        f"{EMBEDDINGS_FILE_PATH}."
+                    )
                     logger.info(msg)
                     try:
                         zip_file_object = zipfile.ZipFile(EMBEDDINGS_FILE_PATH, "r")
@@ -175,7 +179,10 @@ class GloVeEmbeddingsContainer:
                         )
                         raise IOError("Failed to load embeddings.") from e
                 else:
-                    logger.info("Default folder location %s does not exist.", EMBEDDINGS_FILE_PATH)
+                    logger.info(
+                        "Default folder location %s does not exist.",
+                        EMBEDDINGS_FILE_PATH,
+                    )
                     zip_file_object = self._download_embeddings_and_return_zip_handle()
                     if not zip_file_object:
                         raise EmbeddingDownloadError("Failed to download embeddings.")
@@ -194,24 +201,28 @@ class SentenceTransformersContainer:
     To facilitate not loading the large glove embedding file to memory everytime a new container is
     created, a class-level attribute with a hashmap is created.
     """
+
     CONTAINER_LOOKUP = {}
 
     def __init__(
         self,
         pretrained_name_or_abspath,
         bert_output_type="mean",
-        quantize_model=False
+        quantize_model=False,
     ):
         self.pretrained_name_or_abspath = pretrained_name_or_abspath
         self.bert_output_type = bert_output_type
         self.quantize_model = quantize_model
 
         # get model name hash
-        string_to_hash = json.dumps({
-            "pretrained_name_or_abspath": self.pretrained_name_or_abspath,
-            "bert_output_type": self.bert_output_type,
-            "quantize_model": self.quantize_model,
-        }, sort_keys=True)
+        string_to_hash = json.dumps(
+            {
+                "pretrained_name_or_abspath": self.pretrained_name_or_abspath,
+                "bert_output_type": self.bert_output_type,
+                "quantize_model": self.quantize_model,
+            },
+            sort_keys=True,
+        )
         self.model_id = Hasher(algorithm="sha1").hash(string=string_to_hash)
 
         self._model_bunch = None
@@ -229,26 +240,32 @@ class SentenceTransformersContainer:
             info_msg = ""
             for name in [
                 self.pretrained_name_or_abspath,
-                f"sentence-transformers/{self.pretrained_name_or_abspath}"
+                f"sentence-transformers/{self.pretrained_name_or_abspath}",
             ]:
                 try:
                     model = self._get_strans_encoder(
                         name,
                         output_type=self.bert_output_type,
-                        quantize=self.quantize_model
+                        quantize=self.quantize_model,
                     )
-                    info_msg += f"Successfully initialized name/path `{name}` directly through " \
-                                f"huggingface-transformers. "
+                    info_msg += (
+                        f"Successfully initialized name/path `{name}` directly through "
+                        f"huggingface-transformers. "
+                    )
                 except OSError:
-                    info_msg += f"Could not initialize name/path `{name}` directly through " \
-                                f"huggingface-transformers. "
+                    info_msg += (
+                        f"Could not initialize name/path `{name}` directly through "
+                        f"huggingface-transformers. "
+                    )
                 if model:
                     break
             logger.info(info_msg)
 
             if not model:
-                msg = f"Could not resolve the name/path `{self.pretrained_name_or_abspath}`. " \
-                      f"Please check the model name and retry."
+                msg = (
+                    f"Could not resolve the name/path `{self.pretrained_name_or_abspath}`. "
+                    f"Please check the model name and retry."
+                )
                 raise Exception(msg)
 
             SentenceTransformersContainer.CONTAINER_LOOKUP[self.model_id] = model
@@ -256,11 +273,7 @@ class SentenceTransformersContainer:
         return SentenceTransformersContainer.CONTAINER_LOOKUP[self.model_id]
 
     @staticmethod
-    def _get_strans_encoder(
-        name_or_path,
-        output_type="mean",
-        quantize=False
-    ):
+    def _get_strans_encoder(name_or_path, output_type="mean", quantize=False):
         """
         Retrieves a sentence-transformer model and returns it along with its transformer and
         pooling components.
@@ -277,23 +290,21 @@ class SentenceTransformersContainer:
         """
 
         if not _is_module_available("sentence_transformers"):
-            msg = "Must install extra [bert] by running " \
-                  "'pip install mindmeld[bert]'"
+            msg = "Must install extra [bert] by running " "'pip install mindmeld[bert]'"
             raise ImportError(msg)
 
         strans_models = _getattr("sentence_transformers.models")
         strans = _getattr("sentence_transformers", "SentenceTransformer")
 
         transformer_model = strans_models.Transformer(
-            name_or_path,
-            model_args={"output_hidden_states": True}
+            name_or_path, model_args={"output_hidden_states": True}
         )
         pooling_model = strans_models.Pooling(
             transformer_model.get_word_embedding_dimension(),
             pooling_mode_cls_token=output_type == "cls",
             pooling_mode_max_tokens=False,
             pooling_mode_mean_tokens=output_type == "mean",
-            pooling_mode_mean_sqrt_len_tokens=False
+            pooling_mode_mean_sqrt_len_tokens=False,
         )
         sbert_model = strans(modules=[transformer_model, pooling_model])
 
@@ -305,20 +316,26 @@ class SentenceTransformersContainer:
             torch_nn_linear = _getattr("torch.nn", "Linear")
             torch_quantize_dynamic = _getattr("torch.quantization", "quantize_dynamic")
 
-            transformer_model = torch_quantize_dynamic(
-                transformer_model, {torch_nn_linear}, dtype=torch_qint8
-            ) if transformer_model else None
-            pooling_model = torch_quantize_dynamic(
-                pooling_model, {torch_nn_linear}, dtype=torch_qint8
-            ) if pooling_model else None
-            sbert_model = torch_quantize_dynamic(
-                sbert_model, {torch_nn_linear}, dtype=torch_qint8
-            ) if sbert_model else None
+            transformer_model = (
+                torch_quantize_dynamic(transformer_model, {torch_nn_linear}, dtype=torch_qint8)
+                if transformer_model
+                else None
+            )
+            pooling_model = (
+                torch_quantize_dynamic(pooling_model, {torch_nn_linear}, dtype=torch_qint8)
+                if pooling_model
+                else None
+            )
+            sbert_model = (
+                torch_quantize_dynamic(sbert_model, {torch_nn_linear}, dtype=torch_qint8)
+                if sbert_model
+                else None
+            )
 
         return Bunch(
             transformer_model=transformer_model,
             pooling_model=pooling_model,
-            sbert_model=sbert_model
+            sbert_model=sbert_model,
         )
 
     def get_model_bunch(self):
@@ -345,6 +362,7 @@ class HuggingfaceTransformersContainer:
     To facilitate not loading the large glove embedding file to memory everytime a new container is
     created, a class-level attribute with a hashmap is created.
     """
+
     CONTAINER_LOOKUP = {}
 
     def __init__(
@@ -352,23 +370,28 @@ class HuggingfaceTransformersContainer:
         pretrained_model_name_or_path,
         quantize_model=False,
         cache_lookup=True,
-        from_configs=False
+        from_configs=False,
     ):
-
         if not _is_module_available("transformers"):
-            msg = "Must install extra [transformers] by running " \
-                  "'pip install mindmeld[transformers]'"
+            msg = (
+                "Must install extra [transformers] by running "
+                "'pip install mindmeld[transformers]'"
+            )
             raise ImportError(msg)
 
         if from_configs:
             if cache_lookup:
-                msg = "Cannot set both 'cache_lookup' and 'from_configs' to True at the same " \
-                      "time. Loading from Huggingface model configs returns a model without " \
-                      "pretrained weights' initialization."
+                msg = (
+                    "Cannot set both 'cache_lookup' and 'from_configs' to True at the same "
+                    "time. Loading from Huggingface model configs returns a model without "
+                    "pretrained weights' initialization."
+                )
                 raise ValueError(msg)
             if quantize_model:
-                msg = "Huggingface model loaded from configs will be quantized instead of a " \
-                      "model loaded from pretrained weights"
+                msg = (
+                    "Huggingface model loaded from configs will be quantized instead of a "
+                    "model loaded from pretrained weights"
+                )
                 logger.warning(msg)
 
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -377,33 +400,37 @@ class HuggingfaceTransformersContainer:
         self.from_configs = from_configs
 
         # get model name hash
-        string_to_hash = json.dumps({
-            "pretrained_model_name_or_path": self.pretrained_model_name_or_path,
-            "quantize_model": self.quantize_model
-        }, sort_keys=True)
+        string_to_hash = json.dumps(
+            {
+                "pretrained_model_name_or_path": self.pretrained_model_name_or_path,
+                "quantize_model": self.quantize_model,
+            },
+            sort_keys=True,
+        )
         self.model_id = Hasher(algorithm="sha1").hash(string=string_to_hash)
 
         self._model_bunch = None
 
     def _extract_model(self):
-
         if self.cache_lookup:
             model = HuggingfaceTransformersContainer.CONTAINER_LOOKUP.get(self.model_id)
         else:
             model = None
 
         if not model:
-
             try:
                 if self.from_configs:
                     config = self.get_transformer_model_config()
                     transformer_model = _getattr("transformers", "AutoModel").from_config(config)
                 else:
                     transformer_model = _getattr("transformers", "AutoModel").from_pretrained(
-                        self.pretrained_model_name_or_path)
+                        self.pretrained_model_name_or_path
+                    )
             except OSError as e:
-                msg = f"Could not resolve the name/path `{self.pretrained_model_name_or_path}`. " \
-                      f"Please check the model name/path and retry."
+                msg = (
+                    f"Could not resolve the name/path `{self.pretrained_model_name_or_path}`. "
+                    f"Please check the model name/path and retry."
+                )
                 raise OSError(msg) from e
 
             if self.quantize_model:
@@ -415,12 +442,13 @@ class HuggingfaceTransformersContainer:
                 torch_quantize_dynamic = _getattr("torch.quantization", "quantize_dynamic")
 
                 transformer_model = torch_quantize_dynamic(
-                    transformer_model, {torch_nn_linear}, dtype=torch_qint8)
+                    transformer_model, {torch_nn_linear}, dtype=torch_qint8
+                )
 
             model = Bunch(
                 config=self.get_transformer_model_config(),
                 tokenizer=self.get_transformer_model_tokenizer(),
-                transformer_model=transformer_model
+                transformer_model=transformer_model,
             )
 
         # return the model without adding to lookup if the flag is set to False
@@ -440,11 +468,13 @@ class HuggingfaceTransformersContainer:
 
     def get_transformer_model_config(self):
         return _getattr("transformers", "AutoConfig").from_pretrained(
-            self.pretrained_model_name_or_path)
+            self.pretrained_model_name_or_path
+        )
 
     def get_transformer_model_tokenizer(self):
         return _getattr("transformers", "AutoTokenizer").from_pretrained(
-            self.pretrained_model_name_or_path)
+            self.pretrained_model_name_or_path
+        )
 
     def get_transformer_model(self):
         return self.get_model_bunch().transformer_model

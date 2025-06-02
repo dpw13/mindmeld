@@ -12,14 +12,10 @@ def hasher():
 
 
 def test_hashfile_not_found(hasher):
-    assert (
-        hasher.hash_file("some file name") == "da39a3ee5e6b4b0d3255bfef95601890afd80709"
-    )
+    assert hasher.hash_file("some file name") == "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 
 
-@pytest.mark.parametrize(
-    "file_content", ["hello world", "", "hello world\nwe are here"]
-)
+@pytest.mark.parametrize("file_content", ["hello world", "", "hello world\nwe are here"])
 def test_hashfile(hasher, file_content):
     file_content = file_content.encode("utf-8")
     with patch("mindmeld.resource_loader.open", mock_open(read_data=file_content)):

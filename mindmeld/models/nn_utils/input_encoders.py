@@ -103,7 +103,11 @@ class AbstractEncoder(ABC):
 
     @abstractmethod
     def batch_encode(
-        self, examples: List[str], padding_length: int = None, add_terminals: bool = False, **kwargs
+        self,
+        examples: List[str],
+        padding_length: int = None,
+        add_terminals: bool = False,
+        **kwargs,
     ) -> BatchData:
         """
         Method that encodes a list of texts into a list of sequence of ids
@@ -155,9 +159,7 @@ class AbstractEncoder(ABC):
 
 
 def _trim_a_list_of_sub_token_groups(
-    x: List[List[Any]],
-    max_len: int,
-    y: List[Any] = None
+    x: List[List[Any]], max_len: int, y: List[Any] = None
 ) -> Union[Tuple[List[Any], List], List[Any]]:
     """
     Given a list of sub-tokens sequences (aka. groups) upon a tokenization step, this method
@@ -254,8 +256,10 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
 
     def _get_filename(self, path: str):
         if not os.path.isdir(path):
-            msg = f"The dump method of {self.__class__.__name__} only accepts diretory as the " \
-                  f"path argument."
+            msg = (
+                f"The dump method of {self.__class__.__name__} only accepts diretory as the "
+                f"path argument."
+            )
             logger.error(msg)
             raise ValueError(msg)
         filename = os.path.join(path, "vocab.txt")
@@ -266,19 +270,22 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
         raise NotImplementedError("Subclasses must implement this method")
 
     def batch_encode(
-        self, examples: List[str], padding_length: int = None, add_terminals: bool = False,
-        _return_tokenized_examples: bool = False, **kwargs
+        self,
+        examples: List[str],
+        padding_length: int = None,
+        add_terminals: bool = False,
+        _return_tokenized_examples: bool = False,
+        **kwargs,
     ) -> BatchData:
-
         n_terminals = self.number_of_terminal_tokens if add_terminals else 0
 
         if self.classification_type == ClassificationType.TEXT:
-
             tokenized_examples = [self._tokenize(example) for example in examples]
 
             max_curr_len = max([len(ex) for ex in tokenized_examples]) + n_terminals
-            padding_length_including_terminals = min(max_curr_len, padding_length) \
-                if padding_length else max_curr_len
+            padding_length_including_terminals = (
+                min(max_curr_len, padding_length) if padding_length else max_curr_len
+            )
             padding_length_excluding_terminals = padding_length_including_terminals - n_terminals
 
             _trimmed_examples = [
@@ -289,11 +296,7 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
 
             # convert (sub) words into their respective token ids
             seq_ids = [
-                self._encode_text(
-                    example,
-                    padding_length_including_terminals,
-                    add_terminals
-                )
+                self._encode_text(example, padding_length_including_terminals, add_terminals)
                 for example in _trimmed_examples
             ]
 
@@ -303,7 +306,6 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
                 _examples = None
 
         else:
-
             # We split input text at whitespace because tagger models always use query_text_type
             # as 'normalized_text' which consist of whitespaces irrespective of the choice of
             # langauge (English, Japanese, etc.)
@@ -317,8 +319,9 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
             ]
 
             max_curr_len = max([len(sum(t_ex, [])) for t_ex in tokenized_examples]) + n_terminals
-            padding_length_including_terminals = min(max_curr_len, padding_length) \
-                if padding_length else max_curr_len
+            padding_length_including_terminals = (
+                min(max_curr_len, padding_length) if padding_length else max_curr_len
+            )
             padding_length_excluding_terminals = padding_length_including_terminals - n_terminals
 
             _trimmed_examples = [
@@ -335,7 +338,7 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
                 self._encode_text(
                     sum(example, []),
                     padding_length_including_terminals,
-                    add_terminals
+                    add_terminals,
                 )
                 for example in _trimmed_examples
             ]
@@ -345,23 +348,30 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
             else:
                 _examples = None
 
-        return BatchData(**{
-            # number of groups per example
-            "seq_lengths": torch.as_tensor(  # Tensor1d[int]
-                [len(_split_lengths) + n_terminals for _split_lengths in split_lengths],
-                dtype=torch.long
-            ),
-            # len of each subgroup; for each example, sum of its split_lengths will be equal to
-            # the sequence length minus terminals.
-            "split_lengths": [
-                torch.as_tensor(_split_lengths, dtype=torch.long)
-                for _split_lengths in split_lengths
-            ],  # List[Tensor1d[int]],
-            "seq_ids": torch.as_tensor(seq_ids, dtype=torch.long),
-            **({"_examples": _examples} if _return_tokenized_examples else {}),
-        })
+        return BatchData(
+            **{
+                # number of groups per example
+                "seq_lengths": torch.as_tensor(  # Tensor1d[int]
+                    [len(_split_lengths) + n_terminals for _split_lengths in split_lengths],
+                    dtype=torch.long,
+                ),
+                # len of each subgroup; for each example, sum of its split_lengths will be equal to
+                # the sequence length minus terminals.
+                "split_lengths": [
+                    torch.as_tensor(_split_lengths, dtype=torch.long)
+                    for _split_lengths in split_lengths
+                ],  # List[Tensor1d[int]],
+                "seq_ids": torch.as_tensor(seq_ids, dtype=torch.long),
+                **({"_examples": _examples} if _return_tokenized_examples else {}),
+            }
+        )
 
-    def _encode_text(self, list_of_tokens: List[str], padding_length: int, add_terminals: bool):
+    def _encode_text(
+        self,
+        list_of_tokens: List[str],
+        padding_length: int,
+        add_terminals: bool,
+    ):
         """
         Encodes a list of tokens in to a list of ids based on vocab and special token ids.
 
@@ -377,14 +387,13 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
             list_of_ids (List[int]): Sequence of ids corresponding to the input tokens
         """
         list_of_tokens_with_terminals = (
-            [getattr(self, "start_token")] +
-            list_of_tokens +
-            [getattr(self, "end_token")]
-        ) if add_terminals else list_of_tokens
-        list_of_tokens_with_terminals_and_padding = (
-            list_of_tokens_with_terminals +
-            [getattr(self, "pad_token")] * (padding_length - len(list_of_tokens_with_terminals))
+            ([getattr(self, "start_token")] + list_of_tokens + [getattr(self, "end_token")])
+            if add_terminals
+            else list_of_tokens
         )
+        list_of_tokens_with_terminals_and_padding = list_of_tokens_with_terminals + [
+            getattr(self, "pad_token")
+        ] * (padding_length - len(list_of_tokens_with_terminals))
         list_of_ids = [
             self.token2id.get(token, getattr(self, "unk_token_idx"))
             for token in list_of_tokens_with_terminals_and_padding
@@ -412,9 +421,11 @@ class WhitespaceEncoder(AbstractVocabLookupEncoder):
         super().__init__(**kwargs)
 
         if self.classification_type == ClassificationType.TEXT:
-            msg = "For languages like Japanese, Chinese, etc. that do not have whitespaces, " \
-                  "consider using a pretrained huggingface tokenizer or a character tokenizer " \
-                  "when not using 'query_text_type':'normalized_text'."
+            msg = (
+                "For languages like Japanese, Chinese, etc. that do not have whitespaces, "
+                "consider using a pretrained huggingface tokenizer or a character tokenizer "
+                "when not using 'query_text_type':'normalized_text'."
+            )
             logger.warning(msg)
 
     def _tokenize(self, text: str) -> List[str]:
@@ -502,8 +513,10 @@ class WhitespaceAndCharDualEncoder(AbstractVocabLookupEncoder):
 
     def _get_char_filename(self, path: str):
         if not os.path.isdir(path):
-            msg = f"The dump method of {self.__class__.__name__} only accepts diretory as the " \
-                  f"path argument."
+            msg = (
+                f"The dump method of {self.__class__.__name__} only accepts diretory as the "
+                f"path argument."
+            )
             logger.error(msg)
             raise ValueError(msg)
         filename = os.path.join(path, "char_vocab.txt")
@@ -526,18 +539,27 @@ class WhitespaceAndCharDualEncoder(AbstractVocabLookupEncoder):
         return 0
 
     def batch_encode(
-        self, examples: List[str], char_padding_length: int = None, char_add_terminals: bool = True,
-        add_terminals: bool = False, _return_tokenized_examples: bool = False, **kwargs
+        self,
+        examples: List[str],
+        char_padding_length: int = None,
+        char_add_terminals: bool = True,
+        add_terminals: bool = False,
+        _return_tokenized_examples: bool = False,
+        **kwargs,
     ) -> BatchData:
-
         if add_terminals:
-            msg = f"The param 'add_terminals' must not be True to encode a batch using " \
-                  f"{self.__class__.__name__}."
+            msg = (
+                f"The param 'add_terminals' must not be True to encode a batch using "
+                f"{self.__class__.__name__}."
+            )
             logger.error(msg)
             raise ValueError(msg)
 
         batch_data = super().batch_encode(
-            examples=examples, add_terminals=False, _return_tokenized_examples=True, **kwargs
+            examples=examples,
+            add_terminals=False,
+            _return_tokenized_examples=True,
+            **kwargs,
         )
 
         # use tokenized examples to obtain tokens for char tokenization
@@ -546,25 +568,37 @@ class WhitespaceAndCharDualEncoder(AbstractVocabLookupEncoder):
         for _seq_tokens in _examples:
             # compute padding length for character sequences
             _curr_max = max([len(word) for word in _seq_tokens])
-            _curr_max = _curr_max + self.number_of_char_terminal_tokens \
-                if char_add_terminals else _curr_max
+            _curr_max = (
+                _curr_max + self.number_of_char_terminal_tokens if char_add_terminals else _curr_max
+            )
             char_padding_length = (
                 min(char_padding_length, _curr_max) if char_padding_length else _curr_max
             )
-            _char_seq_ids, _char_seq_lengths = zip(*[
-                self._encode_chars(list(word), char_padding_length, char_add_terminals)
-                for word in _seq_tokens
-            ])
+            _char_seq_ids, _char_seq_lengths = zip(
+                *[
+                    self._encode_chars(list(word), char_padding_length, char_add_terminals)
+                    for word in _seq_tokens
+                ]
+            )
             char_seq_ids.append(_char_seq_ids)
             char_seq_lengths.append(_char_seq_lengths)
 
-        batch_data.update({
-            "char_seq_ids": [torch.as_tensor(_ids, dtype=torch.long) for _ids in char_seq_ids],
-            "char_seq_lengths": [torch.as_tensor(_ls, dtype=torch.long) for _ls in char_seq_lengths]
-        })
+        batch_data.update(
+            {
+                "char_seq_ids": [torch.as_tensor(_ids, dtype=torch.long) for _ids in char_seq_ids],
+                "char_seq_lengths": [
+                    torch.as_tensor(_ls, dtype=torch.long) for _ls in char_seq_lengths
+                ],
+            }
+        )
         return batch_data
 
-    def _encode_chars(self, list_of_tokens: List[str], padding_length: int, add_terminals: bool):
+    def _encode_chars(
+        self,
+        list_of_tokens: List[str],
+        padding_length: int,
+        add_terminals: bool,
+    ):
         """
         Encodes a list of tokens in to a list of character ids based on the encoder's char vocab
 
@@ -580,19 +614,22 @@ class WhitespaceAndCharDualEncoder(AbstractVocabLookupEncoder):
             seq_length (int): The length of sequence upon encoding (before padding)
         """
         list_of_chars = (
-            list_of_tokens[:padding_length - self.number_of_char_terminal_tokens]
-            if add_terminals else list_of_tokens[:padding_length]
+            list_of_tokens[: padding_length - self.number_of_char_terminal_tokens]
+            if add_terminals
+            else list_of_tokens[:padding_length]
         )
         list_of_chars_with_terminals = (
-            [getattr(self, "char_start_token")] +
-            list_of_chars +
-            [getattr(self, "char_end_token")]
-        ) if add_terminals else list_of_chars
-        list_of_chars_with_terminals_and_padding = (
-            list_of_chars_with_terminals +
-            [getattr(self, "char_pad_token")] * (
-                padding_length - len(list_of_chars_with_terminals))
+            (
+                [getattr(self, "char_start_token")]
+                + list_of_chars
+                + [getattr(self, "char_end_token")]
+            )
+            if add_terminals
+            else list_of_chars
         )
+        list_of_chars_with_terminals_and_padding = list_of_chars_with_terminals + [
+            getattr(self, "char_pad_token")
+        ] * (padding_length - len(list_of_chars_with_terminals))
         list_of_ids = [
             self.char_token2id.get(token, getattr(self, "char_unk_token_idx"))
             for token in list_of_chars_with_terminals_and_padding
@@ -629,15 +666,19 @@ class AbstractHuggingfaceTrainableEncoder(AbstractEncoder):
         self.trainer = Trainer
 
         if NO_TOKENIZERS_MODULE:
-            msg = "Must install extra [transformers] by running " \
-                  "'pip install mindmeld[transformers]'"
+            msg = (
+                "Must install extra [transformers] by running "
+                "'pip install mindmeld[transformers]'"
+            )
             raise ImportError(msg)
 
         if self.classification_type == ClassificationType.TEXT:
-            msg = f"The pre-tokenizer for {self.__class__.__name__} is set to 'Whitespace'. " \
-                  f"For languages like Japanese, Chinese, etc. that do not have whitespaces, " \
-                  f"consider using a pretrained huggingface tokenizer or a character tokenizer " \
-                  f"when not using 'query_text_type':'normalized_text'."
+            msg = (
+                f"The pre-tokenizer for {self.__class__.__name__} is set to 'Whitespace'. "
+                f"For languages like Japanese, Chinese, etc. that do not have whitespaces, "
+                f"consider using a pretrained huggingface tokenizer or a character tokenizer "
+                f"when not using 'query_text_type':'normalized_text'."
+            )
             logger.warning(msg)
 
     def prepare(self, examples: List[str]):
@@ -651,7 +692,7 @@ class AbstractHuggingfaceTrainableEncoder(AbstractEncoder):
         trainer = self.trainer(
             # vocab_size=30000,
             vocab_size=100,
-            special_tokens=self.__class__.SPECIAL_TOKENS
+            special_tokens=self.__class__.SPECIAL_TOKENS,
         )
         self.tokenizer.train_from_iterator(examples, trainer=trainer, length=len(examples))
 
@@ -670,7 +711,7 @@ class AbstractHuggingfaceTrainableEncoder(AbstractEncoder):
         )
         self.tokenizer.enable_padding(
             pad_id=self.__class__.SPECIAL_TOKENS.index("[PAD]"),
-            pad_token="[PAD]"
+            pad_token="[PAD]",
         )
 
     def dump(self, path: str):
@@ -689,8 +730,10 @@ class AbstractHuggingfaceTrainableEncoder(AbstractEncoder):
 
     def _get_filename(self, path: str):
         if not os.path.isdir(path):
-            msg = f"The dump method of {self.__class__.__name__} only accepts diretory as the " \
-                  f"path argument."
+            msg = (
+                f"The dump method of {self.__class__.__name__} only accepts diretory as the "
+                f"path argument."
+            )
             logger.error(msg)
             raise ValueError(msg)
         filename = os.path.join(path, "tokenizer.json")
@@ -710,7 +753,11 @@ class AbstractHuggingfaceTrainableEncoder(AbstractEncoder):
         return output.tokens
 
     def batch_encode(
-        self, examples: List[str], padding_length: int = None, add_terminals: bool = True, **kwargs
+        self,
+        examples: List[str],
+        padding_length: int = None,
+        add_terminals: bool = True,
+        **kwargs,
     ) -> BatchData:
         """
         Example:
@@ -726,13 +773,17 @@ class AbstractHuggingfaceTrainableEncoder(AbstractEncoder):
         """
 
         if not add_terminals:
-            msg = f"The param 'add_terminals' must be True to encode a batch using " \
-                  f"{self.__class__.__name__}."
+            msg = (
+                f"The param 'add_terminals' must be True to encode a batch using "
+                f"{self.__class__.__name__}."
+            )
             raise ValueError(msg)
 
         if padding_length is not None:
-            msg = f"{self.__class__.__name__} does not support setting padding length during" \
-                  f"batch_encode() method."
+            msg = (
+                f"{self.__class__.__name__} does not support setting padding length during"
+                f"batch_encode() method."
+            )
             logger.warning(msg)
 
         n_terminals = self.number_of_terminal_tokens if add_terminals else 0
@@ -762,21 +813,25 @@ class AbstractHuggingfaceTrainableEncoder(AbstractEncoder):
                     curr_num = word_num
             split_lengths.append(_split_lengths)
 
-        return BatchData(**{
-            # num of groups per example
-            "seq_lengths": torch.as_tensor(  # Tensor1d[int]
-                [len(_split_lengths) + n_terminals for _split_lengths in split_lengths],
-                dtype=torch.long
-            ),
-            # len of each subgroup; for each example, sum of its split_lengths will be equal to
-            # the sum of attention mask minus terminals.
-            "split_lengths": [
-                torch.as_tensor(_split_lengths, dtype=torch.long)
-                for _split_lengths in split_lengths
-            ],  # List[Tensor1d[int]],
-            "seq_ids": torch.as_tensor(seq_ids, dtype=torch.long),  # Tensor2d[int]
-            "attention_masks": torch.as_tensor(attention_masks, dtype=torch.long),  # Tensor2d[int]
-        })
+        return BatchData(
+            **{
+                # num of groups per example
+                "seq_lengths": torch.as_tensor(  # Tensor1d[int]
+                    [len(_split_lengths) + n_terminals for _split_lengths in split_lengths],
+                    dtype=torch.long,
+                ),
+                # len of each subgroup; for each example, sum of its split_lengths will be equal to
+                # the sum of attention mask minus terminals.
+                "split_lengths": [
+                    torch.as_tensor(_split_lengths, dtype=torch.long)
+                    for _split_lengths in split_lengths
+                ],  # List[Tensor1d[int]],
+                "seq_ids": torch.as_tensor(seq_ids, dtype=torch.long),  # Tensor2d[int]
+                "attention_masks": torch.as_tensor(
+                    attention_masks, dtype=torch.long
+                ),  # Tensor2d[int]
+            }
+        )
 
     def get_vocab(self) -> Dict:
         return self.tokenizer.get_vocab()
@@ -816,7 +871,6 @@ class WordPieceEncoder(AbstractHuggingfaceTrainableEncoder):
 
 
 class HuggingfacePretrainedEncoder(AbstractEncoder):
-
     def __init__(self, pretrained_model_name_or_path=None, **kwargs):
         super().__init__(**kwargs)
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -829,8 +883,10 @@ class HuggingfacePretrainedEncoder(AbstractEncoder):
         del examples
 
         if self.pretrained_model_name_or_path is None:
-            msg = f"Need a valid 'pretrained_model_name_or_path' path to fit " \
-                  f"{self.__class__.__name__} but found value: {self.pretrained_model_name_or_path}"
+            msg = (
+                f"Need a valid 'pretrained_model_name_or_path' path to fit "
+                f"{self.__class__.__name__} but found value: {self.pretrained_model_name_or_path}"
+            )
             raise ValueError(msg)
 
         hf_trans = HuggingfaceTransformersContainer(self.pretrained_model_name_or_path)
@@ -839,8 +895,10 @@ class HuggingfacePretrainedEncoder(AbstractEncoder):
 
     def dump(self, path: str):
         if not os.path.isdir(path):
-            msg = f"The dump method of {self.__class__.__name__} only accepts diretory as the " \
-                  f"path argument."
+            msg = (
+                f"The dump method of {self.__class__.__name__} only accepts diretory as the "
+                f"path argument."
+            )
             logger.error(msg)
             raise ValueError(msg)
         os.makedirs(path, exist_ok=True)
@@ -849,8 +907,10 @@ class HuggingfacePretrainedEncoder(AbstractEncoder):
 
     def load(self, path: str):
         if not os.path.isdir(path):
-            msg = f"The dump method of {self.__class__.__name__} only accepts diretory as the " \
-                  f"path argument."
+            msg = (
+                f"The dump method of {self.__class__.__name__} only accepts diretory as the "
+                f"path argument."
+            )
             logger.error(msg)
             raise ValueError(msg)
         hf_trans = HuggingfaceTransformersContainer(path)
@@ -880,44 +940,54 @@ class HuggingfacePretrainedEncoder(AbstractEncoder):
         return self.__model_max_length
 
     def batch_encode(
-        self, examples: List[str], padding_length: int = None, add_terminals: bool = True, **kwargs
+        self,
+        examples: List[str],
+        padding_length: int = None,
+        add_terminals: bool = True,
+        **kwargs,
     ) -> BatchData:
-
         if not add_terminals:
-            msg = f"The param 'add_terminals' must be True to encode a batch using " \
-                  f"{self.__class__.__name__}."
+            msg = (
+                f"The param 'add_terminals' must be True to encode a batch using "
+                f"{self.__class__.__name__}."
+            )
             logger.error(msg)
             raise ValueError(msg)
 
         n_terminals = self.number_of_terminal_tokens if add_terminals else 0
 
         if self.classification_type == ClassificationType.TEXT:
-
             # https://huggingface.co/docs/transformers/v4.16.2/en/preprocessing
             hgf_encodings = self.tokenizer(
-                examples, padding=True, truncation=True, max_length=padding_length,
-                return_tensors="pt"
+                examples,
+                padding=True,
+                truncation=True,
+                max_length=padding_length,
+                return_tensors="pt",
             )  # Huggingface returns a BatchEncodings object; needs to be converted to a dictionary
             split_lengths = [
                 [1] * (sum(msk) - n_terminals) for msk in hgf_encodings["attention_mask"]
             ]
 
         else:
-
             # We split input text at whitespace because tagger models always use query_text_type
             # as 'normalized_text' which consist of whitespaces irrespective of the choice of
             # langauge (English, Japanese, etc.)
             split_at = " "
 
-            if any([
-                "GPT2Tokenizer" in str(parent_class) for parent_class in
-                self.tokenizer.__class__.__mro__
-            ]):  # tokenizers like RobertaTokenizer that use Byte-level BPE (eg. distilroberta-base)
-                msg = "The inputted choice of pretrained huggingface tokenizer is based on " \
-                      "Byte-level BPE (eg. 'GPT2Tokenizer', 'RobertaTokenizer', etc.) which " \
-                      "treats spaces like parts of the tokens. " \
-                      "This conflicts with the use of 'query_text_type':'normalized_text' for " \
-                      "tagger models. Consider using a different pretrained model for tagging."
+            if any(
+                [
+                    "GPT2Tokenizer" in str(parent_class)
+                    for parent_class in self.tokenizer.__class__.__mro__
+                ]
+            ):  # tokenizers like RobertaTokenizer that use Byte-level BPE (eg. distilroberta-base)
+                msg = (
+                    "The inputted choice of pretrained huggingface tokenizer is based on "
+                    "Byte-level BPE (eg. 'GPT2Tokenizer', 'RobertaTokenizer', etc.) which "
+                    "treats spaces like parts of the tokens. "
+                    "This conflicts with the use of 'query_text_type':'normalized_text' for "
+                    "tagger models. Consider using a different pretrained model for tagging."
+                )
                 raise NotImplementedError(msg)
 
             # tokenize each word of each input separately
@@ -928,17 +998,20 @@ class HuggingfacePretrainedEncoder(AbstractEncoder):
             ]
 
             max_curr_len = max([len(sum(t_ex, [])) for t_ex in tokenized_examples]) + n_terminals
-            padding_length_including_terminals = min(max_curr_len, padding_length) \
-                if padding_length else max_curr_len
+            padding_length_including_terminals = (
+                min(max_curr_len, padding_length) if padding_length else max_curr_len
+            )
             if self._model_max_length:
                 # padding_length cannot exceed the transformer model's maximum length
                 padding_length_including_terminals = min(
-                    padding_length_including_terminals, self._model_max_length)
+                    padding_length_including_terminals, self._model_max_length
+                )
             padding_length_excluding_terminals = padding_length_including_terminals - n_terminals
 
             _trimmed_examples = [
-                _trim_a_list_of_sub_token_groups(tokenized_example,
-                                                 padding_length_excluding_terminals)
+                _trim_a_list_of_sub_token_groups(
+                    tokenized_example, padding_length_excluding_terminals
+                )
                 for tokenized_example in tokenized_examples
             ]  # List[List[List[str]]], innermost List[str] is a list of sub-words for a given word
 
@@ -964,26 +1037,31 @@ class HuggingfacePretrainedEncoder(AbstractEncoder):
             ]
             # https://huggingface.co/docs/transformers/v4.16.2/en/preprocessing
             hgf_encodings = self.tokenizer(
-                _detokenized_examples, padding=True, truncation=True, max_length=None,
-                return_tensors="pt"
+                _detokenized_examples,
+                padding=True,
+                truncation=True,
+                max_length=None,
+                return_tensors="pt",
             )  # Huggingface returns a BatchEncodings object; needs to be converted to a dictionary
 
-        return BatchData(**{
-            # number of groups per example
-            "seq_lengths": torch.as_tensor(  # Tensor1d[int]
-                [len(_split_lengths) + n_terminals for _split_lengths in split_lengths],
-                dtype=torch.long
-            ),
-            # len of each subgroup; for each example, sum of its split_lengths will be equal to
-            # the sum of attention mask minus terminals.
-            "split_lengths": [
-                torch.as_tensor(_split_lengths, dtype=torch.long)
-                for _split_lengths in split_lengths
-            ],  # List[Tensor1d[int]],
-            # all the different outputs produced by huggingface's pretrained tokenizer,
-            # consisting of inputs_ids, attention_masks, etc.
-            "hgf_encodings": {**hgf_encodings},
-        })
+        return BatchData(
+            **{
+                # number of groups per example
+                "seq_lengths": torch.as_tensor(  # Tensor1d[int]
+                    [len(_split_lengths) + n_terminals for _split_lengths in split_lengths],
+                    dtype=torch.long,
+                ),
+                # len of each subgroup; for each example, sum of its split_lengths will be equal to
+                # the sum of attention mask minus terminals.
+                "split_lengths": [
+                    torch.as_tensor(_split_lengths, dtype=torch.long)
+                    for _split_lengths in split_lengths
+                ],  # List[Tensor1d[int]],
+                # all the different outputs produced by huggingface's pretrained tokenizer,
+                # consisting of inputs_ids, attention_masks, etc.
+                "hgf_encodings": {**hgf_encodings},
+            }
+        )
 
     def get_vocab(self) -> Dict:
         return self.tokenizer.get_vocab()
@@ -1007,8 +1085,10 @@ class InputEncoderFactory:
         try:
             return InputEncoderFactory.TOKENIZER_NAME_TO_CLASS[TokenizerType(tokenizer_type)]
         except ValueError as e:
-            msg = f"Expected tokenizer_type amongst " \
-                  f"{[v.value for v in TokenizerType.__members__.values()]} " \
-                  f"but found '{tokenizer_type}'. Cannot create an input encoder."
+            msg = (
+                f"Expected tokenizer_type amongst "
+                f"{[v.value for v in TokenizerType.__members__.values()]} "
+                f"but found '{tokenizer_type}'. Cannot create an input encoder."
+            )
             logger.error(msg)
             raise ValueError(msg) from e

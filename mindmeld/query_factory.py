@@ -15,16 +15,23 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
-from typing import Dict, Self
 
 from .components._config import get_language_config
-from .core import TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED, TEXT_FORM_RAW, Query
+from .core import (
+    TEXT_FORM_NORMALIZED,
+    TEXT_FORM_PROCESSED,
+    TEXT_FORM_RAW,
+    Query,
+)
 from .system_entity_recognizer import (
     DucklingRecognizer,
     NoOpSystemEntityRecognizer,
     SystemEntityRecognizer,
 )
-from .text_preparation.text_preparation_pipeline import TextPreparationPipeline, TextPreparationPipelineFactory
+from .text_preparation.text_preparation_pipeline import (
+    TextPreparationPipeline,
+    TextPreparationPipelineFactory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +51,10 @@ class QueryFactory:
 
     def __init__(
         self,
-        text_preparation_pipeline: TextPreparationPipeline=None,
-        locale: str=None,
-        language: str=None,
-        system_entity_recognizer: SystemEntityRecognizer=None,
+        text_preparation_pipeline: TextPreparationPipeline = None,
+        locale: str = None,
+        language: str = None,
+        system_entity_recognizer: SystemEntityRecognizer = None,
         duckling=False,
     ):
         self.text_preparation_pipeline = text_preparation_pipeline
@@ -65,7 +72,12 @@ class QueryFactory:
             self.system_entity_recognizer = NoOpSystemEntityRecognizer.get_instance()
 
     def create_query(
-        self, text: str, time_zone: str=None, timestamp: int=None, locale: str=None, language: str=None
+        self,
+        text: str,
+        time_zone: str = None,
+        timestamp: int = None,
+        locale: str = None,
+        language: str = None,
     ) -> Query:
         """Creates a query with the given text.
 
@@ -94,9 +106,7 @@ class QueryFactory:
             (
                 forward_map,
                 backward_map,
-            ) = self.text_preparation_pipeline.get_char_index_map(
-                raw_text, preprocessed_text
-            )
+            ) = self.text_preparation_pipeline.get_char_index_map(raw_text, preprocessed_text)
             char_maps[(TEXT_FORM_RAW, TEXT_FORM_PROCESSED)] = forward_map
             char_maps[(TEXT_FORM_PROCESSED, TEXT_FORM_RAW)] = backward_map
         else:
@@ -116,15 +126,9 @@ class QueryFactory:
         (
             normalization_forward_map,
             normalization_backward_map,
-        ) = self.text_preparation_pipeline.get_char_index_map(
-            preprocessed_text, normalized_text
-        )
-        char_maps[
-            (TEXT_FORM_PROCESSED, TEXT_FORM_NORMALIZED)
-        ] = normalization_forward_map
-        char_maps[
-            (TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED)
-        ] = normalization_backward_map
+        ) = self.text_preparation_pipeline.get_char_index_map(preprocessed_text, normalized_text)
+        char_maps[(TEXT_FORM_PROCESSED, TEXT_FORM_NORMALIZED)] = normalization_forward_map
+        char_maps[(TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED)] = normalization_backward_map
 
         query = Query(
             raw_text,
@@ -159,10 +163,10 @@ class QueryFactory:
     @staticmethod
     def create_query_factory(
         app_path: str,
-        text_preparation_pipeline: TextPreparationPipeline=None,
-        system_entity_recognizer: SystemEntityRecognizer=None,
+        text_preparation_pipeline: TextPreparationPipeline = None,
+        system_entity_recognizer: SystemEntityRecognizer = None,
         duckling=False,
-    ) -> Self:
+    ) -> "QueryFactory":
         """Creates a query factory for the application.
 
         Args:

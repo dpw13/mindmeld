@@ -23,7 +23,12 @@ from ._config import get_classifier_config
 from .classifier import Classifier, ClassifierConfig, ClassifierLoadError
 from ..constants import DEFAULT_TRAIN_SET_REGEX
 from ..core import Query
-from ..models import CLASS_LABEL_TYPE, ENTITY_EXAMPLE_TYPE, create_model, load_model
+from ..models import (
+    CLASS_LABEL_TYPE,
+    ENTITY_EXAMPLE_TYPE,
+    create_model,
+    load_model,
+)
 from ..resource_loader import ProcessedQueryList, ResourceLoader
 
 logger = logging.getLogger(__name__)
@@ -43,7 +48,13 @@ class RoleClassifier(Classifier):
 
     CLF_TYPE = "role"
 
-    def __init__(self, resource_loader: ResourceLoader, domain: str, intent: str, entity_type: str):
+    def __init__(
+        self,
+        resource_loader: ResourceLoader,
+        domain: str,
+        intent: str,
+        entity_type: str,
+    ):
         """Initializes a role classifier
 
         Args:
@@ -76,11 +87,9 @@ class RoleClassifier(Classifier):
         )
         return super()._get_model_config(loaded_config, **kwargs)
 
-    def fit(self,
-            queries=None,
-            label_set=None,
-            incremental_timestamp=None,
-            load_cached=True, **kwargs):
+    def fit(
+        self, queries=None, label_set=None, incremental_timestamp=None, load_cached=True, **kwargs
+    ):
         """Trains a statistical model for role classification using the provided training examples.
 
         Args:
@@ -178,7 +187,7 @@ class RoleClassifier(Classifier):
         # classifier specific load
         try:
             rc_data = pickle.load(open(self._get_classifier_resources_save_path(model_path), "rb"))
-        except FileNotFoundError:  # backwards compatability for previous version's saved models
+        except (FileNotFoundError):  # backwards compatability for previous version's saved models
             rc_data = joblib.load(model_path)
         self.roles = rc_data["roles"]
 
@@ -200,7 +209,7 @@ class RoleClassifier(Classifier):
             text_preparation_pipeline = self._resource_loader.get_text_preparation_pipeline()
             self._model.register_resources(
                 gazetteers=gazetteers,
-                text_preparation_pipeline=text_preparation_pipeline
+                text_preparation_pipeline=text_preparation_pipeline,
             )
             self.config = ClassifierConfig.from_model_config(self._model.config)
 
@@ -209,9 +218,7 @@ class RoleClassifier(Classifier):
         self.ready = True
         self.dirty = False
 
-    def predict(
-        self, query, entities, entity_index
-    ):  # pylint: disable=arguments-differ
+    def predict(self, query, entities, entity_index):  # pylint: disable=arguments-differ
         """Predicts a role for the given entity using the trained role classification model.
 
         Args:
@@ -233,13 +240,11 @@ class RoleClassifier(Classifier):
         text_preparation_pipeline = self._resource_loader.get_text_preparation_pipeline()
         self._model.register_resources(
             gazetteers=gazetteers,
-            text_preparation_pipeline=text_preparation_pipeline
+            text_preparation_pipeline=text_preparation_pipeline,
         )
         return self._model.predict([(query, entities, entity_index)])[0]
 
-    def predict_proba(
-        self, query, entities, entity_index
-    ):  # pylint: disable=arguments-differ
+    def predict_proba(self, query, entities, entity_index):  # pylint: disable=arguments-differ
         """Runs prediction on a given entity and generates multiple role hypotheses and
         associated probabilities using the trained role classification model.
 
@@ -262,11 +267,9 @@ class RoleClassifier(Classifier):
         text_preparation_pipeline = self._resource_loader.get_text_preparation_pipeline()
         self._model.register_resources(
             gazetteers=gazetteers,
-            text_preparation_pipeline=text_preparation_pipeline
+            text_preparation_pipeline=text_preparation_pipeline,
         )
-        predict_proba_result = self._model.predict_proba(
-            [(query, entities, entity_index)]
-        )
+        predict_proba_result = self._model.predict_proba([(query, entities, entity_index)])
         class_proba_tuples = list(predict_proba_result[0][1].items())
         return sorted(class_proba_tuples, key=lambda x: x[1], reverse=True)
 
@@ -292,15 +295,13 @@ class RoleClassifier(Classifier):
         text_preparation_pipeline = self._resource_loader.get_text_preparation_pipeline()
         self._model.register_resources(
             gazetteers=gazetteers,
-            text_preparation_pipeline=text_preparation_pipeline
+            text_preparation_pipeline=text_preparation_pipeline,
         )
         return self._model._extract_features((query, entities, entity_index))
 
     def _get_queries_from_label_set(self, label_set=DEFAULT_TRAIN_SET_REGEX):
         return self._resource_loader.get_flattened_label_set(
-            domain=self.domain,
-            intent=self.intent,
-            label_set=label_set
+            domain=self.domain, intent=self.intent, label_set=label_set
         )
 
     def _get_examples_and_labels(self, queries):
@@ -329,18 +330,20 @@ class RoleClassifier(Classifier):
             bad_examples = [e for i, e in enumerate(examples) if labels[i] is None]
             for example in bad_examples:
                 logger.error(
-                    "Invalid entity annotation, expecting role in query %r", example[0]
+                    "Invalid entity annotation, expecting role in query %r",
+                    example[0],
                 )
             raise ValueError("One or more invalid entity annotations, expecting role")
 
-        return (ProcessedQueryList.ListIterator(examples),
-                ProcessedQueryList.ListIterator(labels))
+        return (
+            ProcessedQueryList.ListIterator(examples),
+            ProcessedQueryList.ListIterator(labels),
+        )
 
     def _get_examples_and_labels_hash(self, queries):
-        hashable_queries = (
-            [self.domain + "###" + self.intent + "###" + self.entity_type + "###"]
-            + sorted(list(queries.raw_queries()))
-        )
+        hashable_queries = [
+            self.domain + "###" + self.intent + "###" + self.entity_type + "###"
+        ] + sorted(list(queries.raw_queries()))
         return self._resource_loader.hash_list(hashable_queries)
 
     def inspect(self, query, gold_label=None, dynamic_resource=None):

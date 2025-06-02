@@ -120,9 +120,7 @@ class DialogflowConverter(Converter):
         self.create_directory(
             os.path.join(self.mindmeld_project_directory, "domains", "app_specific")
         )
-        self.create_directory(
-            os.path.join(self.mindmeld_project_directory, "domains", "unrelated")
-        )
+        self.create_directory(os.path.join(self.mindmeld_project_directory, "domains", "unrelated"))
         self.create_directory(os.path.join(self.mindmeld_project_directory, "entities"))
 
     # =========================
@@ -135,7 +133,6 @@ class DialogflowConverter(Converter):
         """
         for languages in entities.values():
             for sub in languages.values():
-
                 if sub != self.language:
                     # Each MindMeld app works on one language
                     continue
@@ -144,9 +141,7 @@ class DialogflowConverter(Converter):
                     self.dialogflow_project_directory, "entities", sub + ".json"
                 )
 
-                mindmeld_entity_directory_name = self.clean_check(
-                    sub, self.entities_list
-                )
+                mindmeld_entity_directory_name = self.clean_check(sub, self.entities_list)
 
                 mindmeld_entity_directory = os.path.join(
                     self.mindmeld_project_directory,
@@ -155,23 +150,15 @@ class DialogflowConverter(Converter):
                 )
 
                 # remove DF entity reference "entries"
-                mindmeld_entity_directory = mindmeld_entity_directory.replace(
-                    "entries_", ""
-                )
+                mindmeld_entity_directory = mindmeld_entity_directory.replace("entries_", "")
                 self.create_directory(mindmeld_entity_directory)
-                self._create_entity_file(
-                    dialogflow_entity_file, mindmeld_entity_directory
-                )
+                self._create_entity_file(dialogflow_entity_file, mindmeld_entity_directory)
 
     @staticmethod
     def _create_entity_file(dialogflow_entity_file, mindmeld_entity_directory):
         source_en = open(dialogflow_entity_file, "r")
-        target_gazetteer = open(
-            os.path.join(mindmeld_entity_directory, "gazetteer.txt"), "w"
-        )
-        target_mapping = open(
-            os.path.join(mindmeld_entity_directory, "mapping.json"), "w"
-        )
+        target_gazetteer = open(os.path.join(mindmeld_entity_directory, "gazetteer.txt"), "w")
+        target_mapping = open(os.path.join(mindmeld_entity_directory, "mapping.json"), "w")
 
         datastore = json.load(source_en)
         mapping_dict = {"entities": []}
@@ -193,11 +180,10 @@ class DialogflowConverter(Converter):
         target_mapping.close()
 
     def _create_intents_directories(self, intents):
-        """ Creates directories + files for all languages/files."""
+        """Creates directories + files for all languages/files."""
 
         for languages in intents.values():
             for language, sub in languages.items():
-
                 if language != self.language:
                     # Each MindMeld app works on one language
                     continue
@@ -206,9 +192,7 @@ class DialogflowConverter(Converter):
                     self.dialogflow_project_directory, "intents", sub + ".json"
                 )
 
-                mindmeld_intent_directory_name = self.clean_check(
-                    sub, self.intents_list
-                )
+                mindmeld_intent_directory_name = self.clean_check(sub, self.intents_list)
 
                 # DF has "default" intents like "default_fallback" and "default_greeting"
                 # which are in-built intents. We map these intents to the "unrelated" domain
@@ -227,17 +211,13 @@ class DialogflowConverter(Converter):
                 )
 
                 # remove DF intent reference "usersays_"
-                mindmeld_intent_directory = mindmeld_intent_directory.replace(
-                    "usersays_", ""
-                )
+                mindmeld_intent_directory = mindmeld_intent_directory.replace("usersays_", "")
                 self.create_directory(mindmeld_intent_directory)
                 self._create_intent_file(
                     dialogflow_intent_file, mindmeld_intent_directory, language
                 )
 
-    def _create_intent_file(
-        self, dialogflow_intent_file, mindmeld_intent_directory, language
-    ):
+    def _create_intent_file(self, dialogflow_intent_file, mindmeld_intent_directory, language):
         source_en = open(dialogflow_intent_file, "r")
         target_train = open(os.path.join(mindmeld_intent_directory, "train.txt"), "w")
         datastore = json.load(source_en)
@@ -255,9 +235,7 @@ class DialogflowConverter(Converter):
                     df_meta = texts["meta"]
                     role_type = texts["alias"].replace("-", "_")
 
-                    if re.match(
-                        "(@sys.).+", df_meta
-                    ):  # if text is a dialogflow sys entity
+                    if re.match("(@sys.).+", df_meta):  # if text is a dialogflow sys entity
                         if df_meta in DialogflowConverter.sys_entity_map:
                             mm_meta = DialogflowConverter.sys_entity_map[df_meta]
                             entity_type = mm_meta
@@ -283,9 +261,7 @@ class DialogflowConverter(Converter):
 
         for key in default_intent_to_training_file:
             if key in mindmeld_intent_directory:
-                with open(
-                    os.path.join(package_dir, default_intent_to_training_file[key])
-                ) as fp:
+                with open(os.path.join(package_dir, default_intent_to_training_file[key])) as fp:
                     for line in fp:
                         all_text.append(line.strip())
 
@@ -355,7 +331,7 @@ class DialogflowConverter(Converter):
 
     @staticmethod
     def clean_name(name):
-        """ Takes in a string and returns a valid folder name (no spaces, all lowercase)."""
+        """Takes in a string and returns a valid folder name (no spaces, all lowercase)."""
         name = re.sub(r"[^\w\s-]", "", name).strip().lower()
         name = re.sub(r"[-\s]+", "_", name)
         return name
@@ -377,26 +353,19 @@ class DialogflowConverter(Converter):
             )
 
     def create_mindmeld_init(self):
-        with open(
-            os.path.join(self.mindmeld_project_directory, "__init__.py"), "w"
-        ) as target:
-
+        with open(os.path.join(self.mindmeld_project_directory, "__init__.py"), "w") as target:
             self.code_gen.begin(tab="    ")
             self.code_gen.generate_top_block()
 
             intents = self._get_file_names("intents")
 
             for main in intents:
-
-                df_main = os.path.join(
-                    self.dialogflow_project_directory, "intents", main + ".json"
-                )
+                df_main = os.path.join(self.dialogflow_project_directory, "intents", main + ".json")
 
                 with open(df_main) as source:
                     if "usersays" in df_main:
                         logger.error(
-                            "Please check if your intent file"
-                            "names are correctly labeled."
+                            "Please check if your intent file" "names are correctly labeled."
                         )
                         return
 
@@ -445,9 +414,7 @@ class DialogflowConverter(Converter):
                 template = resp
                 slots = re.findall(r"\$([\w\-\_]+)", resp)
                 for slot in slots:
-                    template = template.replace(
-                        "$" + slot, "{" + slot.replace("-", "_") + "}"
-                    )
+                    template = template.replace("$" + slot, "{" + slot.replace("-", "_") + "}")
                 if template != resp:
                     is_slot_template = True
                 slot_templated_replies.append(template)

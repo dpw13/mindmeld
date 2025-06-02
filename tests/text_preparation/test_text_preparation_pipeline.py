@@ -17,7 +17,10 @@ from mindmeld.text_preparation.normalizers import (
     RegexNormalizerRule,
     Lowercase,
 )
-from mindmeld.text_preparation.preprocessors import NoOpPreprocessor, Preprocessor
+from mindmeld.text_preparation.preprocessors import (
+    NoOpPreprocessor,
+    Preprocessor,
+)
 from mindmeld.text_preparation.stemmers import EnglishNLTKStemmer
 from mindmeld.text_preparation.tokenizers import NoOpTokenizer, SpacyTokenizer
 from mindmeld.text_preparation.text_preparation_pipeline import (
@@ -97,15 +100,13 @@ def test_tokenize_around_annoations():
 
 
 def test_create_text_preparation_pipeline():
-    text_preparation_pipeline = (
-        TextPreparationPipelineFactory.create_text_preparation_pipeline(
-            language=ENGLISH_LANGUAGE_CODE,
-            preprocessors=[],
-            regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
-            normalizers=["Lowercase", "ASCIIFold"],
-            tokenizer="WhiteSpaceTokenizer",
-            stemmer=None,
-        )
+    text_preparation_pipeline = TextPreparationPipelineFactory.create_text_preparation_pipeline(
+        language=ENGLISH_LANGUAGE_CODE,
+        preprocessors=[],
+        regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
+        normalizers=["Lowercase", "ASCIIFold"],
+        tokenizer="WhiteSpaceTokenizer",
+        stemmer=None,
     )
 
     assert text_preparation_pipeline.language == ENGLISH_LANGUAGE_CODE
@@ -118,56 +119,48 @@ def test_create_text_preparation_pipeline():
 
 
 def test_text_preparation_pipeline_hash():
-    text_preparation_pipeline = (
-        TextPreparationPipelineFactory.create_text_preparation_pipeline(
-            language=ENGLISH_LANGUAGE_CODE,
-            preprocessors=["NoOpPreprocessor"],
-            regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
-            normalizers=["Lowercase", "ASCIIFold"],
-            tokenizer="WhiteSpaceTokenizer",
-            stemmer=None,
-        )
+    text_preparation_pipeline = TextPreparationPipelineFactory.create_text_preparation_pipeline(
+        language=ENGLISH_LANGUAGE_CODE,
+        preprocessors=["NoOpPreprocessor"],
+        regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
+        normalizers=["Lowercase", "ASCIIFold"],
+        tokenizer="WhiteSpaceTokenizer",
+        stemmer=None,
     )
 
     original_hash = text_preparation_pipeline.get_hashid()
 
     # Change order of normalizers
-    text_preparation_pipeline = (
-        TextPreparationPipelineFactory.create_text_preparation_pipeline(
-            language=ENGLISH_LANGUAGE_CODE,
-            preprocessors=["NoOpPreprocessor"],
-            regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
-            normalizers=["ASCIIFold", "Lowercase"],
-            tokenizer="WhiteSpaceTokenizer",
-            stemmer=None,
-        )
+    text_preparation_pipeline = TextPreparationPipelineFactory.create_text_preparation_pipeline(
+        language=ENGLISH_LANGUAGE_CODE,
+        preprocessors=["NoOpPreprocessor"],
+        regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
+        normalizers=["ASCIIFold", "Lowercase"],
+        tokenizer="WhiteSpaceTokenizer",
+        stemmer=None,
     )
     order_changed_hash = text_preparation_pipeline.get_hashid()
 
     # Change RegexNormalizer pattern
-    text_preparation_pipeline = (
-        TextPreparationPipelineFactory.create_text_preparation_pipeline(
-            language=ENGLISH_LANGUAGE_CODE,
-            preprocessors=["NoOpPreprocessor"],
-            regex_norm_rules=[{"pattern": ".*", "replacement": "cisc0"}],
-            normalizers=["ASCIIFold", "Lowercase"],
-            tokenizer="WhiteSpaceTokenizer",
-            stemmer=None,
-        )
+    text_preparation_pipeline = TextPreparationPipelineFactory.create_text_preparation_pipeline(
+        language=ENGLISH_LANGUAGE_CODE,
+        preprocessors=["NoOpPreprocessor"],
+        regex_norm_rules=[{"pattern": ".*", "replacement": "cisc0"}],
+        normalizers=["ASCIIFold", "Lowercase"],
+        tokenizer="WhiteSpaceTokenizer",
+        stemmer=None,
     )
 
     regex_changed_hash = text_preparation_pipeline.get_hashid()
 
     # Change Tokenizer type
-    text_preparation_pipeline = (
-        TextPreparationPipelineFactory.create_text_preparation_pipeline(
-            language=ENGLISH_LANGUAGE_CODE,
-            preprocessors=["NoOpPreprocessor"],
-            regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
-            normalizers=["ASCIIFold", "Lowercase"],
-            tokenizer="LetterTokenizer",
-            stemmer=None,
-        )
+    text_preparation_pipeline = TextPreparationPipelineFactory.create_text_preparation_pipeline(
+        language=ENGLISH_LANGUAGE_CODE,
+        preprocessors=["NoOpPreprocessor"],
+        regex_norm_rules=[{"pattern": ".*", "replacement": "cisco"}],
+        normalizers=["ASCIIFold", "Lowercase"],
+        tokenizer="LetterTokenizer",
+        stemmer=None,
     )
 
     tokenizer_changed_hash = text_preparation_pipeline.get_hashid()
@@ -181,18 +174,16 @@ def test_text_preparation_pipeline_hash():
 
 
 def test_construct_pipeline_components_valid_input():
-    text_preparation_pipeline = (
-        TextPreparationPipelineFactory.create_text_preparation_pipeline(
-            preprocessors=("NoOpPreprocessor", NoOpPreprocessor()),
-            normalizers=(
-                "RemoveBeginningSpace",
-                NoOpNormalizer(),
-                "ReplaceSpacesWithSpace",
-                Lowercase(),
-            ),
-            tokenizer="SpacyTokenizer",
-            stemmer=None,
-        )
+    text_preparation_pipeline = TextPreparationPipelineFactory.create_text_preparation_pipeline(
+        preprocessors=("NoOpPreprocessor", NoOpPreprocessor()),
+        normalizers=(
+            "RemoveBeginningSpace",
+            NoOpNormalizer(),
+            "ReplaceSpacesWithSpace",
+            Lowercase(),
+        ),
+        tokenizer="SpacyTokenizer",
+        stemmer=None,
     )
 
     assert text_preparation_pipeline.language == ENGLISH_LANGUAGE_CODE

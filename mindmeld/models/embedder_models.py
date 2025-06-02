@@ -26,13 +26,19 @@ from typing import List, Any, Callable
 import numpy as np
 from tqdm.autonotebook import trange
 
-from ._util import _is_module_available, _get_module_or_attr as _getattr, torch_op
+from ._util import (
+    _is_module_available,
+    _get_module_or_attr as _getattr,
+    torch_op,
+)
 from .helpers import register_embedder
 from .taggers.embeddings import WordSequenceEmbedding
 from .. import path
 from ..core import Bunch
 from ..resource_loader import Hasher
-from ..text_preparation.text_preparation_pipeline import TextPreparationPipelineFactory
+from ..text_preparation.text_preparation_pipeline import (
+    TextPreparationPipelineFactory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +49,6 @@ class Embedder(ABC):
     """
 
     class EmbeddingsCache:
-
         def __init__(self, cache_path=None):
             """
             Args:
@@ -82,8 +87,10 @@ class Embedder(ABC):
 
                 else:  # deprecated format; backwards compatible with QA module code
                     if not isinstance(data, dict):
-                        msg = "Unknown data format while loading cache embeddings. " \
-                              "Ignoring loading ..."
+                        msg = (
+                            "Unknown data format while loading cache embeddings. "
+                            "Ignoring loading ..."
+                        )
                         logger.error(msg)
                     self.data = data
 
@@ -106,7 +113,7 @@ class Embedder(ABC):
                 os.makedirs(os.path.dirname(cache_path), exist_ok=True)
                 data = {
                     "_texts": [*self.data.keys()],
-                    "_texts_embeddings": np.array([*self.data.values()])
+                    "_texts_embeddings": np.array([*self.data.values()]),
                 }
                 with open(cache_path, "wb") as fp:
                     pickle.dump(data, fp)
@@ -176,22 +183,24 @@ class Embedder(ABC):
                 deprecated_cache_path = path.get_embedder_cache_file_path(
                     app_path,
                     kwargs.get("embedder_type", "default"),
-                    kwargs.get("model_name", "default")
+                    kwargs.get("model_name", "default"),
                 )
                 if (
-                    os.path.exists(deprecated_cache_path) and
-                    os.path.getsize(deprecated_cache_path) > 0
+                    os.path.exists(deprecated_cache_path)
+                    and os.path.getsize(deprecated_cache_path) > 0
                 ):
                     # deprecated usage:
                     #   Determine path from `embedder_type` and `model_name`
                     #   Inside a Mindmeld app, this path is generally something like:
                     #       '.generated/indexes/{embedder_type}_{model_name}_cache.pkl'
                     cache_path = deprecated_cache_path
-                    msg = f"Found a deprecated cache path at '{cache_path}' that contains " \
-                          f"embeddings for a default configuration of embedder models. " \
-                          f"If you wish to use mindmeld version greater than 4.3.4 to work with " \
-                          f"non-default embedder configurations, consider deleting this cache " \
-                          f"path manually and run again."
+                    msg = (
+                        f"Found a deprecated cache path at '{cache_path}' that contains "
+                        f"embeddings for a default configuration of embedder models. "
+                        f"If you wish to use mindmeld version greater than 4.3.4 to work with "
+                        f"non-default embedder configurations, consider deleting this cache "
+                        f"path manually and run again."
+                    )
                     logger.warning(msg)
                 else:
                     # new usage:
@@ -203,16 +212,15 @@ class Embedder(ABC):
                     #   sufficient to uniquely identify a bert model (as it can be configured now).
                     #   Inside a Mindmeld app, this path is generally something like:
                     #       '.generated/indexes/{model_id}_cache.pkl'
-                    cache_path = path.get_embedder_cache_file_path(
-                        app_path,
-                        self.model_id
-                    )
+                    cache_path = path.get_embedder_cache_file_path(app_path, self.model_id)
             else:
-                msg = f"{self.__class__.__name__} embedder instantiated without a valid cache " \
-                      f"path. This will lead to an error if you try to dump the encodings cache. " \
-                      f"To have a valid cache dump location, pass-in 'app_path' or 'cache_path' " \
-                      f"argument. Alternatively, the `cache_path` can also be passed to the dump " \
-                      f"and load methods directly."
+                msg = (
+                    f"{self.__class__.__name__} embedder instantiated without a valid cache "
+                    f"path. This will lead to an error if you try to dump the encodings cache. "
+                    f"To have a valid cache dump location, pass-in 'app_path' or 'cache_path' "
+                    f"argument. Alternatively, the `cache_path` can also be passed to the dump "
+                    f"and load methods directly."
+                )
                 logger.info(msg)
 
         # load embedder cache object
@@ -221,11 +229,12 @@ class Embedder(ABC):
 
     @property
     def model_id(self):
-        """Returns a unique hash representation of the embedder model based on its name and configs
-        """
-        msg = "Embedder models need to have model ids to uniquely identify each model " \
-              "associated with a specific configuration. It can be set through the property " \
-              "setter 'model_id'. If unspecified, a default value ('default') is used instead."
+        """Returns a unique hash representation of the embedder model based on its name and configs"""
+        msg = (
+            "Embedder models need to have model ids to uniquely identify each model "
+            "associated with a specific configuration. It can be set through the property "
+            "setter 'model_id'. If unspecified, a default value ('default') is used instead."
+        )
         logger.warning(msg)
         return "default"
 
@@ -300,8 +309,10 @@ class Embedder(ABC):
             value = np.asarray(value).reshape(-1)
             known_emb_dim = getattr(self, "emb_dim", None)
             if known_emb_dim and not len(value) == known_emb_dim:
-                msg = f"Expected superficial embedding of length {known_emb_dim} but found " \
-                      f"{len(value)}. Not adding the embedding for {key} to cache."
+                msg = (
+                    f"Expected superficial embedding of length {known_emb_dim} but found "
+                    f"{len(value)}. Not adding the embedding for {key} to cache."
+                )
                 logger.error(msg)
             if key in self.cache:
                 msg = f"Overwriting a superficial embedding for {key}"
@@ -325,7 +336,7 @@ class Embedder(ABC):
         scores_normalizer: str = None,
         similarity_function: Callable[[List[Any], List[Any]], np.ndarray] = None,
         _return_as_dict=False,
-        _no_sort=False
+        _no_sort=False,
     ):
         """Computes the cosine similarity
 
@@ -358,9 +369,11 @@ class Embedder(ABC):
 
         tgt_texts = [*self.cache.data.keys()] if not tgt_texts else tgt_texts
         if not tgt_texts:
-            msg = "The list of target texts are empty to compute similarities with the source " \
-                  "text(s). This can happen if the embedder cache is empty due to an unloaded " \
-                  "index or if passing in an empty list of target texts to find similarity with."
+            msg = (
+                "The list of target texts are empty to compute similarities with the source "
+                "text(s). This can happen if the embedder cache is empty due to an unloaded "
+                "index or if passing in an empty list of target texts to find similarity with."
+            )
             raise ValueError(msg)
         top_n = len(tgt_texts) if not top_n else top_n
         similarity_function = similarity_function or self.pytorch_cos_sim
@@ -388,9 +401,11 @@ class Embedder(ABC):
                     denominator = _std if _std else 1.0
                     similarity_scores = (similarity_scores - _mean) / denominator
                 else:
-                    msg = f"Allowed values for `scores_normalizer` are only " \
-                          f"{['min_max_scaler', 'standard_scaler']}. Continuing without " \
-                          f"normalizing similarity scores."
+                    msg = (
+                        f"Allowed values for `scores_normalizer` are only "
+                        f"{['min_max_scaler', 'standard_scaler']}. Continuing without "
+                        f"normalizing similarity scores."
+                    )
                     logger.error(msg)
 
             if _return_as_dict:
@@ -403,11 +418,14 @@ class Embedder(ABC):
                         result = sorted(
                             [(tgt_texts[ii], similarity_scores[ii]) for ii in top_inds],
                             key=lambda x: x[1],
-                            reverse=True)
+                            reverse=True,
+                        )
                     else:
-                        result = sorted(zip(tgt_texts, similarity_scores),
-                                        key=lambda x: x[1],
-                                        reverse=True)
+                        result = sorted(
+                            zip(tgt_texts, similarity_scores),
+                            key=lambda x: x[1],
+                            reverse=True,
+                        )
                     results.append(result)
                 else:
                     result = list(zip(tgt_texts, similarity_scores))
@@ -460,8 +478,10 @@ class Embedder(ABC):
 
     # deprecated method, same functionality as 'dump_cache' method
     def dump(self, cache_path=None):
-        msg = f"DeprecationWarning: Use {self.__class__.__name__}.dump_cache() instead of " \
-              f"{self.__class__.__name__}.dump()"
+        msg = (
+            f"DeprecationWarning: Use {self.__class__.__name__}.dump_cache() instead of "
+            f"{self.__class__.__name__}.dump()"
+        )
         warnings.warn(msg, DeprecationWarning)
         self.dump_cache(cache_path=cache_path)
 
@@ -477,7 +497,13 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
     # inference only and not for fine-tuning
     CACHE_MODELS = {}
 
-    def __init__(self, app_path=None, cache_path=None, pretrained_name_or_abspath=None, **kwargs):
+    def __init__(
+        self,
+        app_path=None,
+        cache_path=None,
+        pretrained_name_or_abspath=None,
+        **kwargs,
+    ):
         """
         Initializes a BERT based embedder from Huggingface
 
@@ -517,20 +543,26 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
         # deprecated configs keys
         model_name = kwargs.get("model_name")
         if model_name:
-            msg = "The argument 'model_name' is deprecated and will be removed in future " \
-                  "versions. Consider replacing it with 'pretrained_name_or_abspath'"
+            msg = (
+                "The argument 'model_name' is deprecated and will be removed in future "
+                "versions. Consider replacing it with 'pretrained_name_or_abspath'"
+            )
             warnings.warn(msg, DeprecationWarning)
             if pretrained_name_or_abspath:
-                msg = f"Must pass-in only one of 'pretrained_name_or_abspath' and 'model_name' " \
-                      f"params while instantiating a {self.__class__.__name__} class."
+                msg = (
+                    f"Must pass-in only one of 'pretrained_name_or_abspath' and 'model_name' "
+                    f"params while instantiating a {self.__class__.__name__} class."
+                )
                 raise ValueError(msg)
             pretrained_name_or_abspath = model_name
 
         # configs that uniquely identify the model, used in model_id
         self.pretrained_name_or_abspath = pretrained_name_or_abspath
         if not self.pretrained_name_or_abspath:
-            msg = f"A valid 'pretrained_name_or_abspath' param must be passed " \
-                  f"to instantiate {self.__class__.__name__}."
+            msg = (
+                f"A valid 'pretrained_name_or_abspath' param must be passed "
+                f"to instantiate {self.__class__.__name__}."
+            )
             raise ValueError(msg)
         self.bert_output_type = kwargs.get("bert_output_type", "mean")
         self.quantize_model = kwargs.get("quantize_model", False)
@@ -542,22 +574,24 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
             "device", "cuda" if torch_op("is_available", sub="cuda") else "cpu"
         )
         self._batch_size = kwargs.get("batch_size", 8)
-        self._output_value = kwargs.get("output_value", 'sentence_embedding')
+        self._output_value = kwargs.get("output_value", "sentence_embedding")
         self._convert_to_numpy = kwargs.get("convert_to_numpy", True)
         self._convert_to_tensor = kwargs.get("convert_to_tensor", False)
         self._show_progress_bar = (
-            logger.getEffectiveLevel() == logging.INFO or
-            logger.getEffectiveLevel() == logging.DEBUG
+            logger.getEffectiveLevel() == logging.INFO
+            or logger.getEffectiveLevel() == logging.DEBUG
         )
 
         # unique id for the embedder model based on specified configurations
-        self._model_id = str(self.get_hashid(
-            pretrained_name_or_abspath=self.pretrained_name_or_abspath,
-            bert_output_type=self.bert_output_type,
-            quantize_model=self.quantize_model,
-            concat_last_n_layers=self.concat_last_n_layers,
-            normalize_token_embs=self.normalize_token_embs
-        ))
+        self._model_id = str(
+            self.get_hashid(
+                pretrained_name_or_abspath=self.pretrained_name_or_abspath,
+                bert_output_type=self.bert_output_type,
+                quantize_model=self.quantize_model,
+                concat_last_n_layers=self.concat_last_n_layers,
+                normalize_token_embs=self.normalize_token_embs,
+            )
+        )
 
         super().__init__(app_path=app_path, cache_path=cache_path, **kwargs)
 
@@ -592,10 +626,9 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
         return num_layers
 
     @staticmethod
-    def _get_sentence_transformers_encoder(name_or_path,
-                                           output_type="mean",
-                                           quantize=True,
-                                           return_components=False):
+    def _get_sentence_transformers_encoder(
+        name_or_path, output_type="mean", quantize=True, return_components=False
+    ):
         """
         Retrieves a sentence-transformer model and returns it along with its transformer and
         pooling components.
@@ -620,13 +653,16 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
         strans_models = _getattr("sentence_transformers.models")
         strans = _getattr("sentence_transformers", "SentenceTransformer")
 
-        transformer_model = strans_models.Transformer(name_or_path,
-                                                      model_args={"output_hidden_states": True})
-        pooling_model = strans_models.Pooling(transformer_model.get_word_embedding_dimension(),
-                                              pooling_mode_cls_token=output_type == "cls",
-                                              pooling_mode_max_tokens=False,
-                                              pooling_mode_mean_tokens=output_type == "mean",
-                                              pooling_mode_mean_sqrt_len_tokens=False)
+        transformer_model = strans_models.Transformer(
+            name_or_path, model_args={"output_hidden_states": True}
+        )
+        pooling_model = strans_models.Pooling(
+            transformer_model.get_word_embedding_dimension(),
+            pooling_mode_cls_token=output_type == "cls",
+            pooling_mode_max_tokens=False,
+            pooling_mode_mean_tokens=output_type == "mean",
+            pooling_mode_mean_sqrt_len_tokens=False,
+        )
         sbert_model = strans(modules=[transformer_model, pooling_model])
 
         if quantize:
@@ -637,35 +673,43 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
             torch_nn_linear = _getattr("torch.nn", "Linear")
             torch_quantize_dynamic = _getattr("torch.quantization", "quantize_dynamic")
 
-            transformer_model = torch_quantize_dynamic(
-                transformer_model, {torch_nn_linear}, dtype=torch_qint8
-            ) if transformer_model else None
-            pooling_model = torch_quantize_dynamic(
-                pooling_model, {torch_nn_linear}, dtype=torch_qint8
-            ) if pooling_model else None
-            sbert_model = torch_quantize_dynamic(
-                sbert_model, {torch_nn_linear}, dtype=torch_qint8
-            ) if sbert_model else None
+            transformer_model = (
+                torch_quantize_dynamic(transformer_model, {torch_nn_linear}, dtype=torch_qint8)
+                if transformer_model
+                else None
+            )
+            pooling_model = (
+                torch_quantize_dynamic(pooling_model, {torch_nn_linear}, dtype=torch_qint8)
+                if pooling_model
+                else None
+            )
+            sbert_model = (
+                torch_quantize_dynamic(sbert_model, {torch_nn_linear}, dtype=torch_qint8)
+                if sbert_model
+                else None
+            )
 
         if return_components:
             return Bunch(
                 transformer_model=transformer_model,
                 pooling_model=pooling_model,
-                sbert_model=sbert_model
+                sbert_model=sbert_model,
             )
 
         return sbert_model
 
-    def _encode_local(self,
-                      sentences,
-                      batch_size,
-                      show_progress_bar,
-                      output_value,
-                      convert_to_numpy,
-                      convert_to_tensor,
-                      device,
-                      concat_last_n_layers,
-                      normalize_token_embs):
+    def _encode_local(
+        self,
+        sentences,
+        batch_size,
+        show_progress_bar,
+        output_value,
+        convert_to_numpy,
+        convert_to_tensor,
+        device,
+        concat_last_n_layers,
+        normalize_token_embs,
+    ):
         """
         Computes sentence embeddings (Note: Method largely derived from Sentence Transformers
             library to improve flexibility in encoding and pooling. Notably, `is_pretokenized` and
@@ -699,9 +743,14 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
         length_sorted_idx = np.argsort([len(sen) for sen in sentences])
         sentences_sorted = [sentences[idx] for idx in length_sorted_idx]
 
-        for start_index in trange(0, len(sentences), batch_size, desc="Batches",
-                                  disable=not show_progress_bar):
-            sentences_batch = sentences_sorted[start_index:start_index + batch_size]
+        for start_index in trange(
+            0,
+            len(sentences),
+            batch_size,
+            desc="Batches",
+            disable=not show_progress_bar,
+        ):
+            sentences_batch = sentences_sorted[start_index : start_index + batch_size]
             features = self.transformer_model.tokenize(sentences_batch)
             features = self._batch_to_device(features, device)
 
@@ -711,19 +760,25 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
                 if concat_last_n_layers > 1:
                     _all_layer_embs = out_features_transformer["all_layer_embeddings"]
                     token_embeddings = torch_op(
-                        "cat", _all_layer_embs[-concat_last_n_layers:], dim=-1)
+                        "cat", _all_layer_embs[-concat_last_n_layers:], dim=-1
+                    )
                 if normalize_token_embs:
                     _norm_token_embeddings = torch_op(
-                        "norm", token_embeddings, sub="linalg", dim=2, keepdim=True)
+                        "norm",
+                        token_embeddings,
+                        sub="linalg",
+                        dim=2,
+                        keepdim=True,
+                    )
                     token_embeddings = token_embeddings.div(_norm_token_embeddings)
                 out_features_transformer.update({"token_embeddings": token_embeddings})
                 out_features = self.pooling_model.forward(out_features_transformer)
 
                 embeddings = out_features[output_value]
 
-                if output_value == 'token_embeddings':
+                if output_value == "token_embeddings":
                     # Set token embeddings to 0 for padding tokens
-                    input_mask = out_features['attention_mask']
+                    input_mask = out_features["attention_mask"]
                     input_mask_expanded = input_mask.unsqueeze(-1).expand(embeddings.size()).float()
                     embeddings = embeddings * input_mask_expanded
 
@@ -747,28 +802,30 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
         return all_embeddings
 
     def load(self):
-
         model = BertEmbedder.CACHE_MODELS.get(self._model_id, None)
 
         if not model:
-
             info_msg = ""
             for name in [
                 self.pretrained_name_or_abspath,
-                f"sentence-transformers/{self.pretrained_name_or_abspath}"
+                f"sentence-transformers/{self.pretrained_name_or_abspath}",
             ]:
                 try:
-                    model = (
-                        self._get_sentence_transformers_encoder(name,
-                                                                output_type=self.bert_output_type,
-                                                                quantize=self.quantize_model,
-                                                                return_components=True)
+                    model = self._get_sentence_transformers_encoder(
+                        name,
+                        output_type=self.bert_output_type,
+                        quantize=self.quantize_model,
+                        return_components=True,
                     )
-                    info_msg += f"Successfully initialized name/path `{name}` directly through " \
-                                f"huggingface-transformers. "
+                    info_msg += (
+                        f"Successfully initialized name/path `{name}` directly through "
+                        f"huggingface-transformers. "
+                    )
                 except OSError:
-                    info_msg += f"Could not initialize name/path `{name}` directly through " \
-                                f"huggingface-transformers. "
+                    info_msg += (
+                        f"Could not initialize name/path `{name}` directly through "
+                        f"huggingface-transformers. "
+                    )
 
                 if model:
                     break
@@ -776,8 +833,10 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
             logger.info(info_msg)
 
             if not model:
-                msg = f"Could not resolve the name/path `{self.pretrained_name_or_abspath}`. " \
-                      f"Please check the model name and retry."
+                msg = (
+                    f"Could not resolve the name/path `{self.pretrained_name_or_abspath}`. "
+                    f"Please check the model name and retry."
+                )
                 raise Exception(msg)
 
             BertEmbedder.CACHE_MODELS.update({self._model_id: model})
@@ -802,8 +861,7 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
             return []
 
         show_progress_bar = (
-            self._show_progress_bar
-            and (len(phrases) if isinstance(phrases, list) else 1) > 1
+            self._show_progress_bar and (len(phrases) if isinstance(phrases, list) else 1) > 1
         )
 
         # `False` for first call but might not for the subsequent calls
@@ -818,40 +876,45 @@ class BertEmbedder(Embedder):  # pylint: disable=too-many-instance-attributes
                 #   and newer (python >=3.7) versions which needs more conditions to be implemented
                 #   in `_encode_local` and hence will be addressed in future work
                 # TODO: eliminate depedency on sentence-transformers library
-                results = self._encode_local(phrases,
-                                             batch_size=self._batch_size,
-                                             show_progress_bar=show_progress_bar,
-                                             output_value=self._output_value,
-                                             convert_to_numpy=self._convert_to_numpy,
-                                             convert_to_tensor=self._convert_to_tensor,
-                                             device=self.device,
-                                             concat_last_n_layers=self.concat_last_n_layers,
-                                             normalize_token_embs=self.normalize_token_embs)
+                results = self._encode_local(
+                    phrases,
+                    batch_size=self._batch_size,
+                    show_progress_bar=show_progress_bar,
+                    output_value=self._output_value,
+                    convert_to_numpy=self._convert_to_numpy,
+                    convert_to_tensor=self._convert_to_tensor,
+                    device=self.device,
+                    concat_last_n_layers=self.concat_last_n_layers,
+                    normalize_token_embs=self.normalize_token_embs,
+                )
                 setattr(self, "_use_sbert_model", False)
             except TypeError as e:
                 logger.error(e)
                 if self.concat_last_n_layers != 1 or self.normalize_token_embs:
-                    msg = f"{'concat_last_n_layers,' if self.concat_last_n_layers != 1 else ''} " \
-                          f"{'normalize_token_embs' if self.normalize_token_embs else ''} " \
-                          f"ignored as resorting to using encode methods from sentence-transformers"
+                    msg = (
+                        f"{'concat_last_n_layers,' if self.concat_last_n_layers != 1 else ''} "
+                        f"{'normalize_token_embs' if self.normalize_token_embs else ''} "
+                        f"ignored as resorting to using encode methods from sentence-transformers"
+                    )
                     logger.warning(msg)
                 setattr(self, "_use_sbert_model", True)
 
         if getattr(self, "_use_sbert_model"):
-            results = self.model.sbert_model.encode(phrases,
-                                                    batch_size=self._batch_size,
-                                                    show_progress_bar=show_progress_bar,
-                                                    output_value=self._output_value,
-                                                    convert_to_numpy=self._convert_to_numpy,
-                                                    convert_to_tensor=self._convert_to_tensor,
-                                                    device=self.device)
+            results = self.model.sbert_model.encode(
+                phrases,
+                batch_size=self._batch_size,
+                show_progress_bar=show_progress_bar,
+                output_value=self._output_value,
+                convert_to_numpy=self._convert_to_numpy,
+                convert_to_tensor=self._convert_to_tensor,
+                device=self.device,
+            )
 
         return results
 
     @property
     def model_id(self):
-        """Returns a unique hash representation of the embedder model based on its name and configs
-        """
+        """Returns a unique hash representation of the embedder model based on its name and configs"""
         return self._model_id
 
 
@@ -891,24 +954,27 @@ class GloveEmbedder(Embedder):
             "preprocessors": [],
             "normalizers": [],
             "stemmer": None,
-            "keep_special_chars": True
+            "keep_special_chars": True,
         }
         self.text_preparation_pipeline = (
             TextPreparationPipelineFactory.create_text_preparation_pipeline(**pipeline_config)
         )
 
         # unique id for the embedder model based on specified configurations
-        self._model_id = str(self.get_hashid(
-            token_embedding_dimension=self.token_embedding_dimension,
-            token_pretrained_embedding_filepath=os.path.abspath(
-                self.token_pretrained_embedding_filepath
-            ) if self.token_pretrained_embedding_filepath else "default",
-        ))
+        self._model_id = str(
+            self.get_hashid(
+                token_embedding_dimension=self.token_embedding_dimension,
+                token_pretrained_embedding_filepath=os.path.abspath(
+                    self.token_pretrained_embedding_filepath
+                )
+                if self.token_pretrained_embedding_filepath
+                else "default",
+            )
+        )
 
         super().__init__(app_path=app_path, cache_path=cache_path, **kwargs)
 
     def load(self):
-
         return WordSequenceEmbedding(
             0,
             self.token_embedding_dimension,
@@ -928,10 +994,7 @@ class GloveEmbedder(Embedder):
         return encoded_vecs
 
     def _tokenize(self, text):
-        return [
-            t["entity"] for t in
-            self.text_preparation_pipeline.tokenize_and_normalize(text)
-        ]
+        return [t["entity"] for t in self.text_preparation_pipeline.tokenize_and_normalize(text)]
 
     def dump(self, cache_path=None):
         """Dumps the cache to disk."""
@@ -940,8 +1003,7 @@ class GloveEmbedder(Embedder):
 
     @property
     def model_id(self):
-        """Returns a unique hash representation of the embedder model based on its name and configs
-        """
+        """Returns a unique hash representation of the embedder model based on its name and configs"""
         return self._model_id
 
 

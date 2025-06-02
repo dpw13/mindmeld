@@ -77,16 +77,12 @@ def test_get_class_labels_domains_intents(kwik_e_mart_nlp, all_train_queries):
     unique_domain_intent_labels = list(
         set(LabelMap.get_class_labels(TuneLevel.INTENT.value, all_train_queries))
     )
-    assert all(
-        label in nlp_domain_intent_labels for label in unique_domain_intent_labels
-    )
+    assert all(label in nlp_domain_intent_labels for label in unique_domain_intent_labels)
 
 
 # Test the LogQueriesLoader class
 def test_log_queries_loader(kwik_e_mart_nlp, kwik_e_mart_app_path):
-    first_ten_queries = [
-        kwik_e_mart_nlp.resource_loader.query_cache.get(i) for i in range(1, 10)
-    ]
+    first_ten_queries = [kwik_e_mart_nlp.resource_loader.query_cache.get(i) for i in range(1, 10)]
     first_ten_queries_raw = [q.query.text for q in first_ten_queries]
     log_queries_loader = LogQueriesLoader(
         app_path=kwik_e_mart_app_path,
@@ -128,7 +124,9 @@ def test_data_bucket_factory(kwik_e_mart_app_path, tuning_data_bucket):
 def test_filter_queries_by_nlp_component(all_train_queries):
     domain_to_filter_by = "banking"
     filtered_ids, filtered_queries = DataBucket.filter_queries_by_nlp_component(
-        query_list=all_train_queries, component_type="domain", component_name=domain_to_filter_by
+        query_list=all_train_queries,
+        component_type="domain",
+        component_name=domain_to_filter_by,
     )
     assert len(filtered_ids) == len(filtered_queries)
     assert all(q.domain == domain_to_filter_by for q in filtered_queries)

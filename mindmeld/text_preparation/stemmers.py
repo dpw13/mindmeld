@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class Stemmer(ABC):
-
     def __init__(self):
         """Creates a Stemmer instance."""
 
@@ -41,7 +40,6 @@ class Stemmer(ABC):
 
 
 class NoOpStemmer(Stemmer):
-
     def stem_word(self, word):
         return word
 
@@ -57,10 +55,7 @@ class EnglishNLTKStemmer(Stemmer):
     def stem_word(self, word):
         stem = word.lower()
 
-        if (
-            self._stemmer.mode == self._stemmer.NLTK_EXTENSIONS
-            and word in self._stemmer.pool
-        ):
+        if self._stemmer.mode == self._stemmer.NLTK_EXTENSIONS and word in self._stemmer.pool:
             return self._stemmer.pool[word]
 
         if self._stemmer.mode != self._stemmer.ORIGINAL_ALGORITHM and len(word) <= 2:
@@ -77,7 +72,6 @@ class EnglishNLTKStemmer(Stemmer):
 
 
 class SnowballNLTKStemmer(Stemmer):
-
     def __init__(self, language=None):
         self.language = language
 
@@ -118,7 +112,6 @@ class StemmerFactory:
 
     @staticmethod
     def get_stemmer_by_language(language_code):
-
         if not language_code:
             return NoOpStemmer()
 
@@ -131,7 +124,8 @@ class StemmerFactory:
 
         if not language:
             logger.warning(
-                'Language code "%s" is not supported for stemming.', language_code
+                'Language code "%s" is not supported for stemming.',
+                language_code,
             )
             return NoOpStemmer()
 
@@ -139,9 +133,7 @@ class StemmerFactory:
         if language_name in nltk.stem.SnowballStemmer.languages:
             return SnowballNLTKStemmer(language_name)
 
-        logger.warning(
-            'Language code "%s" is not supported for stemming.', language_code
-        )
+        logger.warning('Language code "%s" is not supported for stemming.', language_code)
         return NoOpStemmer()
 
     @staticmethod

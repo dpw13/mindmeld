@@ -15,7 +15,9 @@ from mindmeld.text_preparation.tokenizers import (
     SpacyTokenizer,
     CharacterTokenizer,
 )
-from mindmeld.text_preparation.text_preparation_pipeline import TextPreparationPipeline
+from mindmeld.text_preparation.text_preparation_pipeline import (
+    TextPreparationPipeline,
+)
 
 JA_SENTENCE_ONE = "紳士が過ぎ去った、 なぜそれが起こったのか誰にも分かりません！"
 JA_SENTENCE_TWO = "株式会社ＫＡＤＯＫＡＷＡ Ｆｕｔｕｒｅ Publishing第13地域"
@@ -24,10 +26,10 @@ JA_SENTENCE_FOUR = "サウンドレベルアップして下さい"
 DE_SENTENCE_ONE = "Ein Gentleman ist vorbeigekommen, der weiß"
 ES_SENTENCE_ONE = "Ha pasado un caballero, ¡quién sabe por qué pasó!"
 EN_SENTENCE_ONE = "Hello Sir. I'd like to tell you how much I like MindMeld."
-EN_SENTENCE_TWO = "Hello my name is {Nikhil|name} and I am an {engineer|profession} at {Cisco|organization}."
-EN_SENTENCE_THREE = (
-    "{Jay|name} ordered a {sandwhich|meal} and {pizza|meal} for lunch and dinner."
+EN_SENTENCE_TWO = (
+    "Hello my name is {Nikhil|name} and I am an {engineer|profession} at {Cisco|organization}."
 )
+EN_SENTENCE_THREE = "{Jay|name} ordered a {sandwhich|meal} and {pizza|meal} for lunch and dinner."
 EN_SENTENCE_FOUR = "{Spero|name}"
 EN_SENTENCE_FIVE = "I found {Andy Neff|name}"
 
@@ -147,10 +149,10 @@ def test_letter_tokenizer_ja_two(letter_tokenizer):
         {"start": 4, "text": "ＫＡＤＯＫＡＷＡ"},
         {"start": 13, "text": "Ｆｕｔｕｒｅ"},
         {"start": 20, "text": "Publishing"},
-        {'start': 30, 'text': '第'},
-        {'start': 31, 'text': '13'},
-        {'start': 33, 'text': '地'},
-        {'start': 34, 'text': '域'}
+        {"start": 30, "text": "第"},
+        {"start": 31, "text": "13"},
+        {"start": 33, "text": "地"},
+        {"start": 34, "text": "域"},
     ]
     assert tokenized_output == expected_output
 
@@ -192,7 +194,7 @@ def test_spacy_tokenizer_ja_two(spacy_tokenizer_ja):
         {"start": 20, "text": "Publishing"},
         {"start": 30, "text": "第"},
         {"start": 31, "text": "13"},
-        {"start": 33, "text": "地域"}
+        {"start": 33, "text": "地域"},
     ]
     assert tokenized_output == expected_output
 
@@ -267,9 +269,7 @@ def test_character_tokenizer_ja_three(character_tokenizer):
 
 
 def test_tokenize(text_preparation_pipeline):
-    tokens = text_preparation_pipeline.tokenize_and_normalize(
-        "Test: Query for $500,000. Chyea!"
-    )
+    tokens = text_preparation_pipeline.tokenize_and_normalize("Test: Query for $500,000. Chyea!")
 
     assert len(tokens)
     assert tokens[0]["entity"] == "test"
@@ -293,7 +293,15 @@ def test_tokenize(text_preparation_pipeline):
         ),
         (
             EN_SENTENCE_TWO,
-            [(0, 17), (18, 24), (30, 43), (44, 52), (64, 68), (69, 74), (88, 89)],
+            [
+                (0, 17),
+                (18, 24),
+                (30, 43),
+                (44, 52),
+                (64, 68),
+                (69, 74),
+                (88, 89),
+            ],
             "Hello my name is Nikhil and I am an engineer at Cisco.",
         ),
         (
@@ -308,9 +316,7 @@ def test_tokenize(text_preparation_pipeline):
 def test_calc_unannotated_spans(raw_text, expected_spans, expected_unannotated_text):
     unannotated_spans = TextPreparationPipeline.calc_unannotated_spans(raw_text)
     assert unannotated_spans == expected_spans
-    unannotated_text = "".join(
-        [raw_text[span[0] : span[1]] for span in unannotated_spans]
-    )
+    unannotated_text = "".join([raw_text[span[0] : span[1]] for span in unannotated_spans])
     assert unannotated_text == expected_unannotated_text
 
 
@@ -325,8 +331,8 @@ def test_calc_unannotated_spans(raw_text, expected_spans, expected_unannotated_t
 def test_unannotated_to_annotated_idx_map(
     unannotated_spans, expected_unannotated_annotated_idx_map
 ):
-    unannotated_annotated_idx_map = (
-        TextPreparationPipeline.unannotated_to_annotated_idx_map(unannotated_spans)
+    unannotated_annotated_idx_map = TextPreparationPipeline.unannotated_to_annotated_idx_map(
+        unannotated_spans
     )
     assert unannotated_annotated_idx_map == expected_unannotated_annotated_idx_map
 

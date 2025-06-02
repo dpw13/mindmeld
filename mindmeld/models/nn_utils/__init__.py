@@ -15,14 +15,14 @@ from .helpers import (
     TokenizerType,
     EmbedderType,
     SequenceClassificationType,
-    TokenClassificationType
+    TokenClassificationType,
 )
 from .sequence_classification import (
     EmbedderForSequenceClassification,
     CnnForSequenceClassification,
     LstmForSequenceClassification,
     BertForSequenceClassification,
-    get_sequence_classifier_cls
+    get_sequence_classifier_cls,
 )
 from .token_classification import (
     EmbedderForTokenClassification,
@@ -30,7 +30,7 @@ from .token_classification import (
     CharCnnWithWordLstmForTokenClassification,
     CharLstmWithWordLstmForTokenClassification,
     BertForTokenClassification,
-    get_token_classifier_cls
+    get_token_classifier_cls,
 )
 
 __all__ = [

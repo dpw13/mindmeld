@@ -38,13 +38,9 @@ SUCCESSFUL_HTTP_CODE = 200
 SYS_ENTITY_REQUEST_TIMEOUT = os.environ.get("MM_SYS_ENTITY_REQUEST_TIMEOUT", 3.0)
 try:
     if float(SYS_ENTITY_REQUEST_TIMEOUT) <= 0.0:
-        raise MindMeldError(
-            "MM_SYS_ENTITY_REQUEST_TIMEOUT env var has to be > 0.0 seconds."
-        )
+        raise MindMeldError("MM_SYS_ENTITY_REQUEST_TIMEOUT env var has to be > 0.0 seconds.")
 except ValueError as e:
-    raise MindMeldError(
-        "MM_SYS_ENTITY_REQUEST_TIMEOUT env var has to be a float value."
-    ) from e
+    raise MindMeldError("MM_SYS_ENTITY_REQUEST_TIMEOUT env var has to be a float value.") from e
 
 logger = logging.getLogger(__name__)
 
@@ -106,9 +102,7 @@ class SystemEntityRecognizer(ABC):
         ):
             SystemEntityRecognizer._instance = system_entity_recognizer
         elif app_path:
-            SystemEntityRecognizer._instance = SystemEntityRecognizer.load_from_app_path(
-                app_path
-            )
+            SystemEntityRecognizer._instance = SystemEntityRecognizer.load_from_app_path(app_path)
         else:
             raise SystemEntityError(
                 "Either `system_entity_recognizer` or `app_path` must be valid."
@@ -128,9 +122,7 @@ class SystemEntityRecognizer(ABC):
             (SystemEntityRecognizer)
         """
         if not app_path:
-            raise SystemEntityError(
-                "App path must be valid to load entity recognizer config."
-            )
+            raise SystemEntityError("App path must be valid to load entity recognizer config.")
 
         if is_duckling_configured(app_path):
             url = get_system_entity_url_config(app_path=app_path)
@@ -278,7 +270,10 @@ class DucklingRecognizer(SystemEntityRecognizer):
         """
         try:
             response = requests.request(
-                "POST", self.url, data=data, timeout=float(SYS_ENTITY_REQUEST_TIMEOUT)
+                "POST",
+                self.url,
+                data=data,
+                timeout=float(SYS_ENTITY_REQUEST_TIMEOUT),
             )
 
             if response.status_code == requests.codes["ok"]:
@@ -302,11 +297,11 @@ class DucklingRecognizer(SystemEntityRecognizer):
     def parse(
         self,
         sentence: str,
-        dimensions: Iterable[str]=None,
-        language: str=None,
-        locale: str=None,
-        time_zone: str=None,
-        timestamp: int=None,
+        dimensions: Iterable[str] = None,
+        language: str = None,
+        locale: str = None,
+        time_zone: str = None,
+        timestamp: int = None,
     ) -> Tuple[Any, int]:
         """Calls System Entity Recognizer service API to extract numerical entities from a sentence.
 
@@ -405,7 +400,8 @@ class DucklingRecognizer(SystemEntityRecognizer):
         """
         span_filtered_candidates = list(
             filter(
-                lambda candidate: candidate.span == span, query.system_entity_candidates
+                lambda candidate: candidate.span == span,
+                query.system_entity_candidates,
             )
         )
 
@@ -468,18 +464,14 @@ class DucklingRecognizer(SystemEntityRecognizer):
         # span
 
         for raw_candidate in duckling_candidates:
-            candidate = duckling_item_to_query_entity(
-                query, raw_candidate, offset=span.start
-            )
+            candidate = duckling_item_to_query_entity(query, raw_candidate, offset=span.start)
 
             if candidate.entity.type == entity_type:
                 # If the candidate matches the entire entity, return it
                 if candidate.span == span:
                     return candidate
                 else:
-                    duckling_text_val_to_candidate.setdefault(
-                        candidate.text, []
-                    ).append(candidate)
+                    duckling_text_val_to_candidate.setdefault(candidate.text, []).append(candidate)
 
         # Sort duckling matching candidates by the length of the value
         best_duckling_candidate_names = list(duckling_text_val_to_candidate.keys())
@@ -489,9 +481,7 @@ class DucklingRecognizer(SystemEntityRecognizer):
             default_duckling_candidate = None
             longest_matched_duckling_candidate = best_duckling_candidate_names[0]
 
-            for candidate in duckling_text_val_to_candidate[
-                longest_matched_duckling_candidate
-            ]:
+            for candidate in duckling_text_val_to_candidate[longest_matched_duckling_candidate]:
                 if candidate.span.start == span.start or candidate.span.end == span.end:
                     return candidate
                 else:
@@ -551,9 +541,7 @@ class DucklingRecognizer(SystemEntityRecognizer):
         if response_code == SUCCESSFUL_HTTP_CODE:
             return [
                 e
-                for e in [
-                    duckling_item_to_query_entity(query, item) for item in response
-                ]
+                for e in [duckling_item_to_query_entity(query, item) for item in response]
                 if entity_types is None or e.entity.type in entity_types
             ]
 
@@ -569,11 +557,11 @@ class DucklingRecognizer(SystemEntityRecognizer):
     def get_candidates_for_text(
         self,
         text: str,
-        entity_types: Iterable[str]=None,
-        locale: str=None,
-        language: str=None,
-        time_zone: str=None,
-        timestamp: int=None,
+        entity_types: Iterable[str] = None,
+        locale: str = None,
+        language: str = None,
+        time_zone: str = None,
+        timestamp: int = None,
     ) -> Iterable[Dict]:
         """Identifies candidate system entities in the given text.
 
@@ -678,7 +666,6 @@ def duckling_item_to_entity(item: Dict[str, Any]) -> Entity:
             if type_ == "value":
                 value["grain"] = item["value"].get("grain")
             elif type_ == "interval":
-
                 # Want to predict time intervals as sys_interval
                 num_type = "interval"
                 if "from" in item["value"]:

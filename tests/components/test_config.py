@@ -97,7 +97,10 @@ def test_get_classifier_config():
     expected = {
         "type": "k-fold",
         "k": 10,
-        "grid": {"fit_intercept": [True, False], "C": [10, 100, 1000, 10000, 100000]},
+        "grid": {
+            "fit_intercept": [True, False],
+            "C": [10, 100, 1000, 10000, 100000],
+        },
     }
 
     assert actual == expected
@@ -105,9 +108,7 @@ def test_get_classifier_config():
 
 def test_get_classifier_config2():
     """Tests that the app specified config is returned over the default config."""
-    actual = get_classifier_config("intent", APP_PATH, domain="domain")[
-        "param_selection"
-    ]
+    actual = get_classifier_config("intent", APP_PATH, domain="domain")["param_selection"]
 
     expected = {
         "type": "k-fold",
@@ -124,9 +125,7 @@ def test_get_classifier_config2():
 
 def test_get_classifier_config_func():
     """Tests that the app config provider is called."""
-    actual = get_classifier_config(
-        "entity", APP_PATH, domain="domain", intent="intent"
-    )["params"]
+    actual = get_classifier_config("entity", APP_PATH, domain="domain", intent="intent")["params"]
 
     expected = {"penalty": "l2", "C": 100, "solver": "liblinear"}
 
@@ -135,11 +134,14 @@ def test_get_classifier_config_func():
 
 def test_get_classifier_config_func_error():
     """Tests robustness to exceptions raised by a config provider."""
-    actual = get_classifier_config("entity", APP_PATH, domain="domain", intent="error")[
-        "params"
-    ]
+    actual = get_classifier_config("entity", APP_PATH, domain="domain", intent="error")["params"]
 
-    expected = {"error": "intent", "penalty": "l2", "C": 100, "solver": "liblinear"}
+    expected = {
+        "error": "intent",
+        "penalty": "l2",
+        "C": 100,
+        "solver": "liblinear",
+    }
 
     assert actual == expected
 

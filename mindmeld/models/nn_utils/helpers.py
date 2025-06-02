@@ -76,6 +76,7 @@ class BatchData(Bunch):
         - logits: Classification scores (before SoftMax).
         - loss: Classification loss object.
     """
+
     pass
 
 
@@ -131,7 +132,7 @@ DEFAULT_TRAINING_INFERENCE_PARAMS = {
     "optimizer": "Adam",
     "learning_rate": 0.001,
     "validation_metric": "accuracy",
-    "dev_split_ratio": 0.2
+    "dev_split_ratio": 0.2,
 }
 
 DEFAULT_VANILLA_BERT_MODEL_PARAMS = {
@@ -146,8 +147,7 @@ DEFAULT_COMMON_TOKEN_CLASSIFICATION_PARAMS = {
     "output_keep_prob": 0.7,
     "use_crf_layer": True,
     "patience": 10,  # observed in benchmarking that more patience is better when using crf
-    "token_spans_pooling_type":
-        "first",  # if words split in subgroups, tells which subword representation to consider
+    "token_spans_pooling_type": "first",  # if words split in subgroups, tells which subword representation to consider
     "validation_metric": "f1",
 }
 
@@ -261,7 +261,7 @@ DEFAULT_FORWARD_PASS_PARAMS = {
         "tokenizer_type": TokenizerType.HUGGINGFACE_PRETRAINED_TOKENIZER.value,
         # keys that are not mutually exclusive and are valid when some of the above keys are set
         "save_frozen_embedder": False,  # the key is valid only when update_embeddings=False
-    }
+    },
 }
 
 
@@ -276,7 +276,7 @@ def get_default_params(class_name: str):
     try:
         return {
             **DEFAULT_TRAINING_INFERENCE_PARAMS,
-            **DEFAULT_FORWARD_PASS_PARAMS[class_name]
+            **DEFAULT_FORWARD_PASS_PARAMS[class_name],
         }
     except KeyError as e:
         msg = f"Cannot find module name {class_name} when looking for default params."
@@ -299,8 +299,10 @@ def get_disk_space_of_model(pytorch_module):
     _get_module_or_attr("torch").save(pytorch_module.state_dict(), filename)
     size = os.path.getsize(filename) / 1e6
     os.remove(filename)
-    msg = f"Pytorch module will be dumped temporarily at {filename} in order to " \
-          f"calculate its disk size."
+    msg = (
+        f"Pytorch module will be dumped temporarily at {filename} in order to "
+        f"calculate its disk size."
+    )
     logger.debug(msg)
     return size
 

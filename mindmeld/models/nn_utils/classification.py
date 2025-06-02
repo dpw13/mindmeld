@@ -45,7 +45,7 @@ from .helpers import (
     SHUFFLE_TRAINING_SEED,
     LABEL_PAD_TOKEN_IDX,
     DEFAULT_EMB_DIM,
-    DEFAULT_TOKENIZER
+    DEFAULT_TOKENIZER,
 )
 from .input_encoders import InputEncoderFactory
 from .._util import _get_module_or_attr
@@ -72,16 +72,18 @@ class BaseClassification(nn_module):
 
         self.name = self.__class__.__name__
         self.params = Bunch()
-        self.params.update({
-            "name": self.name,
-            "classification_type": self.classification_type,
-        })
+        self.params.update(
+            {
+                "name": self.name,
+                "classification_type": self.classification_type,
+            }
+        )
         self.encoder = None
 
         self.ready = False  # True when .fit() is called or loaded from a checkpoint, else False
         self.dirty = False  # True when the model weights aren't saved to disk yet, else False
 
-        self.out_dim = float('-inf')
+        self.out_dim = float("-inf")
 
     def __repr__(self):
         return f"<{self.name}> ready:{self.ready} dirty:{self.dirty}"
@@ -97,9 +99,11 @@ class BaseClassification(nn_module):
         Args:
             verbose (bool): Determines the amount of information to be logged and returned.
         """
-        msg = f"{self.name} " \
-              f"ready:{self.ready} dirty:{self.dirty} device:{self.params.device} " \
-              f"\n\tNumber of weights (trainable, all):{get_num_weights_of_model(self)} "
+        msg = (
+            f"{self.name} "
+            f"ready:{self.ready} dirty:{self.dirty} device:{self.params.device} "
+            f"\n\tNumber of weights (trainable, all):{get_num_weights_of_model(self)} "
+        )
         verbose_msg = msg + (
             f"\n\tDisk Size (in MB): {get_disk_space_of_model(self):.4f} " if verbose else ""
         )
@@ -118,15 +122,19 @@ class BaseClassification(nn_module):
                 batch_data[k] = v.to(self.params.device)
             elif isinstance(v, list):
                 batch_data[k] = [
-                    vv.to(self.params.device) if isinstance(vv, torch.Tensor) else vv
-                    for vv in v
+                    vv.to(self.params.device) if isinstance(vv, torch.Tensor) else vv for vv in v
                 ]
             elif isinstance(v, dict):
                 batch_data[k] = self.to_device(batch_data[k])
         return batch_data
 
     # pylint: disable=too-many-locals
-    def fit(self, examples: List[str], labels: Union[List[int], List[List[int]]], **params):
+    def fit(
+        self,
+        examples: List[str],
+        labels: Union[List[int], List[List[int]]],
+        **params,
+    ):
         """
         Trains the underlying neural model on the inputted data and finally retains the best scored
         model among all iterations.
@@ -152,7 +160,7 @@ class BaseClassification(nn_module):
         params = {
             **self.params,
             **self.get_default_params(),
-            **params  # overwrite keys of default params that are passed-in
+            **params,  # overwrite keys of default params that are passed-in
         }
         params = self._validate_and_update_params(**params)
 
@@ -173,9 +181,11 @@ class BaseClassification(nn_module):
         params.update({"num_labels": num_labels})
 
         # split input data into train & dev splits, and get data loaders
-        train_examples, dev_examples, train_labels, dev_labels = train_test_split(
-            examples, labels, test_size=params["dev_split_ratio"],
-            random_state=TRAIN_DEV_SPLIT_SEED
+        (train_examples, dev_examples, train_labels, dev_labels,) = train_test_split(
+            examples,
+            labels,
+            test_size=params["dev_split_ratio"],
+            random_state=TRAIN_DEV_SPLIT_SEED,
         )
 
         # update self.params which will be used throughout the following modeling code
@@ -193,15 +203,17 @@ class BaseClassification(nn_module):
 
         # create an optimizer and attach all model params to it
         num_training_steps = int(
-            len(train_examples) / self.params.batch_size / self.params.gradient_accumulation_steps *
-            self.params.number_of_epochs
+            len(train_examples)
+            / self.params.batch_size
+            / self.params.gradient_accumulation_steps
+            * self.params.number_of_epochs
         )
         optimizer, scheduler = self._create_optimizer_and_scheduler(num_training_steps)
 
         # set verbosity boolean
         _verbose = (
-            logger.getEffectiveLevel() == logging.INFO or
-            logger.getEffectiveLevel() == logging.DEBUG
+            logger.getEffectiveLevel() == logging.INFO
+            or logger.getEffectiveLevel() == logging.DEBUG
         )
         self.log_and_return_model_info(_verbose)
 
@@ -227,23 +239,36 @@ class BaseClassification(nn_module):
             random.shuffle(indices)
             train_examples = [train_examples[ii] for ii in indices]
             train_labels = [train_labels[ii] for ii in indices]
-            t = tqdm(range(0, len(train_examples), self.params.batch_size), disable=not _verbose)
+            t = tqdm(
+                range(0, len(train_examples), self.params.batch_size),
+                disable=not _verbose,
+            )
             for start_idx in t:
-                batch_examples = train_examples[start_idx:start_idx + self.params.batch_size]
-                batch_labels = train_labels[start_idx:start_idx + self.params.batch_size]
+                batch_examples = train_examples[start_idx : start_idx + self.params.batch_size]
+                batch_labels = train_labels[start_idx : start_idx + self.params.batch_size]
                 batch_data = self.encoder.batch_encode(
                     examples=batch_examples,
                     padding_length=self.params.padding_length,
-                    **({'add_terminals': self.params.add_terminals}
-                       if self.params.add_terminals is not None else {})
+                    **(
+                        {"add_terminals": self.params.add_terminals}
+                        if self.params.add_terminals is not None
+                        else {}
+                    ),
                 )
-                batch_data.update({
-                    "_labels": self._prepare_labels(  # `_` 'cause this key is for intermediate use
-                        batch_labels,
-                        # pad to the max length amongst encoded examples
-                        max([len(_split_lengths) for _split_lengths in batch_data["split_lengths"]])
-                    )
-                })
+                batch_data.update(
+                    {
+                        "_labels": self._prepare_labels(  # `_` 'cause this key is for intermediate use
+                            batch_labels,
+                            # pad to the max length amongst encoded examples
+                            max(
+                                [
+                                    len(_split_lengths)
+                                    for _split_lengths in batch_data["split_lengths"]
+                                ]
+                            ),
+                        )
+                    }
+                )
                 batch_data = self.forward(batch_data)
                 loss = batch_data["loss"]
                 # .cpu() returns copy of tensor in CPU memory
@@ -255,8 +280,8 @@ class BaseClassification(nn_module):
                 # optimizer and scheduler step
                 batch_id = start_idx / self.params.batch_size
                 if (
-                    start_idx + self.params.batch_size >= len(train_examples) or
-                    (batch_id + 1) % self.params.gradient_accumulation_steps == 0
+                    start_idx + self.params.batch_size >= len(train_examples)
+                    or (batch_id + 1) % self.params.gradient_accumulation_steps == 0
                 ):
                     # update weights when it is the last batch in the epoch or
                     # when specified step is reached or
@@ -271,15 +296,20 @@ class BaseClassification(nn_module):
             train_loss = train_loss / train_batches
             # dev evaluation
             predictions, targets = [], []
-            t = tqdm(range(0, len(dev_examples), self.params.batch_size), disable=not _verbose)
+            t = tqdm(
+                range(0, len(dev_examples), self.params.batch_size),
+                disable=not _verbose,
+            )
             for start_idx in t:
-                batch_examples = dev_examples[start_idx:start_idx + self.params.batch_size]
-                batch_labels_targetted = dev_labels[start_idx:start_idx + self.params.batch_size]
+                batch_examples = dev_examples[start_idx : start_idx + self.params.batch_size]
+                batch_labels_targetted = dev_labels[start_idx : start_idx + self.params.batch_size]
                 batch_labels_predicted = self.predict(batch_examples)
                 # validation
                 if len(batch_labels_predicted) != len(batch_labels_targetted):
-                    msg = f"Number of predictions ({len(batch_labels_predicted)}) " \
-                          f"not equal to number of targets ({len(batch_labels_targetted)})"
+                    msg = (
+                        f"Number of predictions ({len(batch_labels_predicted)}) "
+                        f"not equal to number of targets ({len(batch_labels_targetted)})"
+                    )
                     logger.error(msg)
                     raise AssertionError(msg)
                 # flatten if required
@@ -290,33 +320,42 @@ class BaseClassification(nn_module):
                     # raised in case of sequence classification; implies already flattened
                     pass
                 # discard unwanted predictions using _label_padding_idx
-                batch_labels_predicted, batch_labels_targetted = zip(*[
-                    (x, y) for x, y in zip(batch_labels_predicted, batch_labels_targetted)
-                    if y != self.params._label_padding_idx
-                ])
+                batch_labels_predicted, batch_labels_targetted = zip(
+                    *[
+                        (x, y)
+                        for x, y in zip(batch_labels_predicted, batch_labels_targetted)
+                        if y != self.params._label_padding_idx
+                    ]
+                )
                 predictions.extend(batch_labels_predicted)
                 targets.extend(batch_labels_targetted)
-                progress_bar_msg = f"Epoch: {epoch} | " \
-                                   f"Validation Metric: {self.params.validation_metric} "
+                progress_bar_msg = (
+                    f"Epoch: {epoch} | " f"Validation Metric: {self.params.validation_metric} "
+                )
                 t.set_description(progress_bar_msg, refresh=True)
             # compute score
             if ValidationMetricType(self.params.validation_metric) == ValidationMetricType.ACCURACY:
                 dev_score = accuracy_score(targets, predictions, normalize=True)
             elif ValidationMetricType(self.params.validation_metric) == ValidationMetricType.F1:
-                dev_score = f1_score(targets, predictions, average='weighted')
+                dev_score = f1_score(targets, predictions, average="weighted")
             else:
-                msg = f"Invalid 'validation_metric' ({self.params.validation_metric}) provided " \
-                      f"in params. Allowed values are only 'accuracy' and 'f1'"
+                msg = (
+                    f"Invalid 'validation_metric' ({self.params.validation_metric}) provided "
+                    f"in params. Allowed values are only 'accuracy' and 'f1'"
+                )
                 raise ValueError(msg)
             # save model weights in a temp folder; later move it to folder passed through dump()
             if dev_score >= best_dev_score:
                 torch.save(self.state_dict(), temp_weights_save_path)
                 phrase = (
-                    f"improved from '{best_dev_score:.4f}' to" if dev_score > best_dev_score
+                    f"improved from '{best_dev_score:.4f}' to"
+                    if dev_score > best_dev_score
                     else "remained at"
                 )
-                msg = f"Model weights saved after epoch: {epoch} when dev score {phrase} " \
-                      f"'{dev_score:.4f}'\n"
+                msg = (
+                    f"Model weights saved after epoch: {epoch} when dev score {phrase} "
+                    f"'{dev_score:.4f}'\n"
+                )
                 logger.info(msg)
                 # update patience counter
                 if dev_score == best_dev_score:
@@ -326,13 +365,17 @@ class BaseClassification(nn_module):
                 best_dev_score, best_dev_epoch = dev_score, epoch
             else:
                 patience_counter += 1
-                msg = f"No weights saved after epoch: {epoch}. " \
-                      f"The dev score last improved after epoch: {best_dev_epoch}"
+                msg = (
+                    f"No weights saved after epoch: {epoch}. "
+                    f"The dev score last improved after epoch: {best_dev_epoch}"
+                )
                 logger.info(msg)
 
         # load back the best model dumped in temporary path and delete the temp folder
-        msg = f"Setting the model weights to checkpoint whose dev " \
-              f"{self.params.validation_metric} score is {best_dev_score:.4f}"
+        msg = (
+            f"Setting the model weights to checkpoint whose dev "
+            f"{self.params.validation_metric} score is {best_dev_score:.4f}"
+        )
         logger.info(msg)
         # because we are loading to same device, no `map_location` specified
         self.load_state_dict(torch.load(temp_weights_save_path))
@@ -346,14 +389,16 @@ class BaseClassification(nn_module):
         """Common validation and updation of the params dict before creating encoders and layers"""
 
         # populate few required key-values (ensures the key-values are populated if not inputted)
-        params.update({
-            "add_terminals": params.get("add_terminals", True),
-            "padding_length": params.get("padding_length"),  # explicitly obtained for more
-            # transparent param dictionary
-            "tokenizer_type": params.get("tokenizer_type", DEFAULT_TOKENIZER),
-            "_label_padding_idx": LABEL_PAD_TOKEN_IDX,  # used to discard unwanted i.e. label
-            # padding indices in the batch predictions in the fit() method
-        })
+        params.update(
+            {
+                "add_terminals": params.get("add_terminals", True),
+                "padding_length": params.get("padding_length"),  # explicitly obtained for more
+                # transparent param dictionary
+                "tokenizer_type": params.get("tokenizer_type", DEFAULT_TOKENIZER),
+                "_label_padding_idx": LABEL_PAD_TOKEN_IDX,  # used to discard unwanted i.e. label
+                # padding indices in the batch predictions in the fit() method
+            }
+        )
 
         # validate tokenizer_type param
         allowed_tokenizer_types = {
@@ -361,16 +406,20 @@ class BaseClassification(nn_module):
                 TokenizerType.WHITESPACE_TOKENIZER,
                 TokenizerType.WHITESPACE_AND_CHAR_DUAL_TOKENIZER,
             ],
-            EmbedderType.BERT: [TokenizerType.HUGGINGFACE_PRETRAINED_TOKENIZER, ]
+            EmbedderType.BERT: [
+                TokenizerType.HUGGINGFACE_PRETRAINED_TOKENIZER,
+            ],
         }
         if params.get("embedder_type") and params.get("tokenizer_type"):
             embedder_type = EmbedderType(params.get("embedder_type"))
             tokenizer_type = TokenizerType(params.get("tokenizer_type"))
             if embedder_type in allowed_tokenizer_types:
                 if tokenizer_type not in allowed_tokenizer_types[embedder_type]:
-                    msg = f"For the selected choice of embedder ({embedder_type.value}), only " \
-                          f"the following tokenizer_type are allowed: " \
-                          f"{[v.value for v in allowed_tokenizer_types[embedder_type]]}."
+                    msg = (
+                        f"For the selected choice of embedder ({embedder_type.value}), only "
+                        f"the following tokenizer_type are allowed: "
+                        f"{[v.value for v in allowed_tokenizer_types[embedder_type]]}."
+                    )
                     raise ValueError(msg)
 
         # validate validation metric
@@ -378,9 +427,11 @@ class BaseClassification(nn_module):
         try:
             validation_metric = ValidationMetricType(validation_metric)
         except ValueError as e:
-            msg = f"Expected validation_metric amongst " \
-                  f"{[v.value for v in ValidationMetricType.__members__.values()]} " \
-                  f"but found '{validation_metric}'."
+            msg = (
+                f"Expected validation_metric amongst "
+                f"{[v.value for v in ValidationMetricType.__members__.values()]} "
+                f"but found '{validation_metric}'."
+            )
             raise ValueError(msg) from e
 
         return params
@@ -391,10 +442,12 @@ class BaseClassification(nn_module):
         # create and fit encoder
         self.encoder = InputEncoderFactory.get_encoder_cls(params.get("tokenizer_type"))(**params)
         self.encoder.prepare(examples=examples)
-        params.update({
-            "_num_tokens": len(self.encoder.get_vocab()),
-            "_padding_idx": self.encoder.get_pad_token_idx(),
-        })
+        params.update(
+            {
+                "_num_tokens": len(self.encoder.get_vocab()),
+                "_padding_idx": self.encoder.get_pad_token_idx(),
+            }
+        )
         return params
 
     def _prepare_embedder(self, **params) -> Dict:
@@ -412,36 +465,46 @@ class BaseClassification(nn_module):
             token_pretrained_embedding_filepath = params.get("token_pretrained_embedding_filepath")
             glove_container = GloVeEmbeddingsContainer(
                 token_dimension=token_dimension,
-                token_pretrained_embedding_filepath=token_pretrained_embedding_filepath
+                token_pretrained_embedding_filepath=token_pretrained_embedding_filepath,
             )
             token2emb = glove_container.get_pretrained_word_to_embeddings_dict()
             glove_emb_dim = glove_container.token_dimension
             # validate emb_dim
             emb_dim = params.get("emb_dim", glove_emb_dim)
             if emb_dim != glove_emb_dim:
-                msg = f"Provided 'emb_dim':{emb_dim} cannot be used with the provided " \
-                      f"'embedder_type':{embedder_type}. Consider not specifying any 'emb_dim' " \
-                      f"with this embedder."
+                msg = (
+                    f"Provided 'emb_dim':{emb_dim} cannot be used with the provided "
+                    f"'embedder_type':{embedder_type}. Consider not specifying any 'emb_dim' "
+                    f"with this embedder."
+                )
                 raise ValueError(msg)
-            params.update({
-                "embedder_type": embedder_type,
-                "emb_dim": emb_dim,  # overwrite the default value
-                "_embedding_weights": {
-                    i: token2emb[t] for t, i in self.encoder.get_vocab().items() if t in token2emb
-                },
-            })
+            params.update(
+                {
+                    "embedder_type": embedder_type,
+                    "emb_dim": emb_dim,  # overwrite the default value
+                    "_embedding_weights": {
+                        i: token2emb[t]
+                        for t, i in self.encoder.get_vocab().items()
+                        if t in token2emb
+                    },
+                }
+            )
         elif EmbedderType(embedder_type) == EmbedderType.BERT:
             # the bert model is directly loaded in _init_core() itself
-            params.update({
-                "embedder_type": embedder_type,
-                "emb_dim": self.encoder.config.hidden_size,  # overwrite the default value
-                "pretrained_model_name_or_path": params.get("pretrained_model_name_or_path"),
-            })
+            params.update(
+                {
+                    "embedder_type": embedder_type,
+                    "emb_dim": self.encoder.config.hidden_size,  # overwrite the default value
+                    "pretrained_model_name_or_path": params.get("pretrained_model_name_or_path"),
+                }
+            )
 
         if not params.get("emb_dim"):
-            msg = f"Need a valid 'emb_dim' to initialize embedding layers. To specify a " \
-                  f"particular dimension, either pass-in the 'emb_dim' param or provide a  valid " \
-                  f"'embedder_type' param. Continuing with a default value:{DEFAULT_EMB_DIM}."
+            msg = (
+                f"Need a valid 'emb_dim' to initialize embedding layers. To specify a "
+                f"particular dimension, either pass-in the 'emb_dim' param or provide a  valid "
+                f"'embedder_type' param. Continuing with a default value:{DEFAULT_EMB_DIM}."
+            )
             logger.error(msg)
             params.update({"emb_dim": DEFAULT_EMB_DIM})
 
@@ -517,22 +580,27 @@ class BaseClassification(nn_module):
         # create new instance
         module = cls()
         if module.name != all_params["name"]:
-            msg = f"The name of the loaded model ({all_params['name']}) from the path '{path}' " \
-                  f"is different from the name of the module instantiated ({module.name})"
+            msg = (
+                f"The name of the loaded model ({all_params['name']}) from the path '{path}' "
+                f"is different from the name of the module instantiated ({module.name})"
+            )
             raise AssertionError(msg)
 
         # load encoder's state
         module.params.update(dict(all_params))
         module.encoder = InputEncoderFactory.get_encoder_cls(
-            tokenizer_type=all_params["tokenizer_type"])(**module.params)
+            tokenizer_type=all_params["tokenizer_type"]
+        )(**module.params)
         module.encoder.load(path)
 
         # load weights
         module._init_graph()
         device = "cuda" if torch.cuda.is_available() else "cpu"
         if device != module.params.device:
-            msg = f"Model was dumped when on the device:{module.params.device} " \
-                  f"but is now being loaded on device:{device}"
+            msg = (
+                f"Model was dumped when on the device:{module.params.device} "
+                f"but is now being loaded on device:{device}"
+            )
             logger.warning(msg)
             module.params.device = device
         bin_path = os.path.join(path, "model.bin")
@@ -540,12 +608,16 @@ class BaseClassification(nn_module):
         module_state_dict = module.state_dict()
         keys_diff = module_state_dict.keys() - trained_state_dict.keys()
         if keys_diff:
-            msg = f"While loading {module.__class__.__name__}, {len(keys_diff)} keys of the " \
-                  f"total {len(module_state_dict.keys())} of the torch module are not found in " \
-                  f"the file loaded from {bin_path} "
-            msg += "\n- This IS fine if loading a model for which only some parameters were " \
-                   "trained and others frozen. \n- This IS NOT fine if you expect all parameters " \
-                   "were trained."
+            msg = (
+                f"While loading {module.__class__.__name__}, {len(keys_diff)} keys of the "
+                f"total {len(module_state_dict.keys())} of the torch module are not found in "
+                f"the file loaded from {bin_path} "
+            )
+            msg += (
+                "\n- This IS fine if loading a model for which only some parameters were "
+                "trained and others frozen. \n- This IS NOT fine if you expect all parameters "
+                "were trained."
+            )
             logger.warning(msg)
         module.load_state_dict(trained_state_dict, strict=False)
         module.to(device)

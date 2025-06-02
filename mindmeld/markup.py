@@ -21,7 +21,11 @@ import sys
 
 from .constants import SPACY_SYS_ENTITIES_NOT_IN_DUCKLING
 from .core import Entity, NestedEntity, ProcessedQuery, QueryEntity, Span
-from .exceptions import MarkupError, SystemEntityMarkupError, SystemEntityResolutionError
+from .exceptions import (
+    MarkupError,
+    SystemEntityMarkupError,
+    SystemEntityResolutionError,
+)
 from .query_factory import QueryFactory
 
 logger = logging.getLogger(__name__)
@@ -34,9 +38,7 @@ META_SPLIT = "|"
 
 START_CHARACTERS = frozenset({ENTITY_START, GROUP_START})
 END_CHARACTERS = frozenset({ENTITY_END, GROUP_END})
-SPECIAL_CHARACTERS = frozenset(
-    {ENTITY_START, ENTITY_END, GROUP_START, GROUP_END, META_SPLIT}
-)
+SPECIAL_CHARACTERS = frozenset({ENTITY_START, ENTITY_END, GROUP_START, GROUP_END, META_SPLIT})
 TIME_FORMAT = "%Y%m%dT%H%M%S"
 
 
@@ -77,9 +79,7 @@ def load_query(
         markup, query_factory=query_factory, query_options=query_options
     )
 
-    return ProcessedQuery(
-        query, domain=domain, intent=intent, entities=entities, is_gold=is_gold
-    )
+    return ProcessedQuery(query, domain=domain, intent=intent, entities=entities, is_gold=is_gold)
 
 
 def cache_query_file(
@@ -89,7 +89,7 @@ def cache_query_file(
     app_path=None,
     domain=None,
     intent=None,
-    is_gold=False
+    is_gold=False,
 ):
     """Loads the specified query file into the query cache
 
@@ -278,16 +278,12 @@ def _process_annotations(query, annotations, system_entity_recognizer):
             try:
                 head = ann["head"]
             except KeyError as exc:
-                msg = "Group between {} and {} missing head".format(
-                    ann["start"], ann["end"]
-                )
+                msg = "Group between {} and {} missing head".format(ann["start"], ann["end"])
                 raise MarkupError(msg) from exc
             try:
                 children = ann["children"]
             except KeyError as exc:
-                msg = "Group between {} and {} missing children".format(
-                    ann["start"], ann["end"]
-                )
+                msg = "Group between {} and {} missing children".format(ann["start"], ann["end"])
                 raise MarkupError(msg) from exc
             entity = head.with_children(children)
             entities.remove(head)
@@ -303,7 +299,9 @@ def _process_annotations(query, annotations, system_entity_recognizer):
             if Entity.is_system_entity(ann["type"]):
                 if ann["type"] in SPACY_SYS_ENTITIES_NOT_IN_DUCKLING:
                     raw_entity = Entity(
-                        text=ann["text"], entity_type=ann["type"], value={"value": ann["text"]}
+                        text=ann["text"],
+                        entity_type=ann["type"],
+                        value={"value": ann["text"]},
                     )
                 else:
                     try:
@@ -322,9 +320,7 @@ def _process_annotations(query, annotations, system_entity_recognizer):
                     value = {"children": ann["children"]}
                 except KeyError:
                     value = None
-                raw_entity = Entity(
-                    ann["text"], ann["type"], role=ann.get("role"), value=value
-                )
+                raw_entity = Entity(ann["text"], ann["type"], role=ann.get("role"), value=value)
 
             if ann.get("parent"):
                 parent = ann.get("parent")
@@ -457,19 +453,13 @@ def _tokenize_markup(markup):
                 else:
                     key = "entity"
                 if open_annotations[key] == 0:
-                    msg = "Mismatched end for {} at position {}: {}".format(
-                        key, idx, markup
-                    )
+                    msg = "Mismatched end for {} at position {}: {}".format(key, idx, markup)
                     raise MarkupError(msg)
                 if not token_is_meta:
-                    msg = "Missing label for {} at position {}: {}".format(
-                        key, idx, markup
-                    )
+                    msg = "Missing label for {} at position {}: {}".format(key, idx, markup)
                     raise MarkupError(msg)
                 if not token:
-                    msg = "Empty label for {} at position {}: {}".format(
-                        key, idx, markup
-                    )
+                    msg = "Empty label for {} at position {}: {}".format(key, idx, markup)
                     raise MarkupError(msg)
                 open_annotations[key] -= 1
 
@@ -584,9 +574,7 @@ def _dump_brat(processed_query, **kwargs):
             "head": entity_dict[(entity.parent.entity.type, entity.parent.span.start)],
             "dependent": entity_dict[(entity.entity.type, entity.span.start)],
         }
-        annotation = "R{index}\t{entity} Arg1:T{head} Arg2:T{dependent}\t".format(
-            **params
-        )
+        annotation = "R{index}\t{entity} Arg1:T{head} Arg2:T{dependent}\t".format(**params)
         annotations.append(annotation)
 
     return (text, "\n".join(annotations))
@@ -620,7 +608,11 @@ def validate_markup(markup, query_factory):
 
 
 def _mark_up_entities(
-    query_str, entities, exclude_entity=False, exclude_group=False, exclude_role=False
+    query_str,
+    entities,
+    exclude_entity=False,
+    exclude_group=False,
+    exclude_role=False,
 ):
     annotations = []
     for entity in entities or tuple():
@@ -698,15 +690,11 @@ def _annotations_for_entity(entity, depth=0, parent_offset=0):
     if entity.children:
         # This entity is the head of a group. Add an annotation for the group.
         leftmost = entity
-        while (
-            leftmost.children and leftmost.children[0].span.start < leftmost.span.start
-        ):
+        while leftmost.children and leftmost.children[0].span.start < leftmost.span.start:
             leftmost = leftmost.children[0]
         g_start = leftmost.span.start
         rightmost = entity
-        while (
-            rightmost.children and rightmost.children[-1].span.end > rightmost.span.end
-        ):
+        while rightmost.children and rightmost.children[-1].span.end > rightmost.span.end:
             rightmost = rightmost.children[-1]
         g_end = rightmost.span.end
         annotations.append(

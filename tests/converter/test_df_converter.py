@@ -15,9 +15,7 @@ def test_df_converter():
     )
 
     # This is the dialogflow app converted to mindmeld app
-    mm_df_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "mm_df_converted_project"
-    )
+    mm_df_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mm_df_converted_project")
 
     df_init = DialogflowConverter(df_project_path, mm_df_path)
     df_init.convert_project()
@@ -97,7 +95,10 @@ def test_df_converter():
 
     conv.process("hello!")
     conv.assert_text(
-        ["Hello, thanks for choosing ACME Bank.", "Hello. Welcome to ACME Bank."]
+        [
+            "Hello, thanks for choosing ACME Bank.",
+            "Hello. Welcome to ACME Bank.",
+        ]
     )
 
     conv.process("I dont know what the laptop")

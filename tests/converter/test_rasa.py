@@ -47,31 +47,28 @@ convert_test_data = [
     (
         "XyZ date for [21.1(5)L&](product_version0) ?",
         "XyZ date for {21.1(5)L&|product_version0} ?",
-        {'{21.1(5)L&|product_version0}'}
+        {"{21.1(5)L&|product_version0}"},
     ),
-    (
-        "what are your abilities?",
-        "what are your abilities?",
-        {}
-    ),
+    ("what are your abilities?", "what are your abilities?", {}),
     (
         "What is the End of Life Product Restart Time for [XYZ2990-ESPN19-N](PID) ?",
         "What is the End of Life Product Restart Time for {XYZ2990-ESPN19-N|pid} ?",
-        {'{XYZ2990-ESPN19-N|pid}'}
+        {"{XYZ2990-ESPN19-N|pid}"},
     ),
     (
         "XyZ date for [21.1(5)L&](proDucT_version1) - XyZ date for [21.1(5)L&](product_version2)",
         "XyZ date for {21.1(5)L&|product_version1} - XyZ date for {21.1(5)L&|product_version2}",
-        {'{21.1(5)L&|product_version1}', '{21.1(5)L&|product_version2}'}
+        {"{21.1(5)L&|product_version1}", "{21.1(5)L&|product_version2}"},
     ),
 ]
 
 
 @pytest.mark.parametrize("rasa_entry,expected_mindmeld_entry,expected_entities", convert_test_data)
 def test_translate_rasa_entry_to_mindmeld_entry(
-        rasa_converter, rasa_entry, expected_mindmeld_entry, expected_entities):
+    rasa_converter, rasa_entry, expected_mindmeld_entry, expected_entities
+):
     mindmeld_entry = rasa_converter._translate_rasa_entry_to_mindmeld_entry(rasa_entry)
     assert mindmeld_entry == expected_mindmeld_entry
-    assert len(
-        rasa_converter.all_entities.intersection(expected_entities)
-    ) == len(expected_entities)
+    assert len(rasa_converter.all_entities.intersection(expected_entities)) == len(
+        expected_entities
+    )

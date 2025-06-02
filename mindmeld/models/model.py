@@ -14,14 +14,21 @@
 """This module contains base classes for models defined in the models subpackage."""
 
 import copy
-import json
 import logging
 import math
 import os
 import pickle
 from abc import ABC, abstractmethod
 from inspect import signature
-from typing import Union, Type, Dict, Any, Tuple, Iterable, List, Pattern, Self, Set
+from typing import (
+    Union,
+    Type,
+    Dict,
+    Any,
+    Tuple,
+    Iterable,
+    List,
+)
 
 import joblib
 from sklearn.model_selection import (
@@ -56,182 +63,17 @@ from ..core import ProcessedQuery, QueryEntity
 from ..resource_loader import ResourceLoader, ProcessedQueryList as PQL
 from ..text_preparation.text_preparation_pipeline import (
     TextPreparationPipelineFactory,
-    TextPreparationPipeline
+    TextPreparationPipeline,
 )
 
 # for backwards compatability for sklearn models serialized and dumped in previous version
-from .labels import LabelEncoder, EntityLabelEncoder  # pylint: disable=unused-import
+from .labels import LabelEncoder
+from .model_config import ModelConfig
 
 logger = logging.getLogger(__name__)
 
 Examples = Union[PQL.QueryIterator, PQL.ListIterator]
 Labels = Union[PQL.DomainIterator, PQL.IntentIterator, PQL.EntitiesIterator]
-
-
-class ModelConfig:
-    """A value object representing a model configuration.
-
-    Attributes:
-        model_type (str): The name of the model type. Will be used to find the
-            model class to instantiate
-        example_type (str): The type of the examples which will be passed into
-            `fit()` and `predict()`. Used to select feature extractors
-        label_type (str): The type of the labels which will be passed into
-            `fit()` and returned by `predict()`. Used to select the label encoder
-        model_settings (dict): Settings specific to the model type specified
-        params (dict): Params to pass to the underlying classifier
-        param_selection (dict): Configuration for param selection (using cross
-            validation)
-            {'type': 'shuffle',
-            'n': 3,
-            'k': 10,
-            'n_jobs': 2,
-            'scoring': '',
-            'grid': {}
-            }
-        features (dict): The keys are the names of feature extractors and the
-            values are either a kwargs dict which will be passed into the
-            feature extractor function, or a callable which will be used as to
-            extract features
-        train_label_set (regex pattern): The regex pattern for finding training
-            file names.
-        test_label_set (regex pattern): The regex pattern for finding testing
-            file names.
-    """
-
-    __slots__ = [
-        "model_type",
-        "example_type",
-        "label_type",
-        "features",
-        "model_settings",
-        "params",
-        "param_selection",
-        "train_label_set",
-        "test_label_set",
-    ]
-
-    def __init__(
-        self,
-        model_type: str = None,
-        example_type: str = None,
-        label_type: str = None,
-        features: Dict = None,
-        model_settings: Dict = None,
-        params: Dict = None,
-        param_selection: Dict = None,
-        train_label_set: Pattern[str] = None,
-        test_label_set: Pattern[str] = None,
-    ):
-        for arg, val in {
-            "model_type": model_type,
-            "label_type": label_type,
-        }.items():
-            if val is None:
-                raise TypeError("__init__() missing required argument {!r}".format(arg))
-        self.model_type = model_type
-        self.example_type = example_type
-        self.label_type = label_type
-        self.features = features
-        self.model_settings = model_settings
-        self.params = params
-        self.param_selection = param_selection
-        self.train_label_set = train_label_set
-        self.test_label_set = test_label_set
-
-    def __repr__(self):
-        args_str = ", ".join(
-            "{}={!r}".format(key, getattr(self, key)) for key in self.__slots__
-        )
-        return "{}({})".format(self.__class__.__name__, args_str)
-
-    def to_dict(self) -> Dict:
-        """Converts the model config object into a dict
-
-        Returns:
-            dict: A dict version of the config
-        """
-        result = {}
-        for attr in self.__slots__:
-            result[attr] = getattr(self, attr)
-        return result
-
-    def to_json(self) -> str:
-        """Converts the model config object to JSON
-
-        Returns:
-            str: JSON representation of the classifier
-        """
-        return json.dumps(self.to_dict(), sort_keys=True)
-
-    def resolve_config(self, new_config: Self):
-        """This method resolves any config incompatibility issues by
-        loading the latest settings from the app config to the current config
-
-        Args:
-            new_config (ModelConfig): The ModelConfig representing the app's latest config
-        """
-        new_settings = ["train_label_set", "test_label_set"]
-        logger.warning(
-            "Loading missing properties %s from app " "configuration file", new_settings
-        )
-        for setting in new_settings:
-            setattr(self, setting, getattr(new_config, setting))
-
-    def get_ngram_lengths_and_thresholds(self, rname: str) -> Tuple:
-        """
-        Returns the n-gram lengths and thresholds to extract to optimize resource collection
-
-        Args:
-            rname (string): Name of the resource
-
-        Returns:
-            (tuple): tuple containing:
-
-                * lengths (list of int): list of n-gram lengths to be extracted
-                * thresholds (list of int): thresholds to be applied to corresponding n-gram lengths
-        """
-        lengths = thresholds = None
-        # if it's not the n-gram feature, we don't need length and threshold information
-        if rname == CHAR_NGRAM_FREQ_RSC:
-            feature_name = "char-ngrams"
-        elif rname == WORD_NGRAM_FREQ_RSC:
-            feature_name = "bag-of-words"
-        else:
-            return lengths, thresholds
-
-        # feature name varies based on whether it's for a classifier or tagger
-        if self.model_type == "text":
-            if feature_name in self.features:
-                lengths = self.features[feature_name]["lengths"]
-                thresholds = self.features[feature_name].get(
-                    "thresholds", [1] * len(lengths)
-                )
-        elif self.model_type == "tagger":
-            feature_name = feature_name + "-seq"
-            if feature_name in self.features:
-                lengths = self.features[feature_name][
-                    "ngram_lengths_to_start_positions"
-                ].keys()
-                thresholds = self.features[feature_name].get(
-                    "thresholds", [1] * len(lengths)
-                )
-
-        return lengths, thresholds
-
-    def required_resources(self) -> Set:
-        """Returns the resources this model requires
-
-        Returns:
-            set: set of required resources for this model
-        """
-        # get list of resources required by feature extractors
-        required_resources = set()
-        if self.features:
-            for name in self.features:
-                feature = get_feature_extractor(self.example_type, name)
-                required_resources.update(feature.__dict__.get("requirements", []))
-        return required_resources
 
 
 class AbstractModel(ABC):
@@ -255,7 +97,10 @@ class AbstractModel(ABC):
 
     @abstractmethod
     def initialize_resources(
-        self, resource_loader: ResourceLoader, examples: Examples = None, labels: Labels = None
+        self,
+        resource_loader: ResourceLoader,
+        examples: Examples = None,
+        labels: Labels = None,
     ):
         raise NotImplementedError
 
@@ -300,7 +145,7 @@ class AbstractModel(ABC):
         try:
             model_configs_save_path = cls._get_model_config_save_path(path)
             model_config = pickle.load(open(model_configs_save_path, "rb"))
-        except FileNotFoundError as e:  # backwards compatability for sklearn-based model classes
+        except (FileNotFoundError) as e:  # backwards compatability for sklearn-based model classes
             metadata = joblib.load(path)
             # metadata here can be a serialized model (eg. TextModel) or a dict (eg. TaggerModel)
             if isinstance(metadata, dict):
@@ -320,9 +165,11 @@ class AbstractModel(ABC):
                         #   in previous version, a dictionary '{'model': None, 'roles': set()}'
                         #       is dumped at the path: 'path/to/dump/<entity_name>-role.pkl'
                         #       although the self._model in RoleClassifier is None
-                        msg = f"Model config data cold not be identified from existing dump at " \
-                              f"path: {path}. Assuming that the dumped model is NoneType and " \
-                              f"belongs to a role classifier"
+                        msg = (
+                            f"Model config data cold not be identified from existing dump at "
+                            f"path: {path}. Assuming that the dumped model is NoneType and "
+                            f"belongs to a role classifier"
+                        )
                         raise FileNotFoundError(msg) from e
             else:
                 # compatability with previously dumped DomainClassifiers and IntentClassifiers
@@ -389,7 +236,6 @@ class AbstractModel(ABC):
 
     @property
     def text_preparation_pipeline(self) -> TextPreparationPipeline:
-
         text_preparation_pipeline = self._resources.get("text_preparation_pipeline")
 
         if not text_preparation_pipeline:
@@ -429,7 +275,14 @@ class Model(AbstractModel):
     def _get_model_constructor(self):
         raise NotImplementedError
 
-    def _fit_cv(self, examples: Iterable, labels: Iterable, groups=None, selection_settings: Dict=None, fixed_params: Dict=None):
+    def _fit_cv(
+        self,
+        examples: Iterable,
+        labels: Iterable,
+        groups=None,
+        selection_settings: Dict = None,
+        fixed_params: Dict = None,
+    ):
         """Called by the fit method when cross validation parameters are passed in. Runs cross
         validation and returns the best estimator and parameters.
 
@@ -447,7 +300,10 @@ class Model(AbstractModel):
         cv_iterator = self._get_cv_iterator(selection_settings)
 
         if selection_settings is None:
-            return self._fit(examples, labels, self.config.params), self.config.params
+            return (
+                self._fit(examples, labels, self.config.params),
+                self.config.params,
+            )
 
         cv_type = selection_settings["type"]
         num_splits = cv_iterator.get_n_splits(examples, labels, groups)
@@ -471,11 +327,9 @@ class Model(AbstractModel):
                     logger.info(
                         "Found parameter %s both in params and param_selection. Proceeding with param_selection.. \
                         (If you did not set this, it could be a Mindmeld default.)",
-                        key
+                        key,
                     )
-        estimator, param_grid = self._get_cv_estimator_and_params(
-            model_class, param_grid
-        )
+        estimator, param_grid = self._get_cv_estimator_and_params(model_class, param_grid)
         # set GridSearchCV's return_train_score attribute to False improves cross-validation
         # runtime perf as it doesn't have to compute training scores and which we don't consume
         grid_cv = GridSearchCV(
@@ -490,11 +344,7 @@ class Model(AbstractModel):
 
         for idx, params in enumerate(model.cv_results_["params"]):
             logger.debug("Candidate parameters: %s", params)
-            std_err = (
-                2.0
-                * model.cv_results_["std_test_score"][idx]
-                / math.sqrt(model.n_splits_)
-            )
+            std_err = 2.0 * model.cv_results_["std_test_score"][idx] / math.sqrt(model.n_splits_)
             if scoring == Model.LIKELIHOOD_SCORING:
                 msg = "Candidate average log likelihood: {:.4} ± {:.4}"
             else:
@@ -535,10 +385,8 @@ class Model(AbstractModel):
         result = copy.deepcopy(params)
         for param in params:
             if param not in expected_params:
-                msg = (
-                    "Unexpected param `{param}`, dropping it from model config.".format(
-                        param=param
-                    )
+                msg = "Unexpected param `{param}`, dropping it from model config.".format(
+                    param=param
                 )
                 logger.warning(msg)
                 result.pop(param)
@@ -556,7 +404,12 @@ class Model(AbstractModel):
     def _process_cv_best_params(best_params):
         return best_params
 
-    def select_params(self, examples: Iterable, labels: Iterable, selection_settings: Dict=None):
+    def select_params(
+        self,
+        examples: Iterable,
+        labels: Iterable,
+        selection_settings: Dict = None,
+    ):
         """Selects the best set of hyper-parameters for a given set of examples and true labels
             through cross-validation
 
@@ -736,8 +589,9 @@ class Model(AbstractModel):
                 resource_builders[rname] = resource_loader.CharNgramFreqBuilder(l, t)
             elif rname == WORD_NGRAM_FREQ_RSC:
                 l, t = self.config.get_ngram_lengths_and_thresholds(rname)
-                resource_builders[rname] = \
-                    resource_loader.WordNgramFreqBuilder(l, t, enable_stemming)
+                resource_builders[rname] = resource_loader.WordNgramFreqBuilder(
+                    l, t, enable_stemming
+                )
             elif rname == QUERY_FREQ_RSC:
                 resource_builders[rname] = resource_loader.QueryFreqBuilder(enable_stemming)
 
@@ -755,10 +609,9 @@ class Model(AbstractModel):
         ] = resource_loader.get_text_preparation_pipeline()
 
     def _validate_model_configs(self) -> Union[TypeError, ValueError]:
-
         for arg, val in {
             "features": self.config.features,
-            "example_type": self.config.example_type
+            "example_type": self.config.example_type,
         }.items():
             if val is None:
                 raise TypeError("__init__() missing required argument {!r}".format(arg))
@@ -766,18 +619,18 @@ class Model(AbstractModel):
         if self.config.params is None and (
             self.config.param_selection is None or self.config.param_selection.get("grid") is None
         ):
-            raise ValueError(
-                "__init__() One of 'params' and 'param_selection' is required"
-            )
+            raise ValueError("__init__() One of 'params' and 'param_selection' is required")
 
 
 class PytorchModel(AbstractModel):
     ALLOWED_CLASSIFIER_TYPES: List[str] = NotImplemented  # to be implemented in child classes
 
     def __init__(self, config):
-        if not _is_module_available('torch'):
-            raise ImportError("Install the extra 'torch' library by runnning "
-                              "'pip install mindmeld[torch]' to use pytorch based neural models")
+        if not _is_module_available("torch"):
+            raise ImportError(
+                "Install the extra 'torch' library by runnning "
+                "'pip install mindmeld[torch]' to use pytorch based neural models"
+            )
 
         super().__init__(config)
         self._label_encoder = get_label_encoder(self.config)
@@ -791,8 +644,10 @@ class PytorchModel(AbstractModel):
     @staticmethod
     def _validate_training_data(examples: List[Any], labels: Union[List[int], List[List[int]]]):
         if len(examples) != len(labels):
-            msg = f"Number of 'labels' ({len(labels)}) must be same as number of 'examples' " \
-                  f"({len(examples)})"
+            msg = (
+                f"Number of 'labels' ({len(labels)}) must be same as number of 'examples' "
+                f"({len(examples)})"
+            )
             raise AssertionError(msg)
 
     def _set_query_text_type(self, params: Dict = None, default: str = None):
@@ -825,8 +680,10 @@ class PytorchModel(AbstractModel):
         # validation
         allowed_text_types = ["text", "processed_text", "normalized_text"]
         if query_text_type not in allowed_text_types:
-            msg = f"The params 'query_text_type' can only be among " \
-                  f"{allowed_text_types} but found value {query_text_type}."
+            msg = (
+                f"The params 'query_text_type' can only be among "
+                f"{allowed_text_types} but found value {query_text_type}."
+            )
             logger.error(msg)
             raise ValueError(msg)
 
@@ -845,9 +702,11 @@ class PytorchModel(AbstractModel):
                 provided input configs
         """
         if not self._query_text_type:
-            msg = "The instance attribute '_query_text_type' must be set by calling " \
-                  "_set_query_text_type() method before calling the " \
-                  "_get_texts_from_examples() method."
+            msg = (
+                "The instance attribute '_query_text_type' must be set by calling "
+                "_set_query_text_type() method before calling the "
+                "_get_texts_from_examples() method."
+            )
             logger.debug(msg)
             raise ValueError(msg)
         return [getattr(example, self._query_text_type) for example in examples]

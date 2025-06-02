@@ -65,10 +65,12 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
             n_classifiers (int): Number of classifiers to be used by multi-model heuristics
             n_epochs (int): Number of epochs to run tuning
             batch_size (int): Number of queries to select at each iteration
-            tuning_level (list): The hierarchy levels to tune ("domain" or "intent" and/or "entity")
-            classifier_tuning_strategies (List[str]): List of strategies to use for classifier tuning
-                (Options: "LeastConfidenceSampling", "EntropySampling", "MarginSampling", "RandomSampling",
-                "KLDivergenceSampling", "DisagreementSampling", "EnsembleSampling")
+            tuning_level (list): The hierarchy levels to tune ("domain" or "intent" and/or
+                "entity")
+            classifier_tuning_strategies (List[str]): List of strategies to use for classifier
+                tuning (Options: "LeastConfidenceSampling", "EntropySampling", "MarginSampling",
+                "RandomSampling", "KLDivergenceSampling", "DisagreementSampling",
+                "EnsembleSampling")
             tagger_tuning_strategies (List[str]): List of strategies to use for tagger tuning
                 (Options: "LeastConfidenceSampling", "EntropySampling", "MarginSampling")
             classifier_selection_strategy (str): Single strategy to use for log selection
@@ -99,8 +101,8 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
         self.aggregate_statistic = MindMeldALClassifier._validate_aggregate_statistic(
             aggregate_statistic
         )
-        self.class_level_statistic = (
-            MindMeldALClassifier._validate_class_level_statistic(class_level_statistic)
+        self.class_level_statistic = MindMeldALClassifier._validate_class_level_statistic(
+            class_level_statistic
         )
         self.log_usage_pct = log_usage_pct
         self.labeled_logs_pattern = labeled_logs_pattern
@@ -131,7 +133,7 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
             )
 
     def _get_mindmeld_al_classifier(self):
-        """ Creates an instance of a MindMeld Active Learning Classifier. """
+        """Creates an instance of a MindMeld Active Learning Classifier."""
         return MindMeldALClassifier(
             self.app_path,
             self.tuning_level,
@@ -151,7 +153,7 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
 
     @property
     def __dict__(self):
-        """ Custom dictionary method used to save key experiment params. """
+        """Custom dictionary method used to save key experiment params."""
         return {
             "app_path": self.app_path,
             "train_pattern": self.train_pattern,
@@ -225,13 +227,9 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
                 strategy=self.classifier_selection_strategy,
                 queries=newly_sampled_queries,
                 tuning_type=TuningType.CLASSIFIER,
-
             )
 
-        if (
-            self.tagger_selection_strategy
-            and TuneLevel.ENTITY.value in self.tuning_level
-        ):
+        if self.tagger_selection_strategy and TuneLevel.ENTITY.value in self.tuning_level:
             newly_sampled_queries = self._run_strategy(
                 tuning_type=TuningType.TAGGER,
                 strategy=self.tagger_selection_strategy,
@@ -250,18 +248,16 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
             aggregate_statistic=self.aggregate_statistic,
             class_level_statistic=self.class_level_statistic,
             plot_entities=(
-                TuneLevel.ENTITY.value in self.tuning_level
-                and self.tagger_tuning_strategies
+                TuneLevel.ENTITY.value in self.tuning_level and self.tagger_tuning_strategies
             ),
             plot_intents=(
-                TuneLevel.INTENT.value in self.tuning_level
-                and self.classifier_tuning_strategies
+                TuneLevel.INTENT.value in self.tuning_level and self.classifier_tuning_strategies
             ),
         )
         plot_manager.generate_plots()
 
     def _train_all_strategies(self):
-        """ Train with all active learning strategies."""
+        """Train with all active learning strategies."""
 
         # Checks to ensure classifier/tagger tuning is only run when specified in tuning levels.
         if self.classifier_tuning_strategies and (
@@ -271,16 +267,11 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
             for strategy in self.classifier_tuning_strategies:
                 self._run_strategy(tuning_type=TuningType.CLASSIFIER, strategy=strategy)
 
-        if (
-            self.tagger_tuning_strategies
-            and TuneLevel.ENTITY.value in self.tuning_level
-        ):
+        if self.tagger_tuning_strategies and TuneLevel.ENTITY.value in self.tuning_level:
             for strategy in self.tagger_tuning_strategies:
                 self._run_strategy(tuning_type=TuningType.TAGGER, strategy=strategy)
 
-    def _run_strategy(
-        self, tuning_type: TuningType, strategy: str, select_mode: bool = False
-    ):
+    def _run_strategy(self, tuning_type: TuningType, strategy: str, select_mode: bool = False):
         """Helper function to train a single strategy.
 
         Args:
@@ -296,18 +287,14 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
             for iteration in range(self.num_iterations):
                 self._log_tuning_status(tuning_type, strategy, epoch, iteration)
                 if iteration == 0:
-                    newly_sampled_queries_ids = (
-                        self.data_bucket.sampled_queries.elements
-                    )
+                    newly_sampled_queries_ids = self.data_bucket.sampled_queries.elements
                 # Run training and obtain probability distributions for each query
                 (
                     eval_stats,
                     confidences_2d,
                     confidences_3d,
                     confidence_segments,
-                ) = self.mindmeld_al_classifier.train(
-                    self.data_bucket, heuristic, tuning_type
-                )
+                ) = self.mindmeld_al_classifier.train(self.data_bucket, heuristic, tuning_type)
 
                 if not select_mode:
                     self._save_training_data(
@@ -339,7 +326,7 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
                     break
 
     def _reset_data_bucket(self):
-        """ Reset the DataBucket to the initial DataBucket after every epoch."""
+        """Reset the DataBucket to the initial DataBucket after every epoch."""
         self.data_bucket.unsampled_queries = ProcessedQueryList(
             cache=self.data_bucket.resource_loader.query_cache,
             elements=self.init_unsampled_queries_ids,
@@ -369,7 +356,7 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
         newly_sampled_queries_ids,
         eval_stats,
     ):
-        """ Save training data if in tuning mode. """
+        """Save training data if in tuning mode."""
         self.results_manager.update_accuracies_json(
             tuning_type, strategy, epoch, iteration, eval_stats
         )
@@ -416,9 +403,7 @@ class ActiveLearningPipelineFactory:
             classifier_tuning_strategies=config.get("tuning", {}).get(
                 "classifier_tuning_strategies", []
             ),
-            tagger_tuning_strategies=config.get("tuning", {}).get(
-                "tagger_tuning_strategies", []
-            ),
+            tagger_tuning_strategies=config.get("tuning", {}).get("tagger_tuning_strategies", []),
             tuning_level=config.get("tuning", {}).get("tuning_level", None),
             classifier_selection_strategy=config.get("query_selection", {}).get(
                 "classifier_selection_strategy"
@@ -426,21 +411,11 @@ class ActiveLearningPipelineFactory:
             tagger_selection_strategy=config.get("query_selection", {}).get(
                 "tagger_selection_strategy"
             ),
-            save_sampled_queries=config.get("tuning_output", {}).get(
-                "save_sampled_queries"
-            ),
-            aggregate_statistic=config.get("tuning_output", {}).get(
-                "aggregate_statistic"
-            ),
-            class_level_statistic=config.get("tuning_output", {}).get(
-                "class_level_statistic"
-            ),
+            save_sampled_queries=config.get("tuning_output", {}).get("save_sampled_queries"),
+            aggregate_statistic=config.get("tuning_output", {}).get("aggregate_statistic"),
+            class_level_statistic=config.get("tuning_output", {}).get("class_level_statistic"),
             log_usage_pct=config.get("query_selection", {}).get("log_usage_pct"),
-            labeled_logs_pattern=config.get("query_selection", {}).get(
-                "labeled_logs_pattern"
-            ),
-            unlabeled_logs_path=config.get("query_selection", {}).get(
-                "unlabeled_logs_path"
-            ),
+            labeled_logs_pattern=config.get("query_selection", {}).get("labeled_logs_pattern"),
+            unlabeled_logs_path=config.get("query_selection", {}).get("unlabeled_logs_path"),
             output_folder=config.get("output_folder"),
         )

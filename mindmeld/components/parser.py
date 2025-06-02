@@ -73,9 +73,7 @@ class Parser:
                 is provided the app config will be loaded.
         """
         if not resource_loader and not config:
-            raise ValueError(
-                "Parser requires either a configuration or a resource loader"
-            )
+            raise ValueError("Parser requires either a configuration or a resource loader")
         app_path = resource_loader.app_path if resource_loader else None
         try:
             entity_types = path.get_entity_types(app_path) + ["unk"]
@@ -128,14 +126,10 @@ class Parser:
             return entities
 
         if not handle_timeout:
-            return self._parse(
-                query, entities, all_candidates=all_candidates, timeout=timeout
-            )
+            return self._parse(query, entities, all_candidates=all_candidates, timeout=timeout)
 
         try:
-            return self._parse(
-                query, entities, all_candidates=all_candidates, timeout=timeout
-            )
+            return self._parse(query, entities, all_candidates=all_candidates, timeout=timeout)
         except ParserTimeout:
             logger.warning("Parser timed out parsing query %r", query.text)
             return entities
@@ -180,9 +174,7 @@ class Parser:
                 return []
             return entities
 
-        ranked_parses = self._rank_parses(
-            query, entity_dict, parses, timeout, start_time
-        )
+        ranked_parses = self._rank_parses(query, entity_dict, parses, timeout, start_time)
         if all_candidates:
             return ranked_parses
 
@@ -206,13 +198,14 @@ class Parser:
 
         # Prefer parses with minimal distance from dependents to heads
         parses = list(
-            sorted(filtered, key=lambda p: self._parse_distance(p, query, entity_dict))
+            sorted(
+                filtered,
+                key=lambda p: self._parse_distance(p, query, entity_dict),
+            )
         )
         min_parse_dist = self._parse_distance(parses[0], query, entity_dict)
         filtered = (
-            p
-            for p in parses
-            if self._parse_distance(p, query, entity_dict) <= min_parse_dist
+            p for p in parses if self._parse_distance(p, query, entity_dict) <= min_parse_dist
         )
 
         # TODO: apply precedence
@@ -231,13 +224,9 @@ class Parser:
                     continue
                 child = entity_dict[dep.id]
                 if child.token_span.start > head.token_span.start:
-                    intra_entity_span = Span(
-                        head.token_span.end, child.token_span.start
-                    )
+                    intra_entity_span = Span(head.token_span.end, child.token_span.start)
                 else:
-                    intra_entity_span = Span(
-                        child.token_span.end, head.token_span.start
-                    )
+                    intra_entity_span = Span(child.token_span.end, head.token_span.start)
                 link_distance = 0
                 for token in intra_entity_span.slice(query.text.split(" ")):
                     if token in self.config[node.type][dep.type]["linking_words"]:
@@ -323,9 +312,7 @@ class _EntityNode(namedtuple("EntityNode", ("type", "id", "dependents"))):
         if not self.dependents:
             return text
 
-        return (
-            text + "\n" + "\n".join(dep.pretty(indent + 1) for dep in self.dependents)
-        )
+        return text + "\n" + "\n".join(dep.pretty(indent + 1) for dep in self.dependents)
 
     def to_query_entity(self, entity_dict, is_root=True):
         """Converts a node to an QueryEntity
@@ -340,9 +327,7 @@ class _EntityNode(namedtuple("EntityNode", ("type", "id", "dependents"))):
         head = entity_dict[self.id]
         if self.dependents is None:
             return head
-        dependents = tuple(
-            (c.to_query_entity(entity_dict, is_root=False) for c in self.dependents)
-        )
+        dependents = tuple((c.to_query_entity(entity_dict, is_root=False) for c in self.dependents))
         return head.with_children(dependents)
 
 
@@ -389,9 +374,7 @@ def _generate_dependent_rules(dep_type, config, symbol_template, features, head_
     max_instances = config.get("max_instances")
     if max_instances is None:
         # pass through features unchanged
-        lhs = symbol_template.format(
-            **{f: "?" + chr(ord("a") + i) for i, f in enumerate(features)}
-        )
+        lhs = symbol_template.format(**{f: "?" + chr(ord("a") + i) for i, f in enumerate(features)})
         rhs = lhs
         if config.get("left"):
             yield "{lhs} -> {dep} {rhs}".format(lhs=lhs, rhs=rhs, dep=dep_symbol)
@@ -400,9 +383,7 @@ def _generate_dependent_rules(dep_type, config, symbol_template, features, head_
     else:
         for dep_count in range(max_instances):
             feature_dict = {
-                f: "?" + chr(ord("a") + i)
-                for i, f in enumerate(features)
-                if f is not dep_type
+                f: "?" + chr(ord("a") + i) for i, f in enumerate(features) if f is not dep_type
             }
             feature_dict[dep_type] = dep_count
             rhs = symbol_template.format(**feature_dict)
@@ -457,18 +438,12 @@ def generate_grammar(config, entity_types=None, relaxed=False, unique_entities=2
 
         dep_configs = config[entity]
         # If a dependent has a max number of instances, we will track it as a feature
-        features = [
-            t for t, d in dep_configs.items() if d.get("max_instances") is not None
-        ]
+        features = [t for t, d in dep_configs.items() if d.get("max_instances") is not None]
 
         symbol_template = _build_symbol_template(group, features)
 
         # basic rule with features initialized to 0
-        rules.append(
-            "{} -> {}".format(
-                symbol_template.format(**{f: 0 for f in features}), entity
-            )
-        )
+        rules.append("{} -> {}".format(symbol_template.format(**{f: 0 for f in features}), entity))
 
         for dep_type, dep_config in dep_configs.items():
             rules.extend(

@@ -55,25 +55,36 @@ class QueryCache:
         cursor = self.disk_connection.cursor()
 
         if not self.compatible_version():
-            cursor.execute("""
+            cursor.execute(
+                """
             DROP TABLE IF EXISTS queries;
-            """)
-            cursor.execute("""
+            """
+            )
+            cursor.execute(
+                """
             DROP TABLE IF EXISTS version;
-            """)
+            """
+            )
         # Create table to store queries
-        cursor.execute("""
+        cursor.execute(
+            """
         CREATE TABLE IF NOT EXISTS queries
         (hash_id TEXT PRIMARY KEY, query TEXT, raw_query TEXT, domain TEXT, intent TEXT);
-        """)
+        """
+        )
         # Create table to store the data version
-        cursor.execute("""
+        cursor.execute(
+            """
         CREATE TABLE IF NOT EXISTS version
         (schema_version_hash TEXT PRIMARY KEY);
-        """)
-        cursor.execute("""
+        """
+        )
+        cursor.execute(
+            """
         INSERT OR IGNORE INTO version values (?);
-        """, (self.schema_version_hash,))
+        """,
+            (self.schema_version_hash,),
+        )
         self.disk_connection.commit()
 
         in_memory = bool(strtobool(os.environ.get("MM_QUERY_CACHE_IN_MEMORY", "1").lower()))
@@ -91,14 +102,22 @@ class QueryCache:
         """
         Flushes data from the in-memory cache into the disk-backed cache
         """
-        logger.info("Flushing %s queries from in-memory cache to disk", len(self.batch_writes))
-        rows = self.memory_connection.execute(f"""
+        logger.info(
+            "Flushing %s queries from in-memory cache to disk",
+            len(self.batch_writes),
+        )
+        rows = self.memory_connection.execute(
+            f"""
         SELECT hash_id, query, raw_query, domain, intent FROM queries
         WHERE rowid IN ({",".join(self.batch_writes)});
-        """)
-        self.disk_connection.executemany("""
+        """
+        )
+        self.disk_connection.executemany(
+            """
         INSERT OR IGNORE into queries values (?, ?, ?, ?, ?);
-        """, rows)
+        """,
+            rows,
+        )
         self.disk_connection.commit()
         self.batch_writes = []
 
@@ -117,9 +136,12 @@ class QueryCache:
 
         cursor = self.disk_connection.cursor()
         try:
-            row = cursor.execute("""
+            row = cursor.execute(
+                """
             SELECT COUNT(schema_version_hash) FROM version WHERE schema_version_hash=(?);
-            """, (self.schema_version_hash,)).fetchone()
+            """,
+                (self.schema_version_hash,),
+            ).fetchone()
             return row[0] > 0
         except sqlite3.Error:  # pylint: disable=broad-except
             return False
@@ -158,9 +180,12 @@ class QueryCache:
         """
 
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
         SELECT rowid FROM queries where hash_id=(?);
-        """, (key,))
+        """,
+            (key,),
+        )
         row = cursor.fetchone()
         return row[0] if row else None
 
@@ -178,14 +203,18 @@ class QueryCache:
 
         def commit_to_db(connection):
             cursor = connection.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
             INSERT OR IGNORE into queries values (?, ?, ?, ?, ?);
-            """, (key,
-                  data,
-                  processed_query.query.text,
-                  processed_query.domain,
-                  processed_query.intent,
-                  ))
+            """,
+                (
+                    key,
+                    data,
+                    processed_query.query.text,
+                    processed_query.domain,
+                    processed_query.intent,
+                ),
+            )
             connection.commit()
 
         if self.memory_connection:
@@ -217,9 +246,12 @@ class QueryCache:
             ProcessedQuery: The ProcessedQuery associated with the identifier.
         """
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
         SELECT query FROM queries WHERE rowid=(?);
-        """, (row_id,))
+        """,
+            (row_id,),
+        )
         row = cursor.fetchone()
         return ProcessedQuery.from_cache(json.loads(row[0]))
 
@@ -232,9 +264,12 @@ class QueryCache:
         Get the raw text only from a cached example.  See notes on get().
         """
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
         SELECT raw_query FROM queries WHERE rowid=(?);
-        """, (row_id,))
+        """,
+            (row_id,),
+        )
         return cursor.fetchone()[0]
 
     def get_query(self, row_id):
@@ -254,9 +289,12 @@ class QueryCache:
         Get the domain only from a cached example.  See notes on get().
         """
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
         SELECT domain FROM queries WHERE rowid=(?);
-        """, (row_id,))
+        """,
+            (row_id,),
+        )
         return cursor.fetchone()[0]
 
     def get_intent(self, row_id):
@@ -264,7 +302,10 @@ class QueryCache:
         Get the intent only from a cached example.  See notes on get().
         """
         cursor = self.connection.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
         SELECT intent FROM queries WHERE rowid=(?);
-        """, (row_id,))
+        """,
+            (row_id,),
+        )
         return cursor.fetchone()[0]

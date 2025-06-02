@@ -107,7 +107,11 @@ def test_auto_fill_invoke(kwik_e_mart_app):
         domain="store_info",
         intent="get_store_number",
         entities=[
-            {"type": "store_name", "value": [{"cname": "23 Elm Street"}], "role": None}
+            {
+                "type": "store_name",
+                "value": [{"cname": "23 Elm Street"}],
+                "role": None,
+            }
         ],
     )
     responder = DialogueResponder()

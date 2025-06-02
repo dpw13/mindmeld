@@ -54,16 +54,13 @@ class MindmeldCodeGenerator(CodeGenerator):
 
     def generate_follow_up(self, intent, entity, role, replies):
         if role:
-            self.write(
-                "if not entity_and_roles.get('%s', {}).get('%s'):" % (entity, role)
-            )
+            self.write("if not entity_and_roles.get('%s', {}).get('%s'):" % (entity, role))
         else:
             self.write("if not entity_and_roles.get('%s', {}).get(None):" % entity)
         self.indent()
         self.write("replies = %s" % replies)
         self.write(
-            "responder.params.allowed_intents = ('unrelated.*', 'app_specific.%s',)"
-            % intent
+            "responder.params.allowed_intents = ('unrelated.*', 'app_specific.%s',)" % intent
         )
         self.write("responder.reply(replies)")
         self.write("responder.listen()")
@@ -112,15 +109,12 @@ class MindmeldCodeGenerator(CodeGenerator):
             for entity in intent_entity_role_replies[intent]:
                 roles = list(intent_entity_role_replies[intent][entity].keys())
                 if len(roles) == 1:
-                    self.write(
-                        "%s_slot = responder.frame['%s'].pop(None)" % (roles[0], entity)
-                    )
+                    self.write("%s_slot = responder.frame['%s'].pop(None)" % (roles[0], entity))
                     self.write("kwargs['%s'] = %s" % (roles[0], roles[0] + "_slot"))
                 else:
                     for role in roles:
                         self.write(
-                            "%s_slot = responder.frame['%s'].pop('%s')"
-                            % (role, entity, role)
+                            "%s_slot = responder.frame['%s'].pop('%s')" % (role, entity, role)
                         )
                         self.write("kwargs['%s'] = %s" % (role, role + "_slot"))
 

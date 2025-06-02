@@ -51,17 +51,19 @@ def extract_in_gaz_span_features(**kwargs):
             feature_sequence = [{} for _ in tokens]
 
             pop = all_gazes[current_gaz.gaz_name]["pop_dict"][current_gaz.token_ngram]
-            p_total = (
-                math.log(sum([g["total_entities"] for g in all_gazes.values()]) + 1) / 2
-            )
+            p_total = math.log(sum([g["total_entities"] for g in all_gazes.values()]) + 1) / 2
             p_entity_type = math.log(all_gazes[current_gaz.gaz_name]["total_entities"] + 1)
             p_entity = math.log(
                 sum([len(g["index"][current_gaz.raw_ngram]) for g in all_gazes.values()]) + 1
             )
-            p_joint = math.log(len(
-                all_gazes[current_gaz.gaz_name]["index"][current_gaz.raw_ngram]) + 1)
+            p_joint = math.log(
+                len(all_gazes[current_gaz.gaz_name]["index"][current_gaz.raw_ngram]) + 1
+            )
 
-            for i in range(current_gaz.start_token_index, current_gaz.end_token_index_plus_one):
+            for i in range(
+                current_gaz.start_token_index,
+                current_gaz.end_token_index_plus_one,
+            ):
                 # Generic non-positional features
                 gaz_feat_prefix = "in_gaz|type:{}".format(current_gaz.gaz_name)
 
@@ -91,13 +93,16 @@ def extract_in_gaz_span_features(**kwargs):
                     ),
                     # Features for ngram after the span
                     "|ngram_after|length:{}".format(1): get_ngram(
-                        tokens, current_gaz.end_token_index_plus_one, 1),
+                        tokens, current_gaz.end_token_index_plus_one, 1
+                    ),
                     # Features for ngram at start of span
                     "|ngram_first|length:{}".format(1): get_ngram(
-                        tokens, current_gaz.start_token_index, 1),
+                        tokens, current_gaz.start_token_index, 1
+                    ),
                     # Features for ngram at end of span
                     "|ngram_last|length:{}".format(1): get_ngram(
-                        tokens, current_gaz.end_token_index_plus_one - 1, 1),
+                        tokens, current_gaz.end_token_index_plus_one - 1, 1
+                    ),
                     # Popularity features
                     "|pop": pop,
                     # Character length features
@@ -128,13 +133,17 @@ def extract_in_gaz_span_features(**kwargs):
 
                 for key, value in span_features.items():
                     feature_sequence[current_gaz.end_token_index_plus_one][
-                        feat_prefix + key] = value
+                        feat_prefix + key
+                    ] = value
 
             return feature_sequence
 
         def get_exact_span_conflict_features(query, gazes, nested_gaz, other_nested_gaz):
             feature_sequence = [{} for _ in query.normalized_tokens]
-            for i in range(nested_gaz.start_token_index, nested_gaz.end_token_index_plus_one):
+            for i in range(
+                nested_gaz.start_token_index,
+                nested_gaz.end_token_index_plus_one,
+            ):
                 feat_prefix = "in-gaz|conflict:exact|type1:{}|type2:{}".format(
                     nested_gaz.gaz_name, other_nested_gaz.gaz_name
                 )
@@ -142,9 +151,11 @@ def extract_in_gaz_span_features(**kwargs):
                 p_ent_type_1 = math.log(gazes[nested_gaz.gaz_name]["total_entities"] + 1)
                 p_ent_type_2 = math.log(gazes[other_nested_gaz.gaz_name]["total_entities"] + 1)
                 p_joint_1 = math.log(
-                    len(gazes[nested_gaz.gaz_name]["index"][nested_gaz.raw_ngram]) + 1)
+                    len(gazes[nested_gaz.gaz_name]["index"][nested_gaz.raw_ngram]) + 1
+                )
                 p_joint_2 = math.log(
-                    len(gazes[other_nested_gaz.gaz_name]["index"][nested_gaz.raw_ngram]) + 1)
+                    len(gazes[other_nested_gaz.gaz_name]["index"][nested_gaz.raw_ngram]) + 1
+                )
 
                 pop_1 = gazes[nested_gaz.gaz_name]["pop_dict"][nested_gaz.token_ngram]
                 pop_2 = gazes[other_nested_gaz.gaz_name]["pop_dict"][nested_gaz.token_ngram]
@@ -173,12 +184,19 @@ def extract_in_gaz_span_features(**kwargs):
             for start_index, _ in enumerate(tokens):
                 for end_index_plus_one in range(start_index + 1, len(tokens) + 1):
                     for gaz_name, gaz in gazetteers.items():
-                        token_ngram, raw_ngram, _ = query.get_token_ngram_raw_ngram_span(
-                            tokens, start_index, end_index_plus_one - 1)
+                        (token_ngram, raw_ngram, _,) = query.get_token_ngram_raw_ngram_span(
+                            tokens, start_index, end_index_plus_one - 1
+                        )
                         if token_ngram and token_ngram in gaz["pop_dict"]:
-                            nested_gazes.append(NestedGazetteer(
-                                start_index, end_index_plus_one,
-                                gaz_name, token_ngram, raw_ngram))
+                            nested_gazes.append(
+                                NestedGazetteer(
+                                    start_index,
+                                    end_index_plus_one,
+                                    gaz_name,
+                                    token_ngram,
+                                    raw_ngram,
+                                )
+                            )
             return nested_gazes
 
         gazetteers = resources[GAZETTEER_RSC]
@@ -198,12 +216,16 @@ def extract_in_gaz_span_features(**kwargs):
                     break
                 # For now, if two spans of the same type start at the same
                 # place, take the longer one.
-                if other_nested_gaz.start_token_index == nested_gaz.start_token_index and \
-                        other_nested_gaz.gaz_name == nested_gaz.gaz_name:
+                if (
+                    other_nested_gaz.start_token_index == nested_gaz.start_token_index
+                    and other_nested_gaz.gaz_name == nested_gaz.gaz_name
+                ):
                     continue
                 if nested_gaz.start_token_index == other_nested_gaz.start_token_index:
-                    if nested_gaz.end_token_index_plus_one == \
-                            other_nested_gaz.end_token_index_plus_one:
+                    if (
+                        nested_gaz.end_token_index_plus_one
+                        == other_nested_gaz.end_token_index_plus_one
+                    ):
                         cmp_span_features = get_exact_span_conflict_features(
                             query,
                             gazetteers,
@@ -231,9 +253,7 @@ def extract_in_gaz_ngram_features(**kwargs):
                 feat_prefix = "in_gaz|type:{}|ngram".format(entity_type)
 
                 # entity PMI and conditional prob
-                p_total = (
-                    math.log(sum([g["total_entities"] for g in gazes.values()]) + 1) / 2
-                )
+                p_total = math.log(sum([g["total_entities"] for g in gazes.values()]) + 1) / 2
                 p_entity_type = math.log(gazes[entity_type]["total_entities"] + 1)
 
                 features = {
@@ -241,8 +261,7 @@ def extract_in_gaz_ngram_features(**kwargs):
                         len(gazes[entity_type]["index"][get_ngram(tokens, i, 1)]) + 1
                     ),
                     "|length:{}|pos:{}|idf".format(2, -1): math.log(
-                        len(gazes[entity_type]["index"][get_ngram(tokens, i - 1, 2)])
-                        + 1
+                        len(gazes[entity_type]["index"][get_ngram(tokens, i - 1, 2)]) + 1
                     ),
                     "|length:{}|pos:{}|idf".format(2, 1): math.log(
                         len(gazes[entity_type]["index"][get_ngram(tokens, i, 2)]) + 1
@@ -258,17 +277,11 @@ def extract_in_gaz_ngram_features(**kwargs):
                         "length": 1,
                         "position": 0,
                         "p_ngram": math.log(
-                            sum(
-                                [
-                                    len(g["index"][get_ngram(tokens, i, 1)])
-                                    for g in gazes.values()
-                                ]
-                            )
+                            sum([len(g["index"][get_ngram(tokens, i, 1)]) for g in gazes.values()])
                             + 1
                         ),
                         "p_joint": math.log(
-                            len(gazes[entity_type]["index"][get_ngram(tokens, i, 1)])
-                            + 1
+                            len(gazes[entity_type]["index"][get_ngram(tokens, i, 1)]) + 1
                         ),
                     },
                     {
@@ -284,27 +297,18 @@ def extract_in_gaz_ngram_features(**kwargs):
                             + 1
                         ),
                         "p_joint": math.log(
-                            len(
-                                gazes[entity_type]["index"][get_ngram(tokens, i - 1, 2)]
-                            )
-                            + 1
+                            len(gazes[entity_type]["index"][get_ngram(tokens, i - 1, 2)]) + 1
                         ),
                     },
                     {
                         "length": 2,
                         "position": 1,
                         "p_ngram": math.log(
-                            sum(
-                                [
-                                    len(g["index"][get_ngram(tokens, i, 2)])
-                                    for g in gazes.values()
-                                ]
-                            )
+                            sum([len(g["index"][get_ngram(tokens, i, 2)]) for g in gazes.values()])
                             + 1
                         ),
                         "p_joint": math.log(
-                            len(gazes[entity_type]["index"][get_ngram(tokens, i, 2)])
-                            + 1
+                            len(gazes[entity_type]["index"][get_ngram(tokens, i, 2)]) + 1
                         ),
                     },
                     {
@@ -320,10 +324,7 @@ def extract_in_gaz_ngram_features(**kwargs):
                             + 1
                         ),
                         "p_joint": math.log(
-                            len(
-                                gazes[entity_type]["index"][get_ngram(tokens, i - 1, 3)]
-                            )
-                            + 1
+                            len(gazes[entity_type]["index"][get_ngram(tokens, i - 1, 3)]) + 1
                         ),
                     },
                 ]
@@ -367,9 +368,7 @@ def extract_in_gaz_ngram_features(**kwargs):
 
 @register_query_feature(feature_name="bag-of-words-seq")
 @requires(WORD_NGRAM_FREQ_RSC)
-def extract_bag_of_words_features(
-    ngram_lengths_to_start_positions, thresholds=(1,), **kwargs
-):
+def extract_bag_of_words_features(ngram_lengths_to_start_positions, thresholds=(1,), **kwargs):
     """Returns a bag-of-words feature extractor.
 
     Args:
@@ -399,7 +398,7 @@ def extract_bag_of_words_features(
             oob_last = n_gram.rfind(OUT_OF_BOUNDS_TOKEN)
             oob_first = n_gram.find(OUT_OF_BOUNDS_TOKEN)
             if oob_last + len(OUT_OF_BOUNDS_TOKEN) == len(n_gram):
-                shortened_ngram = n_gram[:oob_first + len(OUT_OF_BOUNDS_TOKEN)]
+                shortened_ngram = n_gram[: oob_first + len(OUT_OF_BOUNDS_TOKEN)]
             else:
                 shortened_ngram = n_gram[oob_last:]
         return shortened_ngram
@@ -419,9 +418,7 @@ def extract_bag_of_words_features(
                 threshold = word_thresholds[threshold_index]
                 for start in starts:
                     n_gram = get_ngram(tokens, i + int(start), int(length))
-                    feat_name = "bag_of_words|length:{}|word_pos:{}".format(
-                        length, start
-                    )
+                    feat_name = "bag_of_words|length:{}|word_pos:{}".format(length, start)
                     short_ngram = remove_excess_out_of_bounds(n_gram)
                     if resources[WORD_NGRAM_FREQ_RSC].get(short_ngram, 0) >= threshold:
                         feat_seq[i][feat_name] = n_gram
@@ -429,19 +426,12 @@ def extract_bag_of_words_features(
                         feat_seq[i][feat_name] = OUT_OF_VOCABULARY
 
                     if kwargs.get(ENABLE_STEMMING, False):
-                        stemmed_n_gram = get_ngram(
-                            stemmed_tokens, i + int(start), int(length)
-                        )
+                        stemmed_n_gram = get_ngram(stemmed_tokens, i + int(start), int(length))
                         short_stemmed_ngram = remove_excess_out_of_bounds(stemmed_n_gram)
-                        stemmed_feat_name = (
-                            "bag_of_words_stemmed|length:{}|word_pos:{}".format(
-                                length, start
-                            )
+                        stemmed_feat_name = "bag_of_words_stemmed|length:{}|word_pos:{}".format(
+                            length, start
                         )
-                        if (
-                            resources[WORD_NGRAM_FREQ_RSC].get(short_stemmed_ngram, 0)
-                            >= threshold
-                        ):
+                        if resources[WORD_NGRAM_FREQ_RSC].get(short_stemmed_ngram, 0) >= threshold:
                             feat_seq[i][stemmed_feat_name] = stemmed_n_gram
                         else:
                             feat_seq[i][stemmed_feat_name] = OUT_OF_VOCABULARY
@@ -492,9 +482,7 @@ def enabled_stemming(**kwargs):
 
 @register_query_feature(feature_name="char-ngrams-seq")
 @requires(CHAR_NGRAM_FREQ_RSC)
-def extract_char_ngrams_features(
-    ngram_lengths_to_start_positions, thresholds=(1,), **kwargs
-):
+def extract_char_ngrams_features(ngram_lengths_to_start_positions, thresholds=(1,), **kwargs):
     """Returns a character n-gram feature extractor.
 
     Args:
@@ -530,10 +518,8 @@ def extract_char_ngrams_features(
                         # if token index out of bounds, return OUT_OF_BOUNDS token
                         ngrams = [OUT_OF_BOUNDS_TOKEN]
                     for j, c_gram in enumerate(ngrams):
-                        feat_name = (
-                            "char_ngrams|length:{}|word_pos:{}|char_pos:{}".format(
-                                length, start, j
-                            )
+                        feat_name = "char_ngrams|length:{}|word_pos:{}|char_pos:{}".format(
+                            length, start, j
                         )
                         if resources[CHAR_NGRAM_FREQ_RSC].get(c_gram, 0) < threshold:
                             c_gram = OUT_OF_VOCABULARY
@@ -565,21 +551,23 @@ def extract_sys_candidate_features(start_positions=(0,), **kwargs):
             for i in entity.normalized_token_span:
                 for j in start_positions:
                     if 0 <= i - j < len(feat_seq):
-                        feat_name = (
-                            "sys_candidate|type:{}|granularity:{}|pos:{}".format(
-                                entity.entity.type, entity.entity.value.get("grain"), j
-                            )
+                        feat_name = "sys_candidate|type:{}|granularity:{}|pos:{}".format(
+                            entity.entity.type,
+                            entity.entity.value.get("grain"),
+                            j,
                         )
                         feat_seq[i - j][feat_name] = feat_seq[i - j].get(feat_name, 0) + 1
                         feat_name = "sys_candidate|type:{}|granularity:{}|pos:{}|log_len".format(
-                            entity.entity.type, entity.entity.value.get("grain"), j
+                            entity.entity.type,
+                            entity.entity.value.get("grain"),
+                            j,
                         )
                         feat_value = feat_seq[i - j][feat_name] = feat_seq[i - j].get(feat_name, [])
                         feat_value.append(len(entity.normalized_text))
 
         for token_features in feat_seq:
             for feature, value in token_features.items():
-                if feature.endswith('log_len'):
+                if feature.endswith("log_len"):
                     token_features[feature] = math.log((float(sum(value)) / len(value)) + 1)
                 else:
                     # Adjust value to be greater than 0
@@ -620,7 +608,6 @@ def extract_char_ngrams(lengths=(1,), thresholds=(1,), **kwargs):
     char_thresholds = threshold_list + [1] * (len(lengths) - len(threshold_list))
 
     def _extractor(query, resources):
-
         query_text = re.sub(r"\d", "0", query.normalized_text)
 
         ngram_counter = Counter()
@@ -635,11 +622,7 @@ def extract_char_ngrams(lengths=(1,), thresholds=(1,), **kwargs):
                 if freq < threshold:
                     joined_char_ngram = OUT_OF_VOCABULARY
                 ngram_counter.update(
-                    [
-                        "char_ngram|length:{}|ngram:{}".format(
-                            len(char_ngram), joined_char_ngram
-                        )
-                    ]
+                    ["char_ngram|length:{}|ngram:{}".format(len(char_ngram), joined_char_ngram)]
                 )
         return ngram_counter
 
@@ -677,11 +660,11 @@ def extract_ngrams(lengths=(1,), thresholds=(1,), **kwargs):
                     # We never want to differentiate between number tokens.
                     # We may need to convert number words too, like "eighty".
                     token = tokens[index]
-                    tok = re.sub(r"\d",'0',token)
+                    tok = re.sub(r"\d", "0", token)
                     ngram.append(tok)
 
                     if kwargs.get(ENABLE_STEMMING, False):
-                        tok_stemmed = re.sub(r"\d",'0',stemmed_tokens[index])
+                        tok_stemmed = re.sub(r"\d", "0", stemmed_tokens[index])
                         stemmed_ngram.append(tok_stemmed)
 
                 joined_ngram = " ".join(ngram)
@@ -689,9 +672,7 @@ def extract_ngrams(lengths=(1,), thresholds=(1,), **kwargs):
                 if freq < threshold:
                     joined_ngram = OUT_OF_VOCABULARY
                 ngram_counter.update(
-                    [
-                        "bag_of_words|length:{}|ngram:{}".format(len(ngram), joined_ngram)
-                    ]
+                    ["bag_of_words|length:{}|ngram:{}".format(len(ngram), joined_ngram)]
                 )
                 if kwargs.get(ENABLE_STEMMING, False):
                     joined_stemmed_ngram = " ".join(stemmed_ngram)
@@ -701,7 +682,8 @@ def extract_ngrams(lengths=(1,), thresholds=(1,), **kwargs):
                     ngram_counter.update(
                         [
                             "bag_of_words_stemmed|length:{}|ngram:{}".format(
-                                len(stemmed_ngram), joined_stemmed_ngram)
+                                len(stemmed_ngram), joined_stemmed_ngram
+                            )
                         ]
                     )
 
@@ -913,15 +895,14 @@ def extract_gaz_freq(**kwargs):
         freq_features = defaultdict(int)
 
         for tok in tokens:
-            query_freq = OUT_OF_VOCABULARY if resources[WORD_FREQ_RSC].get(tok) is None \
-                else IN_VOCABULARY
+            query_freq = (
+                OUT_OF_VOCABULARY if resources[WORD_FREQ_RSC].get(tok) is None else IN_VOCABULARY
+            )
             for gaz_name, gaz in resources[GAZETTEER_RSC].items():
                 freq = len(gaz["index"].get(tok, []))
                 if freq > 0:
                     freq_bin = int(math.log(freq, 2) / 2)
-                    freq_features[
-                        "in_gaz|type:{}|gaz_freq_bin:{}".format(gaz_name, freq_bin)
-                    ] += 1
+                    freq_features["in_gaz|type:{}|gaz_freq_bin:{}".format(gaz_name, freq_bin)] += 1
                     freq_features[
                         "in_vocab:{}|in_gaz|type:{}|gaz_freq_bin:{}".format(
                             query_freq, gaz_name, freq_bin
@@ -967,12 +948,11 @@ def extract_in_gaz_feature(scaling=1, **kwargs):
                 if ngram in gaz["pop_dict"]:
                     popularity = gaz["pop_dict"].get(ngram, 0.0)
                     _, raw_ngram, _ = query.get_token_ngram_raw_ngram_span(
-                        verbose_tokens, token_span[0], token_span[1])
+                        verbose_tokens, token_span[0], token_span[1]
+                    )
                     ratio = len(raw_ngram) / len(norm_text) * scaling
                     ratio_pop = ratio * popularity
-                    in_gaz_features[
-                        "in_gaz|type:{}|ratio_pop".format(gaz_name)
-                    ] += ratio_pop
+                    in_gaz_features["in_gaz|type:{}|ratio_pop".format(gaz_name)] += ratio_pop
                     in_gaz_features["in_gaz|type:{}|ratio".format(gaz_name)] += ratio
                     in_gaz_features["in_gaz|type:{}|pop".format(gaz_name)] += popularity
                     in_gaz_features["in_gaz|type:{}".format(gaz_name)] = 1

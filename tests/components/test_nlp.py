@@ -85,7 +85,8 @@ def test_query_info_contains_language_information(kwik_e_mart_nlp):
 def test_process_contains_language_information(kwik_e_mart_nlp):
     # Timestamp is set to Jan 2nd 2020 so that the resolve thanksgiving date will be in 2020
     result = kwik_e_mart_nlp.process(
-        "Is the Main Street location open for Thanksgiving?", timestamp=1578025558
+        "Is the Main Street location open for Thanksgiving?",
+        timestamp=1578025558,
     )
     for entity in result["entities"]:
         if entity["text"] == "Thanksgiving":
@@ -106,22 +107,22 @@ def test_role_classification(home_assistant_nlp):
     allowed_intents = ["times_and_dates.change_alarm.sys_time.new_time"]
     extracted_intents = home_assistant_nlp.extract_nlp_masked_components_list(allowed_intents)
     response = home_assistant_nlp.process("5:30am", extracted_intents)
-    assert response['entities'][0]['role'] == "new_time"
+    assert response["entities"][0]["role"] == "new_time"
 
     allowed_intents = ["times_and_dates.change_alarm.sys_time.old_time"]
     extracted_intents = home_assistant_nlp.extract_nlp_masked_components_list(allowed_intents)
     response = home_assistant_nlp.process("5:30am", extracted_intents)
-    assert response['entities'][0]['role'] == "old_time"
+    assert response["entities"][0]["role"] == "old_time"
 
     allowed_intents = ["times_and_dates.change_alarm.sys_time.*"]
     extracted_intents = home_assistant_nlp.extract_nlp_masked_components_list(allowed_intents)
     response = home_assistant_nlp.process("5:30am", extracted_intents)
-    assert response['entities'][0]['role'] == "new_time"
+    assert response["entities"][0]["role"] == "new_time"
 
     allowed_intents = ["times_and_dates.change_alarm.*.*"]
     extracted_intents = home_assistant_nlp.extract_nlp_masked_components_list(allowed_intents)
     response = home_assistant_nlp.process("5:30am", extracted_intents)
-    assert response['entities'][0]['role'] == "new_time"
+    assert response["entities"][0]["role"] == "new_time"
 
 
 test_data_1 = [
@@ -129,111 +130,169 @@ test_data_1 = [
         ["store_info.find_nearest_store"],
         "store near MG Road",
         "store_info",
-        "find_nearest_store", []
+        "find_nearest_store",
+        [],
     ),
     (
         ["store_info.find_nearest_store", "store_info.greet"],
         "hello!",
         "store_info",
-        "greet", []
+        "greet",
+        [],
     ),
-    (["store_info.find_nearest_store"], "hello!", "store_info", "find_nearest_store", []),
+    (
+        ["store_info.find_nearest_store"],
+        "hello!",
+        "store_info",
+        "find_nearest_store",
+        [],
+    ),
     (["store_info.*"], "hello!", "store_info", "greet", []),
-    (["store_info.get_store_hours.store_name"],
-     "will springfield mall be open and what time will it close",
-     "store_info", "get_store_hours", 'springfield mall')
+    (
+        ["store_info.get_store_hours.store_name"],
+        "will springfield mall be open and what time will it close",
+        "store_info",
+        "get_store_hours",
+        "springfield mall",
+    ),
 ]
 
 
 @pytest.mark.parametrize(
-    "allowed_intents,query,expected_domain,expected_intent,expected_entities", test_data_1
+    "allowed_intents,query,expected_domain,expected_intent,expected_entities",
+    test_data_1,
 )
 def test_nlp_hierarchy_bias_for_user_bias(
-    kwik_e_mart_nlp, allowed_intents, query, expected_domain, expected_intent, expected_entities
+    kwik_e_mart_nlp,
+    allowed_intents,
+    query,
+    expected_domain,
+    expected_intent,
+    expected_entities,
 ):
     """Tests user specified domain and intent biases"""
     extracted_intents = kwik_e_mart_nlp.extract_nlp_masked_components_list(allowed_intents)
     response = kwik_e_mart_nlp.process(query, extracted_intents)
-    assert response['text'] == query
-    assert response['domain'] == expected_domain
-    assert response['intent'] == expected_intent
+    assert response["text"] == query
+    assert response["domain"] == expected_domain
+    assert response["intent"] == expected_intent
     if expected_entities:
-        assert response['entities'][0]['text'] == expected_entities
+        assert response["entities"][0]["text"] == expected_entities
 
 
 test_data_10 = [
     (
         ["times_and_dates.change_alarm"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {
-            'new_time': {}, 'old_time': {}}, 'sys_interval': {'old_time': {}}}}},
+        {
+            "times_and_dates": {
+                "change_alarm": {
+                    "sys_time": {"new_time": {}, "old_time": {}},
+                    "sys_interval": {"old_time": {}},
+                }
+            }
+        },
     ),
     (
         ["times_and_dates.*.sys_time.new_time"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'new_time': {}}}}},
+        {"times_and_dates": {"change_alarm": {"sys_time": {"new_time": {}}}}},
     ),
     (
         ["smart_home.set_thermostat.sys_temperature"],
-        {'smart_home': {'set_thermostat': {'sys_temperature': {'room_temperature': {}}}}},
+        {"smart_home": {"set_thermostat": {"sys_temperature": {"room_temperature": {}}}}},
     ),
     (
         ["smart_home.*.sys_temperature"],
-        {'smart_home': {'set_thermostat': {'sys_temperature': {'room_temperature': {}}}}},
+        {"smart_home": {"set_thermostat": {"sys_temperature": {"room_temperature": {}}}}},
     ),
     (
-        ["times_and_dates.*.sys_time.new_time",
-         "smart_home.set_thermostat.sys_temperature.room_temperature"],
-        {'smart_home': {'set_thermostat': {'sys_temperature': {'room_temperature': {}}}},
-         'times_and_dates': {'change_alarm': {'sys_time': {'new_time': {}}}}},
+        [
+            "times_and_dates.*.sys_time.new_time",
+            "smart_home.set_thermostat.sys_temperature.room_temperature",
+        ],
+        {
+            "smart_home": {"set_thermostat": {"sys_temperature": {"room_temperature": {}}}},
+            "times_and_dates": {"change_alarm": {"sys_time": {"new_time": {}}}},
+        },
     ),
     (
-        ["times_and_dates.*.sys_time.new_time", "times_and_dates.change_alarm.sys_time.old_time"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'old_time': {}, 'new_time': {}}}}},
+        [
+            "times_and_dates.*.sys_time.new_time",
+            "times_and_dates.change_alarm.sys_time.old_time",
+        ],
+        {"times_and_dates": {"change_alarm": {"sys_time": {"old_time": {}, "new_time": {}}}}},
     ),
     (
-        ["times_and_dates.*.*.new_time", "times_and_dates.change_alarm.sys_time.*"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'old_time': {}, 'new_time': {}}}}},
+        [
+            "times_and_dates.*.*.new_time",
+            "times_and_dates.change_alarm.sys_time.*",
+        ],
+        {"times_and_dates": {"change_alarm": {"sys_time": {"old_time": {}, "new_time": {}}}}},
     ),
     (
         ["times_and_dates.change_alarm.*.new_time"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'new_time': {}}}}},
+        {"times_and_dates": {"change_alarm": {"sys_time": {"new_time": {}}}}},
     ),
     (
         ["times_and_dates.change_alarm.sys_time.*"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'new_time': {}, 'old_time': {}}}}},
+        {"times_and_dates": {"change_alarm": {"sys_time": {"new_time": {}, "old_time": {}}}}},
     ),
     (
         ["times_and_dates.change_alarm.sys_time"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'old_time': {}, 'new_time': {}}}}},
+        {"times_and_dates": {"change_alarm": {"sys_time": {"old_time": {}, "new_time": {}}}}},
     ),
     (
         ["times_and_dates.*"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'new_time': {}, 'old_time': {}},
-                                              'sys_interval': {'old_time': {}}}}}
+        {
+            "times_and_dates": {
+                "change_alarm": {
+                    "sys_time": {"new_time": {}, "old_time": {}},
+                    "sys_interval": {"old_time": {}},
+                }
+            }
+        },
     ),
     (
         ["smart_home.*"],
-        {'smart_home': {'set_thermostat': {'all': {}, 'sys_time': {}, 'sys_interval': {},
-                                           'location': {}, 'sys_temperature':
-                                               {'room_temperature': {}}}}}
+        {
+            "smart_home": {
+                "set_thermostat": {
+                    "all": {},
+                    "sys_time": {},
+                    "sys_interval": {},
+                    "location": {},
+                    "sys_temperature": {"room_temperature": {}},
+                }
+            }
+        },
     ),
     (
         ["smart_home.*.sys_temperature", "times_and_dates.change_alarm.*"],
-        {'times_and_dates': {'change_alarm': {'sys_interval': {'old_time': {}},
-                                              'sys_time': {'old_time': {}, 'new_time': {}}}},
-         'smart_home': {'set_thermostat': {'sys_temperature': {'room_temperature': {}}}}},
+        {
+            "times_and_dates": {
+                "change_alarm": {
+                    "sys_interval": {"old_time": {}},
+                    "sys_time": {"old_time": {}, "new_time": {}},
+                }
+            },
+            "smart_home": {"set_thermostat": {"sys_temperature": {"room_temperature": {}}}},
+        },
     ),
     (
         ["feedback.compliment", "times_and_dates.change_alarm.*"],
-        {'times_and_dates': {'change_alarm': {'sys_interval': {'old_time': {}},
-                                              'sys_time': {'old_time': {}, 'new_time': {}}}},
-         'feedback': {'compliment': {}}},
+        {
+            "times_and_dates": {
+                "change_alarm": {
+                    "sys_interval": {"old_time": {}},
+                    "sys_time": {"old_time": {}, "new_time": {}},
+                }
+            },
+            "feedback": {"compliment": {}},
+        },
     ),
 ]
 
 
-@pytest.mark.parametrize(
-    "allowed_intents,expected_nlp_hierarchy", test_data_10
-)
+@pytest.mark.parametrize("allowed_intents,expected_nlp_hierarchy", test_data_10)
 def test_nlp_hierarchy_for_allowed_intents(
     home_assistant_nlp, allowed_intents, expected_nlp_hierarchy
 ):
@@ -244,35 +303,71 @@ def test_nlp_hierarchy_for_allowed_intents(
 
 test_data_110 = [
     (
-        ["times_and_dates.change_alarm"], ["times_and_dates.change_alarm.sys_time.new_time"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'old_time': {}},
-                                              'sys_interval': {'old_time': {}}}}},
+        ["times_and_dates.change_alarm"],
+        ["times_and_dates.change_alarm.sys_time.new_time"],
+        {
+            "times_and_dates": {
+                "change_alarm": {
+                    "sys_time": {"old_time": {}},
+                    "sys_interval": {"old_time": {}},
+                }
+            }
+        },
     ),
     (
-        ["smart_home.set_thermostat"], ["smart_home.set_thermostat.sys_temperature",
-                                        "smart_home.set_thermostat.location"],
-        {'smart_home': {'set_thermostat': {'sys_interval': {}, 'all': {}, 'sys_time': {}}}},
+        ["smart_home.set_thermostat"],
+        [
+            "smart_home.set_thermostat.sys_temperature",
+            "smart_home.set_thermostat.location",
+        ],
+        {
+            "smart_home": {
+                "set_thermostat": {
+                    "sys_interval": {},
+                    "all": {},
+                    "sys_time": {},
+                }
+            }
+        },
     ),
     (
-        [], ["smart_home.set_thermostat"],
-        {'times_and_dates': {'change_alarm': {'sys_time': {'new_time': {}, 'old_time': {}},
-                                              'sys_interval': {'old_time': {}}}},
-         'feedback': {'insult': {}, 'compliment': {}}},
+        [],
+        ["smart_home.set_thermostat"],
+        {
+            "times_and_dates": {
+                "change_alarm": {
+                    "sys_time": {"new_time": {}, "old_time": {}},
+                    "sys_interval": {"old_time": {}},
+                }
+            },
+            "feedback": {"insult": {}, "compliment": {}},
+        },
     ),
     (
-        [], ["smart_home.set_thermostat.sys_temperature"],
-        {'smart_home': {'set_thermostat': {'location': {}, 'all': {}, 'sys_interval': {},
-                                           'sys_time': {}}},
-         'feedback': {'insult': {}, 'compliment': {}},
-         'times_and_dates': {'change_alarm': {'sys_interval': {'old_time': {}},
-                                              'sys_time': {'new_time': {}, 'old_time': {}}}}},
+        [],
+        ["smart_home.set_thermostat.sys_temperature"],
+        {
+            "smart_home": {
+                "set_thermostat": {
+                    "location": {},
+                    "all": {},
+                    "sys_interval": {},
+                    "sys_time": {},
+                }
+            },
+            "feedback": {"insult": {}, "compliment": {}},
+            "times_and_dates": {
+                "change_alarm": {
+                    "sys_interval": {"old_time": {}},
+                    "sys_time": {"new_time": {}, "old_time": {}},
+                }
+            },
+        },
     ),
 ]
 
 
-@pytest.mark.parametrize(
-    "allow_nlp,deny_nlp,expected_nlp_hierarchy", test_data_110
-)
+@pytest.mark.parametrize("allow_nlp,deny_nlp,expected_nlp_hierarchy", test_data_110)
 def test_nlp_hierarchy_for_allow_deny_nlp(
     home_assistant_nlp, allow_nlp, deny_nlp, expected_nlp_hierarchy
 ):
@@ -283,7 +378,12 @@ def test_nlp_hierarchy_for_allow_deny_nlp(
 
 test_data_2 = [
     (["store_info.*", "store_info.greet"], "hello!", "store_info", "greet"),
-    (["store_info.find_nearest_store"], "hello!", "store_info", "find_nearest_store"),
+    (
+        ["store_info.find_nearest_store"],
+        "hello!",
+        "store_info",
+        "find_nearest_store",
+    ),
     (["store_info.*"], "hello!", "store_info", "greet"),
     (
         ["store_info.*", "store_info.find_nearest_store"],
@@ -294,9 +394,7 @@ test_data_2 = [
 ]
 
 
-@pytest.mark.parametrize(
-    "allowed_intents,query,expected_domain,expected_intent", test_data_2
-)
+@pytest.mark.parametrize("allowed_intents,query,expected_domain,expected_intent", test_data_2)
 def test_nlp_hierarchy_using_domains_intents(
     kwik_e_mart_nlp, allowed_intents, query, expected_domain, expected_intent
 ):
@@ -325,25 +423,25 @@ test_data_dyn = [
 
 
 @pytest.mark.parametrize(
-    "query,dyn_gaz,expected_domain,expected_intent,expected_entity", test_data_dyn
+    "query,dyn_gaz,expected_domain,expected_intent,expected_entity",
+    test_data_dyn,
 )
 def test_nlp_hierarchy_using_dynamic_gazetteer(
-    kwik_e_mart_nlp, query, dyn_gaz, expected_domain, expected_intent, expected_entity
+    kwik_e_mart_nlp,
+    query,
+    dyn_gaz,
+    expected_domain,
+    expected_intent,
+    expected_entity,
 ):
     """Tests user specified allowable domains and intents"""
     response = kwik_e_mart_nlp.process(query, dynamic_resource=dyn_gaz)
 
     if dyn_gaz:
-        assert (
-            query
-            not in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")[
-                "entities"
-            ]
-        )
+        assert query not in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")["entities"]
         in_gaz_tokens = "45 Fifth".lower()
         assert (
-            in_gaz_tokens
-            in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")["entities"]
+            in_gaz_tokens in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")["entities"]
         )
 
     assert response["domain"] == expected_domain
@@ -360,110 +458,125 @@ def test_nlp_hierarchy_using_dynamic_gazetteer(
 
 
 def test_allowed_entities(kwik_e_mart_nlp):
-    res = kwik_e_mart_nlp.process("peanut",
-                                  allowed_intents=["store_info.get_store_number.store_name"])
-    assert res['entities'][0]['type'] == 'store_name'
-    assert res['entities'][0]['text'] == 'peanut'
+    res = kwik_e_mart_nlp.process(
+        "peanut", allowed_intents=["store_info.get_store_number.store_name"]
+    )
+    assert res["entities"][0]["type"] == "store_name"
+    assert res["entities"][0]["text"] == "peanut"
 
-    res = kwik_e_mart_nlp.process("xyz",
-                                  allowed_intents=["store_info.get_store_number.store_name"])
-    assert res['entities'] == []
+    res = kwik_e_mart_nlp.process("xyz", allowed_intents=["store_info.get_store_number.store_name"])
+    assert res["entities"] == []
 
-    res = kwik_e_mart_nlp.process("xyz",
-                                  allowed_intents=["store_info.get_store_number.store_name"],
-                                  dynamic_resource={'gazetteers': {'store_name': {'xyz': 1.0}}})
-    assert res['entities'][0]['type'] == 'store_name'
-    assert res['entities'][0]['text'] == 'xyz'
+    res = kwik_e_mart_nlp.process(
+        "xyz",
+        allowed_intents=["store_info.get_store_number.store_name"],
+        dynamic_resource={"gazetteers": {"store_name": {"xyz": 1.0}}},
+    )
+    assert res["entities"][0]["type"] == "store_name"
+    assert res["entities"][0]["text"] == "xyz"
 
 
 def test_disallowed_entities(kwik_e_mart_nlp):
     res = kwik_e_mart_nlp.process("hello")
-    assert res['intent'] == 'greet'
+    assert res["intent"] == "greet"
     res = kwik_e_mart_nlp.process("hello", deny_nlp=["store_info.greet"])
-    assert res['intent'] != 'greet'
+    assert res["intent"] != "greet"
 
     res = kwik_e_mart_nlp.process("transfer $200 from checking to savings")
-    assert res['intent'] == 'transfer_money'
-    assert res['entities'][0]['type'] == 'sys_amount-of-money'
-    assert res['entities'][1]['type'] == 'account_type'
-    assert res['entities'][1]['role'] == 'origin'
-    assert res['entities'][2]['type'] == 'account_type'
-    assert res['entities'][2]['role'] == 'dest'
+    assert res["intent"] == "transfer_money"
+    assert res["entities"][0]["type"] == "sys_amount-of-money"
+    assert res["entities"][1]["type"] == "account_type"
+    assert res["entities"][1]["role"] == "origin"
+    assert res["entities"][2]["type"] == "account_type"
+    assert res["entities"][2]["role"] == "dest"
 
-    res = kwik_e_mart_nlp.process("transfer $200 from checking to savings",
-                                  deny_nlp=["banking.transfer_money"])
-    assert res['intent'] != 'transfer_money'
+    res = kwik_e_mart_nlp.process(
+        "transfer $200 from checking to savings",
+        deny_nlp=["banking.transfer_money"],
+    )
+    assert res["intent"] != "transfer_money"
 
-    res = kwik_e_mart_nlp.process("transfer $200 from checking to savings",
-                                  deny_nlp=["banking.transfer_money.account_type"])
-    assert res['intent'] == 'transfer_money'
-    assert 'account_type' not in {entity['type'] for entity in res['entities']}
+    res = kwik_e_mart_nlp.process(
+        "transfer $200 from checking to savings",
+        deny_nlp=["banking.transfer_money.account_type"],
+    )
+    assert res["intent"] == "transfer_money"
+    assert "account_type" not in {entity["type"] for entity in res["entities"]}
 
-    res = kwik_e_mart_nlp.process("please can you tell me if springfield is "
-                                  "possibly open at this time on friday",
-                                  allow_nlp=["store_info"])
-    assert res['intent'] == 'get_store_hours'
-    assert 'sys_time' in {entity['type'] for entity in res['entities']}
+    res = kwik_e_mart_nlp.process(
+        "please can you tell me if springfield is " "possibly open at this time on friday",
+        allow_nlp=["store_info"],
+    )
+    assert res["intent"] == "get_store_hours"
+    assert "sys_time" in {entity["type"] for entity in res["entities"]}
 
-    res = kwik_e_mart_nlp.process("please can you tell me if springfield is "
-                                  "possibly open at this time on friday",
-                                  allow_nlp=["store_info"],
-                                  deny_nlp=["store_info.get_store_hours.sys_time"])
-    assert res['intent'] == 'get_store_hours'
-    assert 'sys_time' not in {entity['type'] for entity in res['entities']}
+    res = kwik_e_mart_nlp.process(
+        "please can you tell me if springfield is " "possibly open at this time on friday",
+        allow_nlp=["store_info"],
+        deny_nlp=["store_info.get_store_hours.sys_time"],
+    )
+    assert res["intent"] == "get_store_hours"
+    assert "sys_time" not in {entity["type"] for entity in res["entities"]}
 
     # If all entities in an intent are denied, the intent is NOT denied but
     # the entities are denied
-    res = kwik_e_mart_nlp.process("please can you tell me if springfield is "
-                                  "possibly open at this time on friday",
-                                  allow_nlp=["store_info"],
-                                  deny_nlp=["store_info.get_store_hours.sys_time",
-                                            "store_info.get_store_hours.store_name"])
-    assert res['intent'] == 'get_store_hours'
-    assert 'sys_time' not in {entity['type'] for entity in res['entities']}
-    assert 'store_name' not in {entity['type'] for entity in res['entities']}
+    res = kwik_e_mart_nlp.process(
+        "please can you tell me if springfield is " "possibly open at this time on friday",
+        allow_nlp=["store_info"],
+        deny_nlp=[
+            "store_info.get_store_hours.sys_time",
+            "store_info.get_store_hours.store_name",
+        ],
+    )
+    assert res["intent"] == "get_store_hours"
+    assert "sys_time" not in {entity["type"] for entity in res["entities"]}
+    assert "store_name" not in {entity["type"] for entity in res["entities"]}
 
-    res = kwik_e_mart_nlp.process("please can you tell me if springfield is "
-                                  "possibly open at this time on friday",
-                                  allow_nlp=["store_info", "banking.transfer_money"],
-                                  deny_nlp=["store_info.get_store_hours"])
-    assert res['domain'] == 'store_info'
-    assert res['intent'] != 'get_store_hours'
+    res = kwik_e_mart_nlp.process(
+        "please can you tell me if springfield is " "possibly open at this time on friday",
+        allow_nlp=["store_info", "banking.transfer_money"],
+        deny_nlp=["store_info.get_store_hours"],
+    )
+    assert res["domain"] == "store_info"
+    assert res["intent"] != "get_store_hours"
 
     # We fail open here since allow_nlp and deny_nlp are the same
-    res = kwik_e_mart_nlp.process("please can you tell me if springfield is "
-                                  "possibly open at this time on friday",
-                                  allow_nlp=["store_info", "banking.transfer_money"],
-                                  deny_nlp=["store_info", "banking.transfer_money"])
-    assert res['domain'] == 'store_info'
-    assert 'sys_time' in {entity['type'] for entity in res['entities']}
+    res = kwik_e_mart_nlp.process(
+        "please can you tell me if springfield is " "possibly open at this time on friday",
+        allow_nlp=["store_info", "banking.transfer_money"],
+        deny_nlp=["store_info", "banking.transfer_money"],
+    )
+    assert res["domain"] == "store_info"
+    assert "sys_time" in {entity["type"] for entity in res["entities"]}
 
     # We fail open here since allow_nlp is a subset of deny_nlp
-    res = kwik_e_mart_nlp.process("please can you tell me if springfield is "
-                                  "possibly open at this time on friday",
-                                  allow_nlp=["store_info.get_store_hours"],
-                                  deny_nlp=["store_info"])
-    assert res['domain'] == 'store_info'
-    assert 'sys_time' in {entity['type'] for entity in res['entities']}
+    res = kwik_e_mart_nlp.process(
+        "please can you tell me if springfield is " "possibly open at this time on friday",
+        allow_nlp=["store_info.get_store_hours"],
+        deny_nlp=["store_info"],
+    )
+    assert res["domain"] == "store_info"
+    assert "sys_time" in {entity["type"] for entity in res["entities"]}
 
 
 test_find_entities_in_text_data = [
-    ('20', None, {'sys_temperature': {}}),
-    ('2:30', None, {'sys_time': {}}),
+    ("20", None, {"sys_temperature": {}}),
+    ("2:30", None, {"sys_time": {}}),
     # The below test case has overlapping entities
-    ('$20 5', None, {'sys_amount-of-money': {}}),
-    ('foyer', {"gazetteers": {"location": {"foyer": 10.0}}}, {'location': {}}),
+    ("$20 5", None, {"sys_amount-of-money": {}}),
+    ("foyer", {"gazetteers": {"location": {"foyer": 10.0}}}, {"location": {}}),
 ]
 
 
-@pytest.mark.parametrize(
-    "query_text,dyn_gaz,allowed_nlp", test_find_entities_in_text_data
-)
+@pytest.mark.parametrize("query_text,dyn_gaz,allowed_nlp", test_find_entities_in_text_data)
 def test_find_entities_in_text(home_assistant_nlp, query_factory, query_text, dyn_gaz, allowed_nlp):
     # Duckling tests
     query = (query_factory.create_query(text=query_text),)
-    res = home_assistant_nlp.domains['smart_home'].intents['set_thermostat']._find_entities_in_text(
-        query, dyn_gaz, allowed_nlp, 3)
+    res = (
+        home_assistant_nlp.domains["smart_home"]
+        .intents["set_thermostat"]
+        ._find_entities_in_text(query, dyn_gaz, allowed_nlp, 3)
+    )
     assert res[0][0].text == query_text
     assert res[0][0].entity.type == list(allowed_nlp.keys())[0]
 
@@ -510,7 +623,8 @@ def test_process_verbose(kwik_e_mart_nlp):
     assert response["intent"] == "get_store_hours"
     assert response["entities"][0]["text"] == "elm street"
     assert isinstance(
-        response["confidences"]["entities"][0][response["entities"][0]["type"]], float
+        response["confidences"]["entities"][0][response["entities"][0]["type"]],
+        float,
     )
     assert isinstance(response["confidences"]["domains"]["store_info"], float)
     assert isinstance(response["confidences"]["intents"]["get_store_hours"], float)
@@ -530,13 +644,22 @@ def test_process_verbose_long_tokens(kwik_e_mart_nlp):
 
     normalized_tokens = text_preparation_pipeline.tokenize_and_normalize(text)
     normalized_tokens_text = [t["entity"] for t in normalized_tokens]
-    assert normalized_tokens_text == ["is", "the", "kwik", "e", "mart", "open", "tomorrow"]
+    assert normalized_tokens_text == [
+        "is",
+        "the",
+        "kwik",
+        "e",
+        "mart",
+        "open",
+        "tomorrow",
+    ]
 
     assert response["domain"] == "store_info"
     assert response["intent"] == "get_store_hours"
     assert response["entities"][0]["text"] == "tomorrow"
     assert isinstance(
-        response["confidences"]["entities"][0][response["entities"][0]["type"]], float
+        response["confidences"]["entities"][0][response["entities"][0]["type"]],
+        float,
     )
 
 
@@ -560,7 +683,8 @@ def test_process_verbose_short_tokens(kwik_e_mart_nlp):
     assert response["intent"] == "get_store_hours"
     assert response["entities"][0]["text"] == "tomorrow"
     assert isinstance(
-        response["confidences"]["entities"][0][response["entities"][0]["type"]], float
+        response["confidences"]["entities"][0][response["entities"][0]["type"]],
+        float,
     )
 
 
@@ -578,9 +702,7 @@ test_nbest = [
 
 
 @pytest.mark.parametrize("queries,expected_domain,expected_intent", test_nbest)
-def test_nbest_process_verbose(
-    kwik_e_mart_nlp, queries, expected_domain, expected_intent
-):
+def test_nbest_process_verbose(kwik_e_mart_nlp, queries, expected_domain, expected_intent):
     response = kwik_e_mart_nlp.process(queries, verbose=True)
     response["entities_text"] = [e["text"] for e in response["entities"]]
     for i, e in enumerate(response["entities"]):
@@ -614,14 +736,16 @@ test_data_4 = [
             ["first street", "sunday"],
             ["10 4 street", "sunday"],
         ],
-        [["104 first street", "first street", "10 4 street"], ["sunday", "sunday"]],
+        [
+            ["104 first street", "first street", "10 4 street"],
+            ["sunday", "sunday"],
+        ],
     ),
 ]
 
 
 @pytest.mark.parametrize(
-    "queries,expected_domain,expected_intent,expected_nbest_entities,"
-    "expected_aligned_entities",
+    "queries,expected_domain,expected_intent,expected_nbest_entities," "expected_aligned_entities",
     test_data_4,
 )
 def test_process_nbest(
@@ -637,13 +761,11 @@ def test_process_nbest(
     response["entities_text"] = [e["text"] for e in response["entities"]]
     response.pop("entities")
     response["nbest_transcripts_entities_text"] = [
-        [e["text"] for e in n_entities]
-        for n_entities in response["nbest_transcripts_entities"]
+        [e["text"] for e in n_entities] for n_entities in response["nbest_transcripts_entities"]
     ]
     response.pop("nbest_transcripts_entities")
     response["nbest_aligned_entities_text"] = [
-        [e["text"] for e in n_entities]
-        for n_entities in response["nbest_aligned_entities"]
+        [e["text"] for e in n_entities] for n_entities in response["nbest_aligned_entities"]
     ]
     response.pop("nbest_aligned_entities")
 
@@ -823,10 +945,16 @@ test_data_dyn = [
 
 
 @pytest.mark.parametrize(
-    "query,dyn_gaz,expected_domain,expected_intent,expected_entity", test_data_dyn
+    "query,dyn_gaz,expected_domain,expected_intent,expected_entity",
+    test_data_dyn,
 )
 def test_nlp_hierarchy_using_dynamic_gazetteer_and_allowed_intents(
-    kwik_e_mart_nlp, query, dyn_gaz, expected_domain, expected_intent, expected_entity
+    kwik_e_mart_nlp,
+    query,
+    dyn_gaz,
+    expected_domain,
+    expected_intent,
+    expected_entity,
 ):
     """Tests user specified allowed_nlp_classes and dynamic_resource"""
     response = kwik_e_mart_nlp.process(
@@ -835,16 +963,10 @@ def test_nlp_hierarchy_using_dynamic_gazetteer_and_allowed_intents(
         allowed_nlp_classes={"store_info": {"get_store_hours": {"store_name": {}, "sys_time": {}}}},
     )
     if dyn_gaz:
-        assert (
-            query
-            not in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")[
-                "entities"
-            ]
-        )
+        assert query not in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")["entities"]
         in_gaz_tokens = "45 Fifth".lower()
         assert (
-            in_gaz_tokens
-            in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")["entities"]
+            in_gaz_tokens in kwik_e_mart_nlp.resource_loader.get_gazetteer("store_name")["entities"]
         )
 
     assert response["domain"] == expected_domain
@@ -858,14 +980,13 @@ def test_nlp_hierarchy_using_dynamic_gazetteer_and_allowed_intents(
 
 
 def test_extract_entity_resolvers(kwik_e_mart_app_path):
-    """Tests extracting entity resolvers
-    """
+    """Tests extracting entity resolvers"""
     nlp = NaturalLanguageProcessor(kwik_e_mart_app_path)
-    entity_processors = nlp.domains['banking'].intents['transfer_money'].get_entity_processors()
+    entity_processors = nlp.domains["banking"].intents["transfer_money"].get_entity_processors()
     assert len(entity_processors.keys()) == 2
     assert "account_type" in entity_processors.keys()
     assert "sys_amount-of-money" in entity_processors.keys()
-    entity_processors = nlp.domains['store_info'].intents['get_store_hours'].get_entity_processors()
+    entity_processors = nlp.domains["store_info"].intents["get_store_hours"].get_entity_processors()
     assert len(entity_processors.keys()) == 2
     assert "store_name" in entity_processors.keys()
     assert "sys_time" in entity_processors.keys()

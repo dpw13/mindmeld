@@ -25,38 +25,28 @@ from mindmeld.resource_loader import ResourceLoader
 from mindmeld.system_entity_recognizer import DucklingRecognizer
 from mindmeld.text_preparation.preprocessors import Preprocessor
 from mindmeld.text_preparation.stemmers import EnglishNLTKStemmer
-from mindmeld.text_preparation.text_preparation_pipeline import TextPreparationPipelineFactory
+from mindmeld.text_preparation.text_preparation_pipeline import (
+    TextPreparationPipelineFactory,
+)
 from mindmeld.text_preparation.tokenizers import WhiteSpaceTokenizer
 from mindmeld.query_factory import QueryFactory
 
-warnings.filterwarnings(
-    "module", category=DeprecationWarning, module="sklearn.preprocessing.label"
-)
+warnings.filterwarnings("module", category=DeprecationWarning, module="sklearn.preprocessing.label")
 
 
 APP_NAME = "kwik_e_mart"
 APP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), APP_NAME)
-FOOD_ORDERING_APP_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "food_ordering"
-)
-HOME_ASSISTANT_APP_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "home_assistant"
-)
+FOOD_ORDERING_APP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "food_ordering")
+HOME_ASSISTANT_APP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "home_assistant")
 AENEID_FILE = "aeneid.txt"
 AENEID_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), AENEID_FILE)
 STORE_DATA_FILE_PATH = os.path.join(APP_PATH, "data/stores.json")
 
 CONVERTER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "converter")
 RASA_CONVERTER_PROJECT_PATH = os.path.join(CONVERTER_PATH, "rasa_sample_project")
-DIALOG_CONVERTER_PROJECT_PATH = os.path.join(
-    CONVERTER_PATH, "dialogflow_sample_project"
-)
-MINDMELD_RASA_CONVERTER_PROJECT_PATH = os.path.join(
-    CONVERTER_PATH, "mm_rasa_converted_project"
-)
-MINDMELD_DIALOG_CONVERTER_PROJECT_PATH = os.path.join(
-    CONVERTER_PATH, "mm_df_converted_project"
-)
+DIALOG_CONVERTER_PROJECT_PATH = os.path.join(CONVERTER_PATH, "dialogflow_sample_project")
+MINDMELD_RASA_CONVERTER_PROJECT_PATH = os.path.join(CONVERTER_PATH, "mm_rasa_converted_project")
+MINDMELD_DIALOG_CONVERTER_PROJECT_PATH = os.path.join(CONVERTER_PATH, "mm_df_converted_project")
 
 
 @pytest.fixture
@@ -110,7 +100,9 @@ def food_ordering_nlp(food_ordering_app_path: str) -> NaturalLanguageProcessor:
 
 
 @pytest.fixture
-def home_assistant_nlp(home_assistant_app_path: str) -> NaturalLanguageProcessor:
+def home_assistant_nlp(
+    home_assistant_app_path: str,
+) -> NaturalLanguageProcessor:
     """Provides a built processor instance"""
     nlp = NaturalLanguageProcessor(app_path=home_assistant_app_path)
     nlp.build()

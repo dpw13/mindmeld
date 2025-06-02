@@ -21,8 +21,15 @@ import sys
 from .app_manager import ApplicationManager
 from .cli import app_cli
 from .components._config import get_custom_action_config
-from .components.custom_action import CustomActionException, CustomActionSequence
-from .components.dialogue import AutoEntityFilling, DialogueFlow, DialogueResponder
+from .components.custom_action import (
+    CustomActionException,
+    CustomActionSequence,
+)
+from .components.dialogue import (
+    AutoEntityFilling,
+    DialogueFlow,
+    DialogueResponder,
+)
 from .components.request import Request
 from .components.schemas import DEFAULT_FORM_SCHEMA
 from .core import CallableRegistry
@@ -175,7 +182,7 @@ class Application:  # pylint: disable=R0902
         async_mode=False,
         merge=True,
         config=None,
-        **kwargs
+        **kwargs,
     ):
         """Adds a custom action sequence handler for the dialogue manager.
 
@@ -191,15 +198,11 @@ class Application:  # pylint: disable=R0902
             config (dict): The custom action config, if different from the application's.
         """
         if not (action or actions):
-            raise CustomActionException(
-                "`action` or `actions` must be present in arguments."
-            )
+            raise CustomActionException("`action` or `actions` must be present in arguments.")
 
         config = config or self.custom_action_config
         if not config:
-            raise CustomActionException(
-                "There is no configuration specified for this action."
-            )
+            raise CustomActionException("There is no configuration specified for this action.")
 
         actions = [action] if action else actions
         action_seq = CustomActionSequence(actions, config, merge=merge)
@@ -228,7 +231,7 @@ class Application:  # pylint: disable=R0902
             if not form or not isinstance(form, dict):
                 raise TypeError("Form cannot be empty.")
             validated_form = DEFAULT_FORM_SCHEMA.dump(form)
-            if 'entities' not in validated_form:
+            if "entities" not in validated_form:
                 raise KeyError("Entity list cannot be empty.")
             auto_fill = AutoEntityFilling(func, validated_form, self)
             if self.async_mode:

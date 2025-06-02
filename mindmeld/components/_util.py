@@ -56,6 +56,7 @@ class MaskState(enum.Enum):
         allow: state when the user has explicitly allowed a node.
         deny: state when the user has explicitly denied a node.
     """
+
     unset = enum.auto()
     allow = enum.auto()
     deny = enum.auto()
@@ -65,10 +66,13 @@ class MaskState(enum.Enum):
 
 
 class TreeNode:
-    def __init__(self, nlp_name: str,
-                 parent: Optional['TreeNode'] = None,
-                 children: Optional[List['TreeNode']] = None,
-                 mask_state: Optional[MaskState] = None):
+    def __init__(
+        self,
+        nlp_name: str,
+        parent: Optional["TreeNode"] = None,
+        children: Optional[List["TreeNode"]] = None,
+        mask_state: Optional[MaskState] = None,
+    ):
         """
         Constructor for the tree node
         Args:
@@ -92,9 +96,10 @@ class TreeNlp:
     encodes a mask state, based on which certain NLP components are allowed
     or denied based on user input
     """
+
     def __init__(self, nlp, mask_state=MaskState.unset):
         # root
-        self.root = TreeNode('root', mask_state=mask_state)
+        self.root = TreeNode("root", mask_state=mask_state)
         # construct NLP tree
         for domain in nlp.domains:
             domain_node = TreeNode(domain, parent=self.root, mask_state=mask_state)
@@ -112,10 +117,9 @@ class TreeNlp:
 
     @staticmethod
     def _convert_tree_node_to_values(*nlp_components):
-        result = [None for _ in ['domain', 'intent', 'entity', 'role']]
+        result = [None for _ in ["domain", "intent", "entity", "role"]]
         for idx, component in enumerate(nlp_components):
-            component_name = component.nlp_name if isinstance(
-                component, TreeNode) else component
+            component_name = component.nlp_name if isinstance(component, TreeNode) else component
             result[idx] = component_name
         return result
 
@@ -129,29 +133,33 @@ class TreeNlp:
                 return domain_node.children
         return []
 
-    def get_entity_nodes(self, domain: Union[str, TreeNode],
-                         intent: Union[str, TreeNode]):
+    def get_entity_nodes(self, domain: Union[str, TreeNode], intent: Union[str, TreeNode]):
         domain, intent, _, _ = self._convert_tree_node_to_values(domain, intent)
         for intent_node in self.get_intent_nodes(domain):
             if intent_node.nlp_name == intent:
                 return intent_node.children
         return []
 
-    def get_role_nodes(self, domain: Union[str, TreeNode],
-                       intent: Union[str, TreeNode],
-                       entity: Union[str, TreeNode]):
-        domain, intent, entity, _ = self._convert_tree_node_to_values(
-            domain, intent, entity)
+    def get_role_nodes(
+        self,
+        domain: Union[str, TreeNode],
+        intent: Union[str, TreeNode],
+        entity: Union[str, TreeNode],
+    ):
+        domain, intent, entity, _ = self._convert_tree_node_to_values(domain, intent, entity)
         for entity_node in self.get_entity_nodes(domain, intent):
             if entity_node.nlp_name == entity:
                 return entity_node.children
         return []
 
-    def update(self, mask_state: bool,
-               domain: Union[str, TreeNode],
-               intent: Optional[Union[str, TreeNode]] = None,
-               entity: Optional[Union[str, TreeNode]] = None,
-               role: Optional[Union[str, TreeNode]] = None):
+    def update(
+        self,
+        mask_state: bool,
+        domain: Union[str, TreeNode],
+        intent: Optional[Union[str, TreeNode]] = None,
+        entity: Optional[Union[str, TreeNode]] = None,
+        role: Optional[Union[str, TreeNode]] = None,
+    ):
         """
         This function updates the NLP tree with mask values. Note:
         Args:
@@ -161,8 +169,12 @@ class TreeNlp:
             entity: entity of NLP
             role: role of NLP
         """
-        domain_name, intent_name, entity_name, role_name = self._convert_tree_node_to_values(
-            domain, intent, entity, role)
+        (
+            domain_name,
+            intent_name,
+            entity_name,
+            role_name,
+        ) = self._convert_tree_node_to_values(domain, intent, entity, role)
 
         # validation check
         nlp_components = [domain_name, intent_name, entity_name, role_name]
@@ -170,7 +182,8 @@ class TreeNlp:
             if any(not component for component in nlp_components[:i]) and nlp_components[i]:
                 raise InvalidMaskError(
                     f"Unable to resolve NLP hierarchy since "
-                    f"{str(nlp_components[i])} does not have an valid ancestor")
+                    f"{str(nlp_components[i])} does not have an valid ancestor"
+                )
 
         for domain_node in self.get_domain_nodes():
             if domain_node.nlp_name != domain_name:
@@ -181,7 +194,7 @@ class TreeNlp:
                 return
 
             for intent_node in self.get_intent_nodes(domain_node.nlp_name):
-                if intent_name not in ('*', intent_node.nlp_name):
+                if intent_name not in ("*", intent_node.nlp_name):
                     continue
 
                 if not entity_name:
@@ -189,15 +202,16 @@ class TreeNlp:
                     # If the intent is * and it's terminal, eg. "domain.*", then
                     # we mask the intent AND continue to iterate through the other
                     # intents of the domain
-                    if intent_name == '*':
+                    if intent_name == "*":
                         continue
                     # If the intent is not *, then it's terminal, eg. "domain.intent",
                     # then we mask the intent and end the function's operations
                     return
 
-                for entity_node in self.get_entity_nodes(domain_node.nlp_name,
-                                                         intent_node.nlp_name):
-                    if entity_name not in ('*', entity_node.nlp_name):
+                for entity_node in self.get_entity_nodes(
+                    domain_node.nlp_name, intent_node.nlp_name
+                ):
+                    if entity_name not in ("*", entity_node.nlp_name):
                         continue
 
                     if not role_name:
@@ -206,20 +220,22 @@ class TreeNlp:
                         # If the entity is * and it's terminal, eg. "domain.intent.*", then
                         # we mask the entity AND continue to iterate through the other
                         # entities of the intent
-                        if entity_name == '*':
+                        if entity_name == "*":
                             continue
                         # If the entity is not *, then it's terminal, eg. "domain.intent.entity",
                         # then we mask the entity and end the function's operations
                         return
 
-                    for role_node in self.get_role_nodes(domain_node.nlp_name,
-                                                         intent_node.nlp_name,
-                                                         entity_node.nlp_name):
-                        if role_name not in ('*', role_node.nlp_name):
+                    for role_node in self.get_role_nodes(
+                        domain_node.nlp_name,
+                        intent_node.nlp_name,
+                        entity_node.nlp_name,
+                    ):
+                        if role_name not in ("*", role_node.nlp_name):
                             continue
 
                         role_node.mask_state = mask_state
-                        if role_name == '*':
+                        if role_name == "*":
                             continue
                         return
 
@@ -245,22 +261,25 @@ class TreeNlp:
             intents = self.get_intent_nodes(domain)
             for intent in intents:
                 # sync down
-                if domain.mask_state != MaskState.unset and \
-                        intent.mask_state == MaskState.unset:
+                if domain.mask_state != MaskState.unset and intent.mask_state == MaskState.unset:
                     intent.mask_state = domain.mask_state
 
                 entities = self.get_entity_nodes(domain, intent)
                 for entity in entities:
                     # sync down
-                    if intent.mask_state != MaskState.unset and \
-                            entity.mask_state == MaskState.unset:
+                    if (
+                        intent.mask_state != MaskState.unset
+                        and entity.mask_state == MaskState.unset
+                    ):
                         entity.mask_state = intent.mask_state
 
                     roles = self.get_role_nodes(domain, intent, entity)
                     for role in roles:
                         # sync down
-                        if entity.mask_state != MaskState.unset and \
-                                role.mask_state == MaskState.unset:
+                        if (
+                            entity.mask_state != MaskState.unset
+                            and role.mask_state == MaskState.unset
+                        ):
                             role.mask_state = entity.mask_state
 
                     # sync up entity-role
@@ -297,17 +316,17 @@ class TreeNlp:
                 if intent.mask_state:
                     result[domain.nlp_name][intent.nlp_name] = defaultdict(dict)
 
-                for entity in self.get_entity_nodes(domain.nlp_name,
-                                                    intent.nlp_name):
+                for entity in self.get_entity_nodes(domain.nlp_name, intent.nlp_name):
                     if entity.mask_state:
                         result[domain.nlp_name][intent.nlp_name][entity.nlp_name] = {}
 
-                    for role in self.get_role_nodes(domain.nlp_name,
-                                                    intent.nlp_name,
-                                                    entity.nlp_name):
+                    for role in self.get_role_nodes(
+                        domain.nlp_name, intent.nlp_name, entity.nlp_name
+                    ):
                         if role.mask_state:
-                            result[domain.nlp_name][intent.nlp_name][
-                                entity.nlp_name][role.nlp_name] = {}
+                            result[domain.nlp_name][intent.nlp_name][entity.nlp_name][
+                                role.nlp_name
+                            ] = {}
 
         serialize_results = self._default_to_regular(result)
         return serialize_results

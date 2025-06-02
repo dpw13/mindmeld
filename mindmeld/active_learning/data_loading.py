@@ -147,9 +147,7 @@ class LabelMap:
         return dict(zip(entity_labels, range(len(entity_labels))))
 
     @staticmethod
-    def get_class_labels(
-        tuning_level: list, query_list: ProcessedQueryList
-    ) -> List[str]:
+    def get_class_labels(tuning_level: list, query_list: ProcessedQueryList) -> List[str]:
         """Creates a class label for a set of queries. These labels are used to split
             queries by type. Labels follow the format of "domain" or "domain|intent".
             For example, "date|get_date".
@@ -161,9 +159,7 @@ class LabelMap:
             class_labels (List[str]): list of labels for classification task.
         """
         if TuneLevel.INTENT.value in tuning_level:
-            return [
-                f"{d}.{i}" for d, i in zip(query_list.domains(), query_list.intents())
-            ]
+            return [f"{d}.{i}" for d, i in zip(query_list.domains(), query_list.intents())]
         else:
             return [f"{d}" for d in query_list.domains()]
 
@@ -206,9 +202,7 @@ class LogQueriesLoader:
         """
         return list(set(q for q in log_queries_iter))
 
-    def convert_text_queries_to_processed(
-        self, text_queries: List[str]
-    ) -> List[ProcessedQuery]:
+    def convert_text_queries_to_processed(self, text_queries: List[str]) -> List[ProcessedQuery]:
         """Converts text queries to processed queries using an annotator.
 
         Args:
@@ -220,16 +214,12 @@ class LogQueriesLoader:
         annotator_params = DEFAULT_AUTO_ANNOTATOR_CONFIG
         annotator_params["app_path"] = self.app_path
         bootstrap_annotator = BootstrapAnnotator(**annotator_params)
-        return bootstrap_annotator.text_queries_to_processed_queries(
-            text_queries=text_queries
-        )
+        return bootstrap_annotator.text_queries_to_processed_queries(text_queries=text_queries)
 
     @property
     def queries(self):
         log_queries_iter = read_query_file(self.log_file_path)
-        filtered_text_queries = LogQueriesLoader.deduplicate_raw_text_queries(
-            log_queries_iter
-        )
+        filtered_text_queries = LogQueriesLoader.deduplicate_raw_text_queries(log_queries_iter)
         return self.convert_text_queries_to_processed(filtered_text_queries)
 
 
@@ -267,9 +257,7 @@ class DataBucket:
         Returns:
             queries (List[ProcessedQuery]): List of processed queries from the cache.
         """
-        return [
-            self.resource_loader.query_cache.get(query_id) for query_id in query_ids
-        ]
+        return [self.resource_loader.query_cache.get(query_id) for query_id in query_ids]
 
     def update_sampled_queries(self, newly_sampled_queries_ids):
         """Update the current set of sampled queries by adding the set of newly sampled
@@ -292,11 +280,10 @@ class DataBucket:
             remaining_indices (List[int]): List of ids corresponding the reamining queries
                 queries in self.unsampled_queries.
         """
-        remaining_queries_ids = [
-            self.unsampled_queries.elements[i] for i in remaining_indices
-        ]
+        remaining_queries_ids = [self.unsampled_queries.elements[i] for i in remaining_indices]
         self.unsampled_queries = ProcessedQueryList(
-            cache=self.resource_loader.query_cache, elements=remaining_queries_ids
+            cache=self.resource_loader.query_cache,
+            elements=remaining_queries_ids,
         )
 
     def sample_and_update(
@@ -409,9 +396,7 @@ class DataBucketFactory:
         label_map = LabelMap.create_label_map(app_path, train_pattern)
         resource_loader = ResourceLoader.create_resource_loader(app_path)
 
-        train_query_list = resource_loader.get_flattened_label_set(
-            label_set=train_pattern
-        )
+        train_query_list = resource_loader.get_flattened_label_set(label_set=train_pattern)
 
         if TuneLevel.ENTITY.value in tuning_level:
             label_map.entity2id = LabelMap._get_entity_mappings(train_query_list)
@@ -421,23 +406,19 @@ class DataBucketFactory:
         ranked_indices = stratified_random_sample(train_class_labels)
         sampling_size = int(train_seed_pct * len(train_query_list))
 
-        sampled_query_ids = [
-            train_query_list.elements[i] for i in ranked_indices[:sampling_size]
-        ]
-        unsampled_query_ids = [
-            train_query_list.elements[i] for i in ranked_indices[sampling_size:]
-        ]
+        sampled_query_ids = [train_query_list.elements[i] for i in ranked_indices[:sampling_size]]
+        unsampled_query_ids = [train_query_list.elements[i] for i in ranked_indices[sampling_size:]]
 
-        sampled_queries = ProcessedQueryList(
-            resource_loader.query_cache, sampled_query_ids
-        )
-        unsampled_queries = ProcessedQueryList(
-            resource_loader.query_cache, unsampled_query_ids
-        )
+        sampled_queries = ProcessedQueryList(resource_loader.query_cache, sampled_query_ids)
+        unsampled_queries = ProcessedQueryList(resource_loader.query_cache, unsampled_query_ids)
         test_queries = resource_loader.get_flattened_label_set(label_set=test_pattern)
 
         return DataBucket(
-            label_map, resource_loader, test_queries, unsampled_queries, sampled_queries
+            label_map,
+            resource_loader,
+            test_queries,
+            unsampled_queries,
+            sampled_queries,
         )
 
     @staticmethod
@@ -467,22 +448,16 @@ class DataBucketFactory:
         label_map = LabelMap.create_label_map(app_path, train_pattern)
         resource_loader = ResourceLoader.create_resource_loader(app_path)
 
-        train_query_list = resource_loader.get_flattened_label_set(
-            label_set=train_pattern
-        )
+        train_query_list = resource_loader.get_flattened_label_set(label_set=train_pattern)
 
         if TuneLevel.ENTITY.value in tuning_level:
             label_map.entity2id = LabelMap._get_entity_mappings(train_query_list)
             label_map.id2entity = LabelMap._reverse_dict(label_map.entity2id)
 
         if labeled_logs_pattern:
-            log_query_list = resource_loader.get_flattened_label_set(
-                label_set=labeled_logs_pattern
-            )
+            log_query_list = resource_loader.get_flattened_label_set(label_set=labeled_logs_pattern)
         else:
-            log_queries = LogQueriesLoader(
-                app_path, tuning_level, unlabeled_logs_path
-            ).queries
+            log_queries = LogQueriesLoader(app_path, tuning_level, unlabeled_logs_path).queries
             log_queries_keys = [
                 resource_loader.query_cache.get_key(q.domain, q.intent, q.query.text)
                 for q in log_queries
@@ -497,20 +472,18 @@ class DataBucketFactory:
 
         if log_usage_pct < AL_MAX_LOG_USAGE_PCT:
             sampling_size = int(log_usage_pct * len(log_query_list))
-            log_class_labels, _ = label_map.get_class_labels(
-                tuning_level, log_query_list
-            )
+            log_class_labels, _ = label_map.get_class_labels(tuning_level, log_query_list)
             ranked_indices = stratified_random_sample(log_class_labels)
-            log_query_ids = [
-                log_query_list.elements[i] for i in ranked_indices[:sampling_size]
-            ]
+            log_query_ids = [log_query_list.elements[i] for i in ranked_indices[:sampling_size]]
             log_queries = ProcessedQueryList(log_query_list.cache, log_query_ids)
 
-        sampled_queries = resource_loader.get_flattened_label_set(
-            label_set=train_pattern
-        )
+        sampled_queries = resource_loader.get_flattened_label_set(label_set=train_pattern)
         test_queries = resource_loader.get_flattened_label_set(label_set=test_pattern)
 
         return DataBucket(
-            label_map, resource_loader, test_queries, log_query_list, sampled_queries
+            label_map,
+            resource_loader,
+            test_queries,
+            log_query_list,
+            sampled_queries,
         )

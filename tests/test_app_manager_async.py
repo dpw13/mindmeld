@@ -20,4 +20,4 @@ async def test_parse(async_kwik_e_mart_app):
     for field in fields:
         assert field in dict(response).keys()
     for field in nested_fields:
-        assert field in dict(response)['request'].keys()
+        assert field in dict(response)["request"].keys()

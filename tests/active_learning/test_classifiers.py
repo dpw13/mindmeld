@@ -63,7 +63,11 @@ def tuning_data_bucket_domain(kwik_e_mart_app_path):
 
 
 def test_mindmeld_al_classifier_mappings(kwik_e_mart_nlp, mindmeld_al_classifier):
-    intent2idx, idx2intent, domain_indices = mindmeld_al_classifier._get_mappings()
+    (
+        intent2idx,
+        idx2intent,
+        domain_indices,
+    ) = mindmeld_al_classifier._get_mappings()
     # Test intent2idx and idx2intent
     for intent, idx in intent2idx.items():
         assert idx2intent[idx] == intent
@@ -86,36 +90,26 @@ def test_validate_class_level_statistic(mindmeld_al_classifier):
 
 
 # Test single model classification, for example: LeastConfidenceSampling.
-def test_single_model_classification(
-    mindmeld_al_classifier_domain, tuning_data_bucket_domain
-):
-
+def test_single_model_classification(mindmeld_al_classifier_domain, tuning_data_bucket_domain):
     (
         _,
         confidences_2d,
         confidences_3d,
         domain_indices,
-    ) = mindmeld_al_classifier_domain.train(
-        tuning_data_bucket_domain, LeastConfidenceSampling()
-    )
+    ) = mindmeld_al_classifier_domain.train(tuning_data_bucket_domain, LeastConfidenceSampling())
     assert len(confidences_2d) == len(tuning_data_bucket_domain.unsampled_queries)
     assert confidences_3d is None
     assert domain_indices is None
 
 
 # Test multi model classification, for example: KLDivergenceSampling.
-def test_multi_model_classification(
-    mindmeld_al_classifier_domain, tuning_data_bucket_domain
-):
-
+def test_multi_model_classification(mindmeld_al_classifier_domain, tuning_data_bucket_domain):
     (
         _,
         confidences_2d,
         confidences_3d,
         domain_indices,
-    ) = mindmeld_al_classifier_domain.train(
-        tuning_data_bucket_domain, KLDivergenceSampling()
-    )
+    ) = mindmeld_al_classifier_domain.train(tuning_data_bucket_domain, KLDivergenceSampling())
     assert len(confidences_2d) == len(tuning_data_bucket_domain.unsampled_queries)
     assert len(confidences_3d[0]) == len(tuning_data_bucket_domain.unsampled_queries)
     assert domain_indices is not None

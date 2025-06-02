@@ -11,15 +11,18 @@ import shutil
 import pytest
 
 from mindmeld import markup
-from mindmeld.models import ENTITY_EXAMPLE_TYPE, ENTITIES_LABEL_TYPE, ModelFactory, ModelConfig
+from mindmeld.models import (
+    ENTITY_EXAMPLE_TYPE,
+    ENTITIES_LABEL_TYPE,
+    ModelFactory,
+    ModelConfig,
+)
 from mindmeld.models.nn_utils.helpers import get_num_weights_of_model
 from mindmeld.query_factory import QueryFactory
 from mindmeld.resource_loader import ResourceLoader, ProcessedQueryList
 
 APP_NAME = "kwik_e_mart"
-APP_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), APP_NAME
-)
+APP_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), APP_NAME)
 GENERATED_TMP_FOLDER = os.path.join(APP_PATH, ".generated/pytorch_module")
 QUERY_FACTORY = QueryFactory.create_query_factory(app_path=None, duckling=True)
 
@@ -32,14 +35,19 @@ def resource_loader():
 
 def model_predictions_assertions(model):
     """Conducts assertions on model predictions; common checks across multiple unittests"""
-    predictions = model.predict([
-        markup.load_query("Medium Beers pizza from oz pizza",
-                          query_factory=QUERY_FACTORY).query])[0]
+    predictions = model.predict(
+        [markup.load_query("Medium Beers pizza from oz pizza", query_factory=QUERY_FACTORY).query]
+    )[0]
     assert len(predictions) <= 6
     for prediction in predictions:
         if prediction:  # non entities are predicted as NoneType
             assert prediction.entity.type in {
-                'category', 'cuisine', 'dish', 'option', 'restaurant', 'sys_number'
+                "category",
+                "cuisine",
+                "dish",
+                "option",
+                "restaurant",
+                "sys_number",
             }
 
 
@@ -109,7 +117,10 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -139,7 +150,10 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -154,7 +168,9 @@ class TestSequenceClassification:
             "label_type": ENTITIES_LABEL_TYPE,
             "model_settings": {"classifier_type": "embedder"},
             "params": {  # default token_spans_pooling_type is "first"
-                "emb_dim": 30, "tokenizer_type": "bpe-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "bpe-tokenizer",
+                "add_terminals": True,
             },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
@@ -164,32 +180,53 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "mean"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "max"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "max"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "mean_sqrt"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "token_spans_pooling_type": "mean_sqrt",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "last"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "last"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {
-            **config["params"], "use_crf_layer": False, "token_spans_pooling_type": "first"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "use_crf_layer": False,
+                "token_spans_pooling_type": "first",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -204,7 +241,9 @@ class TestSequenceClassification:
             "label_type": ENTITIES_LABEL_TYPE,
             "model_settings": {"classifier_type": "embedder"},
             "params": {
-                "emb_dim": 30, "tokenizer_type": "wordpiece-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "wordpiece-tokenizer",
+                "add_terminals": True,
             },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
@@ -214,7 +253,10 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -228,7 +270,9 @@ class TestSequenceClassification:
             "label_type": ENTITIES_LABEL_TYPE,
             "model_settings": {"classifier_type": "embedder"},
             "params": {  # default token_spans_pooling_type is "first"
-                "emb_dim": 30, "tokenizer_type": "char-tokenizer"},
+                "emb_dim": 30,
+                "tokenizer_type": "char-tokenizer",
+            },
         }
         examples = self.labeled_data.queries()
         labels = self.labeled_data.entities()
@@ -238,19 +282,28 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "add_terminals": "True"}}
+        config = {
+            **config,
+            "params": {**config["params"], "add_terminals": "True"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "mean"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -273,13 +326,19 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "add_terminals": "True"}}
+        config = {
+            **config,
+            "params": {**config["params"], "add_terminals": "True"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -301,7 +360,10 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -316,7 +378,9 @@ class TestSequenceClassification:
             "label_type": ENTITIES_LABEL_TYPE,
             "model_settings": {"classifier_type": "lstm-pytorch"},
             "params": {  # default token_spans_pooling_type is "first"
-                "emb_dim": 30, "tokenizer_type": "bpe-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "bpe-tokenizer",
+                "add_terminals": True,
             },
         }
         examples = self.labeled_data.queries()
@@ -327,38 +391,62 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "mean"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "max"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "max"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "mean_sqrt"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "token_spans_pooling_type": "mean_sqrt",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "last"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "last"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {
-            **config["params"], "use_crf_layer": False, "token_spans_pooling_type": "first"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "use_crf_layer": False,
+                "token_spans_pooling_type": "first",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -373,7 +461,9 @@ class TestSequenceClassification:
             "label_type": ENTITIES_LABEL_TYPE,
             "model_settings": {"classifier_type": "lstm-pytorch"},
             "params": {
-                "emb_dim": 30, "tokenizer_type": "wordpiece-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "wordpiece-tokenizer",
+                "add_terminals": True,
             },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
@@ -383,7 +473,10 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -397,7 +490,10 @@ class TestSequenceClassification:
             "label_type": ENTITIES_LABEL_TYPE,
             "model_settings": {"classifier_type": "lstm-pytorch"},
             "params": {  # default token_spans_pooling_type is "first"
-                "embedder_type": "glove", "emb_dim": 30, "tokenizer_type": "char-tokenizer"},
+                "embedder_type": "glove",
+                "emb_dim": 30,
+                "tokenizer_type": "char-tokenizer",
+            },
         }
         examples = self.labeled_data.queries()
         labels = self.labeled_data.entities()
@@ -407,27 +503,41 @@ class TestSequenceClassification:
             model.initialize_resources(resource_loader, examples, labels)
             model.fit(examples, labels)
 
-        config = {**config, "params": {
-            "embedder_type": None, "emb_dim": 30, "tokenizer_type": "char-tokenizer"}
+        config = {
+            **config,
+            "params": {
+                "embedder_type": None,
+                "emb_dim": 30,
+                "tokenizer_type": "char-tokenizer",
+            },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "add_terminals": "True"}}
+        config = {
+            **config,
+            "params": {**config["params"], "add_terminals": "True"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "token_spans_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "mean"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -445,23 +555,31 @@ class TestSequenceClassification:
         examples = self.labeled_data.queries()
         labels = self.labeled_data.entities()
 
-        incorrect_config = {**config, "params": {**config["params"], "add_terminals": True}}
+        incorrect_config = {
+            **config,
+            "params": {**config["params"], "add_terminals": True},
+        }
         with pytest.raises(ValueError):
             model = ModelFactory.create_model_from_config(ModelConfig(**incorrect_config))
             model.initialize_resources(resource_loader, examples, labels)
             model.fit(examples, labels)
 
         incorrect_config = {
-            **config, "params": {**config["params"], "tokenizer_type": "char-tokenizer"}}
+            **config,
+            "params": {**config["params"], "tokenizer_type": "char-tokenizer"},
+        }
         with pytest.raises(ValueError):
             model = ModelFactory.create_model_from_config(ModelConfig(**incorrect_config))
             model.initialize_resources(resource_loader, examples, labels)
             model.fit(examples, labels)
 
         incorrect_config = {
-            **config, "params": {
-                **config["params"], "embedder_type": "bert",
-                "pretrained_model_name_or_path": "bert-base-cased"}
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_type": "bert",
+                "pretrained_model_name_or_path": "bert-base-cased",
+            },
         }
         with pytest.raises(ValueError):
             model = ModelFactory.create_model_from_config(ModelConfig(**incorrect_config))
@@ -473,13 +591,22 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "char_lstm_output_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "char_lstm_output_pooling_type": "mean",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -503,23 +630,31 @@ class TestSequenceClassification:
         examples = self.labeled_data.queries()
         labels = self.labeled_data.entities()
 
-        incorrect_config = {**config, "params": {**config["params"], "add_terminals": True}}
+        incorrect_config = {
+            **config,
+            "params": {**config["params"], "add_terminals": True},
+        }
         with pytest.raises(ValueError):
             model = ModelFactory.create_model_from_config(ModelConfig(**incorrect_config))
             model.initialize_resources(resource_loader, examples, labels)
             model.fit(examples, labels)
 
         incorrect_config = {
-            **config, "params": {**config["params"], "tokenizer_type": "char-tokenizer"}}
+            **config,
+            "params": {**config["params"], "tokenizer_type": "char-tokenizer"},
+        }
         with pytest.raises(ValueError):
             model = ModelFactory.create_model_from_config(ModelConfig(**incorrect_config))
             model.initialize_resources(resource_loader, examples, labels)
             model.fit(examples, labels)
 
         incorrect_config = {
-            **config, "params": {
-                **config["params"], "embedder_type": "bert",
-                "pretrained_model_name_or_path": "bert-base-cased"}
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_type": "bert",
+                "pretrained_model_name_or_path": "bert-base-cased",
+            },
         }
         with pytest.raises(ValueError):
             model = ModelFactory.create_model_from_config(ModelConfig(**incorrect_config))
@@ -531,7 +666,10 @@ class TestSequenceClassification:
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        config = {**config, "params": {**config["params"], "use_crf_layer": False}}
+        config = {
+            **config,
+            "params": {**config["params"], "use_crf_layer": False},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -562,15 +700,18 @@ class TestSequenceClassification:
             "params": {
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "bert-base-cased",
-                "add_terminals": True
-            }
+                "add_terminals": True,
+            },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
         model_predictions_assertions(model)
 
-        new_config = {**config, "params": {**config["params"], "token_spans_pooling_type": "mean"}}
+        new_config = {
+            **config,
+            "params": {**config["params"], "token_spans_pooling_type": "mean"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**new_config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
@@ -583,7 +724,7 @@ class TestSequenceClassification:
             "params": {
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "distilbert-base-uncased",
-            }
+            },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
@@ -595,7 +736,7 @@ class TestSequenceClassification:
             "params": {
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "albert-base-v2",
-            }
+            },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
@@ -607,7 +748,7 @@ class TestSequenceClassification:
             "params": {
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "sentence-transformers/all-mpnet-base-v2",
-            }
+            },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
@@ -619,7 +760,7 @@ class TestSequenceClassification:
             "params": {
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "roberta-base",
-            }
+            },
         }
         with pytest.raises(NotImplementedError):
             model = ModelFactory.create_model_from_config(ModelConfig(**config))
@@ -641,7 +782,7 @@ class TestSequenceClassification:
             "params": {  # default embedder_output_pooling_type for bert is "first"
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "distilbert-base-uncased",
-                "update_embeddings": False
+                "update_embeddings": False,
             },
         }
         examples = self.labeled_data.queries()
@@ -679,7 +820,7 @@ class TestSequenceClassification:
             "params": {
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "distilroberta-base",
-                "add_terminals": True
+                "add_terminals": True,
             },
         }
         examples = self.labeled_data.queries()

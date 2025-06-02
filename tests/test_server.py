@@ -27,9 +27,7 @@ def test_parse_endpoint(client):
     )
     assert response.status == "200 OK"
     assert (
-        json.loads(response.data.decode("utf8"))["request"]["entities"][0]["value"][0][
-            "cname"
-        ]
+        json.loads(response.data.decode("utf8"))["request"]["entities"][0]["value"][0]["cname"]
         == "12th Avenue"
     )
     assert set(json.loads(response.data.decode("utf8")).keys()) == {
@@ -89,12 +87,9 @@ def test_parse_endpoint_multiple_requests(client):
     "request_body,error_message",
     [
         (
-            {
-                "text": "hello",
-                "random_key": {}
-            },
+            {"text": "hello", "random_key": {}},
             "Bad request {'text': 'hello', 'random_key': {}} "
-            "caused error {'random_key': ['Unknown field.']}"
+            "caused error {'random_key': ['Unknown field.']}",
         ),
         (
             {
@@ -105,7 +100,7 @@ def test_parse_endpoint_multiple_requests(client):
                     "language": "en",
                     "locale": "en_US",
                     "target_dialogue_state": "transfer_money_handler",
-                    "time_zone": '',
+                    "time_zone": "",
                 },
             },
             "Bad request {'text': 'hello', "
@@ -113,7 +108,7 @@ def test_parse_endpoint_multiple_requests(client):
             "'language': 'en', 'locale': 'en_US', 'target_dialogue_state': "
             "'transfer_money_handler', 'time_zone': ''}} caused "
             "error {'params': {'time_zone': ['Invalid time_zone param:  "
-            "is not a valid time zone.']}}"
+            "is not a valid time zone.']}}",
         ),
     ],
 )
@@ -126,4 +121,4 @@ def test_invalid_requests(client, request_body, error_message):
     )
     assert response.status == "400 BAD REQUEST"
     assert response.status_code == 400
-    assert json.loads(response.get_data(as_text=True))['error'] == error_message
+    assert json.loads(response.get_data(as_text=True))["error"] == error_message

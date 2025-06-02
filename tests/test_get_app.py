@@ -50,7 +50,6 @@ app_counter = 0
 def app_dir():
     global app_counter
     with tempfile.TemporaryDirectory() as temp_dir:
-
         temp_app_dir = os.path.join(temp_dir, "mm_app_" + str(app_counter))
         os.mkdir(temp_app_dir)
         yield temp_app_dir

@@ -2,9 +2,7 @@ LANGUAGE_CONFIG = {"language": "en", "locale": "en_CA"}
 
 CUSTOM_ACTION_CONFIG = {"url": "http://0.0.0.0:8080/"}
 
-NLP_CONFIG = {
-    "resolve_entities_using_nbest_transcripts": ["store_info.get_store_hours"]
-}
+NLP_CONFIG = {"resolve_entities_using_nbest_transcripts": ["store_info.get_store_hours"]}
 
 DOMAIN_CLASSIFIER_CONFIG = {
     "model_type": "text",
@@ -14,7 +12,10 @@ DOMAIN_CLASSIFIER_CONFIG = {
     "param_selection": {
         "type": "k-fold",
         "k": 10,
-        "grid": {"fit_intercept": [True, False], "C": [10, 100, 1000, 10000, 100000]},
+        "grid": {
+            "fit_intercept": [True, False],
+            "C": [10, 100, 1000, 10000, 100000],
+        },
     },
     "features": {
         "bag-of-words": {
@@ -102,13 +103,11 @@ TEST_ENTITY_RECOGNIZER_CONFIG = {
         "sys-candidates-seq": {"start_positions": [-1, 0, 1]},
         "enable-stemming": True,
     },
-    "train_label_set": "testtrain.*\.txt",  # noqa: W605
-    "test_label_set": "testtrain.*\.txt",  # noqa: W605
+    "train_label_set": r"testtrain.*\.txt",  # noqa: W605
+    "test_label_set": r"testtrain.*\.txt",  # noqa: W605
 }
 
-TEXT_PREPARATION_CONFIG = {
-    "tokenizer": "WhiteSpaceTokenizer"
-}
+TEXT_PREPARATION_CONFIG = {"tokenizer": "WhiteSpaceTokenizer"}
 
 
 def get_entity_recognizer_config(domain, intent):

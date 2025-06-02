@@ -45,9 +45,7 @@ class MindMeldRequest(Request):  # pylint: disable=too-many-ancestors
         occurred. The default implementation just raises a BadRequest exception.
         """
         del exc
-        raise BadMindMeldRequestError(
-            "Malformed request body: {0:s}".format(sys.exc_info()[1])
-        )
+        raise BadMindMeldRequestError("Malformed request body: {0:s}".format(sys.exc_info()[1]))
 
 
 class MindMeldServer:
@@ -58,7 +56,7 @@ class MindMeldServer:
         self._request_schema = RequestSchema(
             context={
                 "nlp": self._app_manager.nlp,
-                "dialogue_handler_map": self._app_manager.dialogue_manager.handler_map
+                "dialogue_handler_map": self._app_manager.dialogue_manager.handler_map,
             }
         )
         self._request_logger = logger.getChild("requests")
@@ -96,19 +94,19 @@ class MindMeldServer:
             try:
                 validated_request = self._request_schema.load(request_json)
                 response = self._app_manager.parse(
-                    text=validated_request.get('text'),
-                    params=validated_request.get('params'),
-                    context=validated_request.get('context'),
-                    frame=validated_request.get('frame'),
-                    history=validated_request.get('history'),
-                    form=validated_request.get('form'),
-                    verbose=validated_request.get('verbose', False)
+                    text=validated_request.get("text"),
+                    params=validated_request.get("params"),
+                    context=validated_request.get("context"),
+                    frame=validated_request.get("frame"),
+                    history=validated_request.get("history"),
+                    form=validated_request.get("form"),
+                    verbose=validated_request.get("verbose", False),
                 )
                 # add request id to response
                 # use the passed in id if any
                 response = dict(response)
                 request_id = validated_request.get("request_id", str(uuid.uuid4()))
-                response['request_id'] = request_id
+                response["request_id"] = request_id
                 return jsonify(response)
             except (ValidationError, ValueError, KeyError) as e:
                 err_message = "Bad request {} caused error {}".format(request_json, e)

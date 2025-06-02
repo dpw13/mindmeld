@@ -12,10 +12,13 @@ import pytest
 from mindmeld.auto_annotator import MultiLingualAnnotator
 from mindmeld._util import get_pattern
 
+
 @pytest.fixture(scope="module")
 def en_mla(kwik_e_mart_app_path: str) -> MultiLingualAnnotator:
     return MultiLingualAnnotator(
-        app_path=kwik_e_mart_app_path, language="en", translator="NoOpTranslator"
+        app_path=kwik_e_mart_app_path,
+        language="en",
+        translator="NoOpTranslator",
     )
 
 
@@ -40,7 +43,13 @@ def fr_mla(kwik_e_mart_app_path: str) -> MultiLingualAnnotator:
 
 
 def _check_match(
-    annotator: MultiLingualAnnotator, query: str, entity_type: str, body: str=None, value: str=None, unit=None, grain=None
+    annotator: MultiLingualAnnotator,
+    query: str,
+    entity_type: str,
+    body: str = None,
+    value: str = None,
+    unit=None,
+    grain=None,
 ):
     entities = annotator.parse(query, entity_types=[entity_type])
     assert entities is not None
@@ -214,7 +223,11 @@ def test_es_money_parse(es_mla, query, unit, value):
 
 @pytest.mark.parametrize(
     "query, unit, value",
-    [("2 horas", "hour", 2), ("15 minutos", "minute", 15), ("3 días", "day", 3)],
+    [
+        ("2 horas", "hour", 2),
+        ("15 minutos", "minute", 15),
+        ("3 días", "day", 3),
+    ],
 )
 def test_es_duration_parse(es_mla, query, unit, value):
     _check_match(es_mla, query, "sys_duration", None, value, unit, None)
@@ -293,7 +306,11 @@ def test_fr_money_parse(fr_mla, query, unit, value):
 
 @pytest.mark.parametrize(
     "query, unit, value",
-    [("2 heures", "hour", 2), ("15 minutes", "minute", 15), ("3 jours", "day", 3)],
+    [
+        ("2 heures", "hour", 2),
+        ("15 minutes", "minute", 15),
+        ("3 jours", "day", 3),
+    ],
 )
 def test_fr_duration_parse(fr_mla, query, unit, value):
     _check_match(fr_mla, query, "sys_duration", None, value, unit, None)
@@ -385,7 +402,12 @@ def test_fr_time_parse(fr_mla, query, grain, value):
             ".*/date/get_date/(train.txt|test.txt)",
         ),
         (
-            {"domains": "general", "intents": ".+", "files": ".+", "entities": "*"},
+            {
+                "domains": "general",
+                "intents": ".+",
+                "files": ".+",
+                "entities": "*",
+            },
             ".*/general/.+/.+",
         ),
         (

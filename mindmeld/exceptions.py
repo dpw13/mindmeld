@@ -103,7 +103,6 @@ class ElasticsearchKnowledgeBaseConnectionError(KnowledgeBaseError):
     """An exception for problem connecting to knowledge base."""
 
     def __init__(self, es_host):
-
         self.es_host = es_host
         if (not es_host) or (not es_host[0]):
             self.message = (
@@ -139,9 +138,7 @@ class ElasticsearchConnectionError(EntityResolverError):
             es_host = [host["host"] for host in es_host]
             self.message = (
                 "Unable to connect to Elasticsearch for entity resolution. "
-                "Please verify your connection to: {hosts}.".format(
-                    hosts=", ".join(es_host)
-                )
+                "Please verify your connection to: {hosts}.".format(hosts=", ".join(es_host))
             )
 
 

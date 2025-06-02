@@ -128,27 +128,30 @@ class Request:
         nbest_aligned_entities (tuple): List of lists of aligned entities for each of the n-best
             transcripts.
     """
+
     domain = attr.ib(default=None)
     intent = attr.ib(default=None)
     entities = attr.ib(
-        default=attr.Factory(tuple), converter=deserialize_to_list_immutable_maps
+        default=attr.Factory(tuple),
+        converter=deserialize_to_list_immutable_maps,
     )
     history = attr.ib(
-        default=attr.Factory(tuple), converter=deserialize_to_list_immutable_maps
+        default=attr.Factory(tuple),
+        converter=deserialize_to_list_immutable_maps,
     )
     text = attr.ib(default=None)
     frame = attr.ib(default=immutables.Map(), converter=immutables.Map)
     params = attr.ib(default=FrozenParams())
     context = attr.ib(default=immutables.Map(), converter=immutables.Map)
     confidences = attr.ib(default=immutables.Map(), converter=immutables.Map)
-    nbest_transcripts_text = attr.ib(
-        default=attr.Factory(tuple), converter=tuple
-    )
+    nbest_transcripts_text = attr.ib(default=attr.Factory(tuple), converter=tuple)
     nbest_transcripts_entities = attr.ib(
-        default=attr.Factory(tuple), converter=deserialize_to_lists_of_list_of_immutable_maps
+        default=attr.Factory(tuple),
+        converter=deserialize_to_lists_of_list_of_immutable_maps,
     )
     nbest_aligned_entities = attr.ib(
-        default=attr.Factory(tuple), converter=deserialize_to_lists_of_list_of_immutable_maps
+        default=attr.Factory(tuple),
+        converter=deserialize_to_lists_of_list_of_immutable_maps,
     )
     form = attr.ib(default=attr.Factory(tuple), converter=immutables.Map)
 

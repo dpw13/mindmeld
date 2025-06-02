@@ -30,7 +30,21 @@ def test_stratified_random_sample():
     labels = ["R", "B", "C", "C", "B", "R", "R", "R", "C", "B", "B", "B", "R"]
     selected_indices = stratified_random_sample(labels)
     sampled_labels = [labels[i] for i in selected_indices]
-    expected_labels = ["R", "B", "C", "R", "B", "C", "R", "B", "C", "R", "B", "B", "R"]
+    expected_labels = [
+        "R",
+        "B",
+        "C",
+        "R",
+        "B",
+        "C",
+        "R",
+        "B",
+        "C",
+        "R",
+        "B",
+        "B",
+        "R",
+    ]
     assert sampled_labels == expected_labels
 
 
@@ -54,9 +68,7 @@ def test_ordered_indices_list_to_final_rank():
     argsort of above --> [3, 0, 2, 4, 1]
     """
     expected_sample_ranks = [3, 0, 2, 4, 1]
-    predicted_sample_ranks = Heuristic.ordered_indices_list_to_final_rank(
-        ordered_indices_list
-    )
+    predicted_sample_ranks = Heuristic.ordered_indices_list_to_final_rank(ordered_indices_list)
     assert expected_sample_ranks == predicted_sample_ranks
 
 
@@ -75,9 +87,7 @@ def test_least_confidence_sampling():
     argsort of above --> [1,2,0]
     """
     expected_LC_sampling_3d_result = [1, 2, 0]
-    predicted_LC_sampling_2d_result = [
-        LeastConfidenceSampling.rank_2d(c) for c in example
-    ]
+    predicted_LC_sampling_2d_result = [LeastConfidenceSampling.rank_2d(c) for c in example]
     predicted_LC_sampling_3d_result = LeastConfidenceSampling.rank_3d(example)
 
     assert expected_LC_sampling_2d_result == predicted_LC_sampling_2d_result
@@ -135,10 +145,7 @@ def test_disagreement_sampling():
     """
     expected_disagreement_sampling_3d_result = [0, 2, 1]
     predicted_disagreement_sampling_3d_result = DisagreementSampling.rank_3d(example)
-    assert (
-        expected_disagreement_sampling_3d_result
-        == predicted_disagreement_sampling_3d_result
-    )
+    assert expected_disagreement_sampling_3d_result == predicted_disagreement_sampling_3d_result
 
 
 def test_kl_divergence_sampling():
@@ -148,10 +155,7 @@ def test_kl_divergence_sampling():
     """
     expected_kl_divergence_sampling_3d_result = [2, 1, 0]
     predicted_kl_divergence_sampling_3d_result = KLDivergenceSampling.rank_3d(example)
-    assert (
-        expected_kl_divergence_sampling_3d_result
-        == predicted_kl_divergence_sampling_3d_result
-    )
+    assert expected_kl_divergence_sampling_3d_result == predicted_kl_divergence_sampling_3d_result
 
 
 def test_ensemble_sampling():
@@ -163,9 +167,7 @@ def test_ensemble_sampling():
 
     expected_ensemble_sampling_2d_result = [[1, 2, 0], [1, 2, 0], [1, 0, 2]]
     expected_ensemble_sampling_3d_result = [1, 2, 0]
-    predicted_ensemble_sampling_2d_result = [
-        EnsembleSampling.rank_2d(c) for c in example
-    ]
+    predicted_ensemble_sampling_2d_result = [EnsembleSampling.rank_2d(c) for c in example]
     predicted_ensemble_sampling_3d_result = EnsembleSampling.rank_3d(example)
 
     assert expected_ensemble_sampling_2d_result == predicted_ensemble_sampling_2d_result

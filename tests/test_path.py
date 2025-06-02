@@ -18,7 +18,7 @@ APP_NAME = "kwik_e_mart"
 APP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), APP_NAME)
 
 DOMAIN_NAME = "store_info"
-DOMAINS = set([DOMAIN_NAME, 'banking'])
+DOMAINS = set([DOMAIN_NAME, "banking"])
 
 INTENTS = set(
     [
@@ -50,7 +50,7 @@ def test_get_labeled_query_tree():
 
 
 def test_get_labeled_query_tree_pattern():
-    tree = path.get_labeled_query_tree(APP_PATH, ["testtrain.*\.txt"])  # noqa: W605
+    tree = path.get_labeled_query_tree(APP_PATH, [r"testtrain.*\.txt"])  # noqa: W605
     for domain in DOMAINS:
         for intent in tree[domain]:
             for key in tree[domain][intent].keys():
@@ -78,9 +78,7 @@ def test_get_indexes():
         (APP_PATH, "en", "en_CA"),
         # test relative file path
         (
-            "{}/../tests/{}".format(
-                os.path.dirname(os.path.abspath(__file__)), APP_NAME
-            ),
+            "{}/../tests/{}".format(os.path.dirname(os.path.abspath(__file__)), APP_NAME),
             "en",
             "en_CA",
         ),

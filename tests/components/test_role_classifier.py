@@ -4,7 +4,11 @@ import shutil
 import pytest
 
 from mindmeld.components import NaturalLanguageProcessor
-from mindmeld.path import MODEL_CACHE_PATH, get_entity_model_paths, get_role_model_paths
+from mindmeld.path import (
+    MODEL_CACHE_PATH,
+    get_entity_model_paths,
+    get_role_model_paths,
+)
 
 test_data_7 = [
     (
@@ -68,7 +72,9 @@ def test_single_role_label(home_assistant_nlp):
     assert result["entities"][0]["role"] == "room_temperature"
 
 
-def test_model_accuracies_are_similar_before_and_after_caching(home_assistant_app_path):
+def test_model_accuracies_are_similar_before_and_after_caching(
+    home_assistant_app_path,
+):
     # clear model cache
     model_cache_path = MODEL_CACHE_PATH.format(app_path=home_assistant_app_path)
     try:
@@ -83,24 +89,20 @@ def test_model_accuracies_are_similar_before_and_after_caching(home_assistant_ap
     nlp.dump()
 
     entity_eval = (
-        nlp.domains["times_and_dates"]
-            .intents["change_alarm"]
-            .entity_recognizer.evaluate()
+        nlp.domains["times_and_dates"].intents["change_alarm"].entity_recognizer.evaluate()
     )
 
     role_eval = (
         nlp.domains["times_and_dates"]
-            .intents["change_alarm"]
-            .entities["sys_time"]
-            .role_classifier.evaluate()
+        .intents["change_alarm"]
+        .entities["sys_time"]
+        .role_classifier.evaluate()
     )
 
     entity_accuracy_no_cache = entity_eval.get_accuracy()
     role_accuracy_no_cache = role_eval.get_accuracy()
 
-    example_cache = os.listdir(
-        MODEL_CACHE_PATH.format(app_path=home_assistant_app_path)
-    )[0]
+    example_cache = os.listdir(MODEL_CACHE_PATH.format(app_path=home_assistant_app_path))[0]
     nlp = NaturalLanguageProcessor(home_assistant_app_path)
     nlp.load(example_cache)
 
@@ -108,16 +110,14 @@ def test_model_accuracies_are_similar_before_and_after_caching(home_assistant_ap
     assert os.path.exists(model_cache_path) is True
 
     entity_eval = (
-        nlp.domains["times_and_dates"]
-            .intents["change_alarm"]
-            .entity_recognizer.evaluate()
+        nlp.domains["times_and_dates"].intents["change_alarm"].entity_recognizer.evaluate()
     )
 
     role_eval = (
         nlp.domains["times_and_dates"]
-            .intents["change_alarm"]
-            .entities["sys_time"]
-            .role_classifier.evaluate()
+        .intents["change_alarm"]
+        .entities["sys_time"]
+        .role_classifier.evaluate()
     )
 
     entity_accuracy_cached = entity_eval.get_accuracy()
@@ -127,14 +127,14 @@ def test_model_accuracies_are_similar_before_and_after_caching(home_assistant_ap
     assert entity_accuracy_no_cache == entity_accuracy_cached
 
 
-def test_all_classifier_are_unique_for_incremental_builds(home_assistant_app_path):
+def test_all_classifier_are_unique_for_incremental_builds(
+    home_assistant_app_path,
+):
     nlp = NaturalLanguageProcessor(home_assistant_app_path)
     nlp.build(incremental=True)
     nlp.dump()
 
-    example_cache = os.listdir(
-        MODEL_CACHE_PATH.format(app_path=home_assistant_app_path)
-    )[0]
+    example_cache = os.listdir(MODEL_CACHE_PATH.format(app_path=home_assistant_app_path))[0]
     unique_hashs = set()
 
     for domain in nlp.domains:
@@ -146,9 +146,7 @@ def test_all_classifier_are_unique_for_incremental_builds(home_assistant_app_pat
             assert hash_val not in unique_hashs
             unique_hashs.add(hash_val)
 
-            for entity in (
-                nlp.domains[domain].intents[intent].entity_recognizer.entity_types
-            ):
+            for entity in nlp.domains[domain].intents[intent].entity_recognizer.entity_types:
                 _, cached_path = get_role_model_paths(
                     home_assistant_app_path,
                     domain,

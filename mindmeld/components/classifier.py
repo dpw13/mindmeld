@@ -63,11 +63,11 @@ class ClassifierConfig:
 
     def __init__(
         self,
-        model_type: str=None,
-        features: Dict[str, Dict | Callable]=None,
-        model_settings: Dict=None,
-        params: Dict=None,
-        param_selection: Dict=None,
+        model_type: str = None,
+        features: Dict[str, Dict | Callable] = None,
+        model_settings: Dict = None,
+        params: Dict = None,
+        param_selection: Dict = None,
     ):
         """Initializes a classifier configuration"""
         for arg, val in {"model_type": model_type}.items():
@@ -91,9 +91,7 @@ class ClassifierConfig:
         return result
 
     def __repr__(self):
-        args_str = ", ".join(
-            "{}={!r}".format(key, getattr(self, key)) for key in self.__slots__
-        )
+        args_str = ", ".join("{}={!r}".format(key, getattr(self, key)) for key in self.__slots__)
         return "{}({})".format(self.__class__.__name__, args_str)
 
     @classmethod
@@ -144,12 +142,14 @@ class Classifier(ABC):
         self.config = None
         self.hash = ""
 
-    def fit(self,
-            queries: Iterable[ProcessedQuery] | ProcessedQueryList=None,
-            label_set: str=None,
-            incremental_timestamp: str=None,
-            load_cached=True,
-            **kwargs) -> bool:
+    def fit(
+        self,
+        queries: Iterable[ProcessedQuery] | ProcessedQueryList = None,
+        label_set: str = None,
+        incremental_timestamp: str = None,
+        load_cached=True,
+        **kwargs
+    ) -> bool:
         """Trains a statistical model for classification using the provided training examples and
         model configuration.
 
@@ -257,7 +257,11 @@ class Classifier(ABC):
         self.dirty = True
         return True
 
-    def _resolve_queries(self, queries: ProcessedQueryList | Iterable[ProcessedQueryList]=None, label_set=None) -> ProcessedQueryList:
+    def _resolve_queries(
+        self,
+        queries: ProcessedQueryList | Iterable[ProcessedQueryList] = None,
+        label_set=None,
+    ) -> ProcessedQueryList:
         """
         Resolve queries and/or label_set into a ProcessedQueryList.
         queries is preferred over label_set.
@@ -276,7 +280,13 @@ class Classifier(ABC):
             queries = ProcessedQueryList.from_in_memory_list(queries)
         return queries
 
-    def predict(self, query: Query | str, time_zone=None, timestamp=None, dynamic_resource=None):
+    def predict(
+        self,
+        query: Query | str,
+        time_zone=None,
+        timestamp=None,
+        dynamic_resource=None,
+    ):
         """Predicts a class label for the given query using the trained classification model
 
         Args:
@@ -299,9 +309,7 @@ class Classifier(ABC):
             )
         return self._model.predict([query], dynamic_resource=dynamic_resource)[0]
 
-    def predict_proba(
-        self, query, time_zone=None, timestamp=None, dynamic_resource=None
-    ):
+    def predict_proba(self, query, time_zone=None, timestamp=None, dynamic_resource=None):
         """Runs prediction on a given query and generates multiple hypotheses with their
         associated probabilities using the trained classification model
 
@@ -325,9 +333,7 @@ class Classifier(ABC):
                 query, time_zone=time_zone, timestamp=timestamp
             )
 
-        predict_proba_result = self._model.predict_proba(
-            [query], dynamic_resource=dynamic_resource
-        )
+        predict_proba_result = self._model.predict_proba([query], dynamic_resource=dynamic_resource)
         class_proba_tuples = list(predict_proba_result[0][1].items())
         return sorted(class_proba_tuples, key=lambda x: x[1], reverse=True)
 
@@ -362,7 +368,7 @@ class Classifier(ABC):
 
         # enables fetching probability distribution for entity recognizer
         kwargs = {}
-        if self.config.model_type == 'tagger':
+        if self.config.model_type == "tagger":
             kwargs["fetch_distribution"] = fetch_distribution
 
         evaluation = self._model.evaluate(examples, labels, **kwargs)
@@ -371,9 +377,7 @@ class Classifier(ABC):
     def inspect(self, query, gold_label=None, dynamic_resource=None):
         raise NotImplementedError
 
-    def view_extracted_features(
-        self, query, time_zone=None, timestamp=None, dynamic_resource=None
-    ):
+    def view_extracted_features(self, query, time_zone=None, timestamp=None, dynamic_resource=None):
         """Extracts features for the given input based on the model config.
 
         Args:
@@ -405,8 +409,8 @@ class Classifier(ABC):
         Returns:
             ModelConfig: The model configuration corresponding to the provided config name
         """
-        if 'params' in loaded_config and 'params' in kwargs:
-            kwargs['params'] = {**loaded_config['params'], **kwargs['params']}
+        if "params" in loaded_config and "params" in kwargs:
+            kwargs["params"] = {**loaded_config["params"], **kwargs["params"]}
         try:
             # If all params required for model config were passed in, use kwargs
             return ModelConfig(**kwargs)
@@ -511,7 +515,7 @@ class Classifier(ABC):
         return model_hash
 
     @abstractmethod
-    def _get_queries_from_label_set(self, label_set: Iterable=DEFAULT_TRAIN_SET_REGEX):
+    def _get_queries_from_label_set(self, label_set: Iterable = DEFAULT_TRAIN_SET_REGEX):
         """Returns the set of queries loaded from the label_set
 
         Args:

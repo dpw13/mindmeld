@@ -46,9 +46,7 @@ def dm():
     async def intent_entity_2(ctx, handler):
         pass
 
-    @dialogue_manager.handle(
-        intent="intent", has_entities=("entity_1", "entity_2", "entity_3")
-    )
+    @dialogue_manager.handle(intent="intent", has_entities=("entity_1", "entity_2", "entity_3"))
     async def intent_entities(ctx, handler):
         pass
 
@@ -144,9 +142,7 @@ class TestDialogueManager:
     @pytest.mark.asyncio
     async def test_intent_entity_tiebreak(self, dm):
         """Correctly break ties between rules of equal complexity"""
-        request = create_request(
-            "domain", "intent", [{"type": "entity_1"}, {"type": "entity_2"}]
-        )
+        request = create_request("domain", "intent", [{"type": "entity_1"}, {"type": "entity_2"}])
         result = await dm.apply_handler(request, create_responder(request))
         assert result.dialogue_state == "intent_entity_1"
 
@@ -166,7 +162,9 @@ class TestDialogueManager:
         """Correctly sets the dialogue state based on the target_dialogue_state"""
         context = create_request("domain", "intent")
         result = await dm.apply_handler(
-            context, create_responder(context), target_dialogue_state="intent_entity_2"
+            context,
+            create_responder(context),
+            target_dialogue_state="intent_entity_2",
         )
         assert result.dialogue_state == "intent_entity_2"
 
@@ -276,7 +274,9 @@ def test_convo_force_sync_creation(async_kwik_e_mart_app, kwik_e_mart_app_path):
     at creation.
     """
     convo = Conversation(
-        app=async_kwik_e_mart_app, app_path=kwik_e_mart_app_path, force_sync=True
+        app=async_kwik_e_mart_app,
+        app_path=kwik_e_mart_app_path,
+        force_sync=True,
     )
 
     response = convo.process("close door")

@@ -32,22 +32,24 @@ def assert_target_dialogue_state(convo, target_dialogue_state):
 def test_reprocess_handler(async_kwik_e_mart_app, kwik_e_mart_app_path):
     """Tests that the params are cleared in one trip from app to mm."""
     convo = Conversation(
-        app=async_kwik_e_mart_app, app_path=kwik_e_mart_app_path, force_sync=True
+        app=async_kwik_e_mart_app,
+        app_path=kwik_e_mart_app_path,
+        force_sync=True,
     )
     convo.process("When does that open?")
     assert_target_dialogue_state(convo, "send_store_hours_flow")
     directives = convo.process("are there any stores near me?").directives
     assert_target_dialogue_state(convo, "send_store_hours_flow")
-    assert_reply(
-        directives, templates="I'm not sure. You haven't told me where you are!"
-    )
+    assert_reply(directives, templates="I'm not sure. You haven't told me where you are!")
 
 
 @pytest.mark.conversation
 def test_default_handler(async_kwik_e_mart_app, kwik_e_mart_app_path):
     """Tests that the params are cleared in one trip from app to mm."""
     convo = Conversation(
-        app=async_kwik_e_mart_app, app_path=kwik_e_mart_app_path, force_sync=True
+        app=async_kwik_e_mart_app,
+        app_path=kwik_e_mart_app_path,
+        force_sync=True,
     )
     convo.process("When does that open?")
     assert_target_dialogue_state(convo, "send_store_hours_flow")
@@ -63,7 +65,9 @@ def test_default_handler(async_kwik_e_mart_app, kwik_e_mart_app_path):
 def test_repeated_flow(async_kwik_e_mart_app, kwik_e_mart_app_path):
     """Tests that the params are cleared in one trip from app to mm."""
     convo = Conversation(
-        app=async_kwik_e_mart_app, app_path=kwik_e_mart_app_path, force_sync=True
+        app=async_kwik_e_mart_app,
+        app_path=kwik_e_mart_app_path,
+        force_sync=True,
     )
     convo.process("When does that open?")
     assert_target_dialogue_state(convo, "send_store_hours_flow")
@@ -80,7 +84,9 @@ def test_repeated_flow(async_kwik_e_mart_app, kwik_e_mart_app_path):
 def test_intent_handler_and_exit_flow(async_kwik_e_mart_app, kwik_e_mart_app_path):
     """Tests that the params are cleared in one trip from app to mm."""
     convo = Conversation(
-        app=async_kwik_e_mart_app, app_path=kwik_e_mart_app_path, force_sync=True
+        app=async_kwik_e_mart_app,
+        app_path=kwik_e_mart_app_path,
+        force_sync=True,
     )
     convo.process("When does that open?")
     assert_target_dialogue_state(convo, "send_store_hours_flow")

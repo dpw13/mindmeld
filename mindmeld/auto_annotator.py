@@ -29,7 +29,14 @@ from .system_entity_recognizer import (
     duckling_item_to_query_entity,
 )
 from .markup import load_query, dump_queries
-from .core import Entity, Span, ProcessedQuery, QueryEntity, _get_overlap, NestedEntity
+from .core import (
+    Entity,
+    Span,
+    ProcessedQuery,
+    QueryEntity,
+    _get_overlap,
+    NestedEntity,
+)
 from .exceptions import MarkupError
 from .models.helpers import register_annotator
 from .constants import (
@@ -314,15 +321,19 @@ class Annotator(ABC):
         span = Span(start=item["start"], end=item["end"] - 1)
         role = item.get("role")
         entity = Entity(
-            text=item["body"], entity_type=item["dim"], role=role, value=item["value"]
+            text=item["body"],
+            entity_type=item["dim"],
+            role=role,
+            value=item["value"],
         )
-        query_entity = QueryEntity.from_query(
-            query=processed_query.query, span=span, entity=entity
-        )
+        query_entity = QueryEntity.from_query(query=processed_query.query, span=span, entity=entity)
         return query_entity
 
     @staticmethod
-    def _resolve_conflicts(target_entities: List[QueryEntity], other_entities: Iterable[QueryEntity]) -> Iterable[QueryEntity]:
+    def _resolve_conflicts(
+        target_entities: List[QueryEntity],
+        other_entities: Iterable[QueryEntity],
+    ) -> Iterable[QueryEntity]:
         """Resolve overlaps between existing entities and newly annotad entities.
 
         Args:
@@ -335,8 +346,7 @@ class Annotator(ABC):
         additional_entities = []
         for o_entity in other_entities:
             no_overlaps = [
-                not _get_overlap(o_entity.span, t_entity.span)
-                for t_entity in target_entities
+                not _get_overlap(o_entity.span, t_entity.span) for t_entity in target_entities
             ]
             if all(no_overlaps):
                 additional_entities.append(o_entity)
@@ -405,9 +415,7 @@ class SpacyAnnotator(Annotator):
         """
         super().__init__(*args, **kwargs)
         self.spacy_model_size = kwargs.get("spacy_model_size", "lg")
-        self.nlp = SpacyModelFactory.get_spacy_language_model(
-            self.language, self.spacy_model_size
-        )
+        self.nlp = SpacyModelFactory.get_spacy_language_model(self.language, self.spacy_model_size)
 
     @property
     def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
@@ -456,7 +464,9 @@ class SpacyAnnotator(Annotator):
                 filtered_entities.append(entity)
         return filtered_entities
 
-    def parse(self, sentence: str, entity_types: Iterable[str]=None, **kwargs) -> List[QueryEntity]:
+    def parse(
+        self, sentence: str, entity_types: Iterable[str] = None, **kwargs
+    ) -> List[QueryEntity]:
         """Extracts entities from a sentence. Detected entities should are
         represented as dictionaries with the following keys: "body", "start"
         (start index), "end" (end index), "value", "dim" (entity type).
@@ -521,10 +531,7 @@ class SpacyAnnotator(Annotator):
             domain=kwargs.get("domain"),
             intent=kwargs.get("intent"),
         )
-        return [
-            Annotator._item_to_query_entity(entity, processed_query)
-            for entity in entities
-        ]
+        return [Annotator._item_to_query_entity(entity, processed_query) for entity in entities]
 
     def _resolve_time_date(self, entity, entity_types=None):
         """Resolves a time related entity. First, an exact match is searched for. If
@@ -591,10 +598,7 @@ class SpacyAnnotator(Annotator):
         """
         for candidate in candidates:
             candidate_entity = SpacyAnnotator._get_time_entity_type(candidate)
-            if (
-                candidate_entity in time_entities
-                and candidate["body"] == entity["body"]
-            ):
+            if candidate_entity in time_entities and candidate["body"] == entity["body"]:
                 entity["dim"] = candidate_entity
                 entity["value"] = candidate["value"]
                 return entity
@@ -648,7 +652,10 @@ class SpacyAnnotator(Annotator):
             entity["body"], language=self.language, locale=self.locale
         )
         if self._resolve_largest_substring(
-            entity, candidates, entity_types=["sys_number"], is_time_related=False
+            entity,
+            candidates,
+            entity_types=["sys_number"],
+            is_time_related=False,
         ):
             return entity
 
@@ -685,10 +692,7 @@ class SpacyAnnotator(Annotator):
         if len(candidates) == 0:
             return
         for candidate in candidates:
-            if (
-                candidate["entity_type"] == entity["dim"]
-                and entity["body"] == candidate["body"]
-            ):
+            if candidate["entity_type"] == entity["dim"] and entity["body"] == candidate["body"]:
                 entity["value"] = candidate["value"]
                 return entity
 
@@ -711,10 +715,7 @@ class SpacyAnnotator(Annotator):
         entity_types = ["distance", "quantity"]
         for entity_type in entity_types:
             for candidate in candidates:
-                if (
-                    candidate["dim"] == entity_type
-                    and candidate["body"] == entity["body"]
-                ):
+                if candidate["dim"] == entity_type and candidate["body"] == entity["body"]:
                     entity["value"] = candidate["value"]
                     entity["dim"] = ANNOTATOR_TO_SYS_ENTITY_MAPPINGS[entity_type]
                     return entity
@@ -821,7 +822,14 @@ class BootstrapAnnotator(Annotator):
         self.nlp = NaturalLanguageProcessor(self.app_path)
         self.nlp.build()
 
-    def parse(self, sentence, entity_types: Iterable, domain: str, intent: str, **kwargs) -> Iterable[QueryEntity]:
+    def parse(
+        self,
+        sentence,
+        entity_types: Iterable,
+        domain: str,
+        intent: str,
+        **kwargs,
+    ) -> Iterable[QueryEntity]:
         """
         Args:
             sentence (str): Sentence to detect entities.
@@ -839,9 +847,7 @@ class BootstrapAnnotator(Annotator):
         entities: List[Dict] = []
         for i, entity in enumerate(response["entities"]):
             if not entity_types or entity["type"] in entity_types:
-                entity_confidence = response["confidences"]["entities"][i][
-                    entity["type"]
-                ]
+                entity_confidence = response["confidences"]["entities"][i][entity["type"]]
                 if entity_confidence >= self.confidence_threshold:
                     entities.append(
                         {
@@ -859,10 +865,7 @@ class BootstrapAnnotator(Annotator):
             domain=kwargs.get("domain"),
             intent=kwargs.get("intent"),
         )
-        return [
-            Annotator._item_to_query_entity(entity, processed_query)
-            for entity in entities
-        ]
+        return [Annotator._item_to_query_entity(entity, processed_query) for entity in entities]
 
     def text_queries_to_processed_queries(self, text_queries: List[str]):
         """Converts text queries into processed queries.
@@ -872,9 +875,7 @@ class BootstrapAnnotator(Annotator):
         Returns:
             processed_queries (List[ProcessedQuery]): List of processed queries.
         """
-        return [
-            self.nlp.process_query(query=self.nlp.create_query(q)) for q in text_queries
-        ]
+        return [self.nlp.process_query(query=self.nlp.create_query(q)) for q in text_queries]
 
     @property
     def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
@@ -935,22 +936,16 @@ class NoTranslationDucklingAnnotator(Annotator):
             language=self.language,
             locale=self.locale,
         )
-        filtered_candidates = (
-            NoTranslationDucklingAnnotator._filter_out_bad_duckling_candidates(
-                duckling_candidates
-            )
+        filtered_candidates = NoTranslationDucklingAnnotator._filter_out_bad_duckling_candidates(
+            duckling_candidates
         )
         final_candidates = NestedEntity.get_largest_non_overlapping_entities(
-            filtered_candidates, lambda x: Span(x["start"], x["end"] - 1))
+            filtered_candidates, lambda x: Span(x["start"], x["end"] - 1)
+        )
         if entity_types:
-            final_candidates = [
-                e for e in final_candidates if e["entity_type"] in entity_types
-            ]
+            final_candidates = [e for e in final_candidates if e["entity_type"] in entity_types]
         query = self._resource_loader.query_factory.create_query(sentence)
-        return [
-            duckling_item_to_query_entity(query, candidate)
-            for candidate in final_candidates
-        ]
+        return [duckling_item_to_query_entity(query, candidate) for candidate in final_candidates]
 
     @property
     def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
@@ -969,10 +964,8 @@ class NoTranslationDucklingAnnotator(Annotator):
         Returns:
             filtered_candidates (list): List of filtered duckling candidates.
         """
-        filtered_candidates = (
-            NoTranslationDucklingAnnotator._remove_unresolved_sys_amount_of_money(
-                candidates
-            )
+        filtered_candidates = NoTranslationDucklingAnnotator._remove_unresolved_sys_amount_of_money(
+            candidates
         )
         return filtered_candidates
 
@@ -1038,7 +1031,9 @@ class TranslationDucklingAnnotator(Annotator):
             locale=ENGLISH_US_LOCALE,
         )
 
-    def parse(self, sentence: str, entity_types: Iterable=None, **kwargs) -> Iterable[QueryEntity]:
+    def parse(
+        self, sentence: str, entity_types: Iterable = None, **kwargs
+    ) -> Iterable[QueryEntity]:
         """Implements a heuristic to match English entities detected by Spacy on the
         translated non-English sentence against the non-English entities detected by
         Duckling on the non-English sentence.
@@ -1075,27 +1070,18 @@ class TranslationDucklingAnnotator(Annotator):
                     continue
                 # Check if the translated entity text matches candidate entity text
                 if (
-                    self.translator.translate(
-                        entity.entity.text, target_language=self.language
-                    )
+                    self.translator.translate(entity.entity.text, target_language=self.language)
                     == candidate["body"]
                 ):
                     final_candidates.append(candidate)
                     break
             # Select the largest of the candidates with a value match
             if value_matched_candidates:
-                final_candidates.append(
-                    max(value_matched_candidates, key=lambda x: len(x["body"]))
-                )
+                final_candidates.append(max(value_matched_candidates, key=lambda x: len(x["body"])))
         if entity_types:
-            final_candidates = [
-                e for e in final_candidates if e["entity_type"] in entity_types
-            ]
+            final_candidates = [e for e in final_candidates if e["entity_type"] in entity_types]
         query = self._resource_loader.query_factory.create_query(sentence)
-        return [
-            duckling_item_to_query_entity(query, candidate)
-            for candidate in final_candidates
-        ]
+        return [duckling_item_to_query_entity(query, candidate) for candidate in final_candidates]
 
     @property
     def supported_entity_types(self) -> Iterable[str]:  # pylint: disable=W0236
@@ -1103,9 +1089,9 @@ class TranslationDucklingAnnotator(Annotator):
         Returns:
             supported_entity_types (list): List of supported entity types.
         """
-        supported_entity_types = set(
-            self.en_annotator.supported_entity_types
-        ).intersection(DUCKLING_TO_SYS_ENTITY_MAPPINGS[self.language])
+        supported_entity_types = set(self.en_annotator.supported_entity_types).intersection(
+            DUCKLING_TO_SYS_ENTITY_MAPPINGS[self.language]
+        )
         return list(supported_entity_types)
 
 
@@ -1169,7 +1155,9 @@ class MultiLingualAnnotator(Annotator):
             locale=self.locale,
         )
 
-    def parse(self, sentence: str, entity_types: Iterable[str]=None, **kwargs) -> Iterable[QueryEntity]:
+    def parse(
+        self, sentence: str, entity_types: Iterable[str] = None, **kwargs
+    ) -> Iterable[QueryEntity]:
         """
         Args:
             sentence (str): Sentence to detect entities.
@@ -1180,15 +1168,9 @@ class MultiLingualAnnotator(Annotator):
         """
         if self.language == ENGLISH_LANGUAGE_CODE:
             return self.en_annotator.parse(sentence, entity_types=entity_types)
-        non_en_spacy_entities = self.non_en_annotator.parse(
-            sentence, entity_types=entity_types
-        )
-        duckling_entities = self.duckling_annotator.parse(
-            sentence, entity_types=entity_types
-        )
-        merged_entities = Annotator._resolve_conflicts(
-            non_en_spacy_entities, duckling_entities
-        )
+        non_en_spacy_entities = self.non_en_annotator.parse(sentence, entity_types=entity_types)
+        duckling_entities = self.duckling_annotator.parse(sentence, entity_types=entity_types)
+        merged_entities = Annotator._resolve_conflicts(non_en_spacy_entities, duckling_entities)
         return merged_entities
 
     @property

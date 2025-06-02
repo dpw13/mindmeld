@@ -1,4 +1,7 @@
-from mindmeld.models.helpers import register_entity_feature, register_query_feature
+from mindmeld.models.helpers import (
+    register_entity_feature,
+    register_query_feature,
+)
 
 
 @register_query_feature(feature_name="average-token-length")
@@ -10,6 +13,7 @@ def extract_average_token_length(**args):
         (function) A feature extraction function that takes a query and
             returns the average normalized token length
     """
+
     # pylint: disable=locally-disabled,unused-argument
     def _extractor(query, resources):
         tokens = query.normalized_tokens

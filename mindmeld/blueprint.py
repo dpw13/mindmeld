@@ -203,9 +203,10 @@ class Blueprint:
             # dir already exists -- no worries
             pass
 
-        filename = {"app": BLUEPRINT_APP_ARCHIVE, "kb": BLUEPRINT_KB_ARCHIVE}.get(
-            archive_type
-        )
+        filename = {
+            "app": BLUEPRINT_APP_ARCHIVE,
+            "kb": BLUEPRINT_KB_ARCHIVE,
+        }.get(archive_type)
 
         local_archive = os.path.join(cache_dir, filename)
         remote_url = BLUEPRINT_URL.format(
@@ -223,9 +224,7 @@ class Blueprint:
             raise EnvironmentError(msg)
         if res.status_code != 200:
             # Unknown error
-            msg = "Unknown error fetching {} archive from {!r}".format(
-                archive_type, remote_url
-            )
+            msg = "Unknown error fetching {} archive from {!r}".format(archive_type, remote_url)
             logger.warning(msg)
             raise ValueError("Unknown error fetching archive")
         remote_modified = datetime.datetime(
@@ -237,9 +236,7 @@ class Blueprint:
             )
         except (OSError, IOError):
             # File doesn't exist, use minimum possible time
-            local_modified = datetime.datetime(
-                datetime.MINYEAR, 1, 1, tzinfo=tz.tzutc()
-            )
+            local_modified = datetime.datetime(datetime.MINYEAR, 1, 1, tzinfo=tz.tzutc())
 
         if remote_modified < local_modified:
             logger.info("Using cached %r %s archive", name, archive_type)

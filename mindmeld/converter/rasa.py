@@ -51,9 +51,7 @@ class RasaConverter(Converter):
         are placed under a domain named 'general'."""
         GENERAL_DOMAIN_LOCATION = "/domains/general/"
         for intent in intents:
-            self.create_directory(
-                mindmeld_project_directory + GENERAL_DOMAIN_LOCATION + intent
-            )
+            self.create_directory(mindmeld_project_directory + GENERAL_DOMAIN_LOCATION + intent)
 
     def _create_entities_directories(self, mindmeld_project_directory, entities):
         for entity in entities:
@@ -83,9 +81,7 @@ class RasaConverter(Converter):
     def _remove_comments_from_line(line):
         start_of_comment = line.find("<!---")
         end_of_comment = line.find("-->")
-        line_without_comment = line.replace(
-            line[start_of_comment: end_of_comment + 3], ""
-        )
+        line_without_comment = line.replace(line[start_of_comment : end_of_comment + 3], "")
         line_without_comment = line_without_comment.rstrip()
         return line_without_comment
 
@@ -188,9 +184,7 @@ class RasaConverter(Converter):
 
     def _get_story_name(self, stories_line):
         if "<!--" in stories_line:
-            return self._remove_comments_from_line(
-                stories_line.replace("## ", "")
-            ).rstrip()
+            return self._remove_comments_from_line(stories_line.replace("## ", "")).rstrip()
         else:
             return stories_line.replace("## ", "").rstrip()
 
@@ -223,9 +217,7 @@ class RasaConverter(Converter):
             entities_with_values = entities_with_values.group(0)
             entities_list = self._clean_up_entities_list(entities_with_values)
             start_of_entity = stories_line.find(entities_with_values)
-            intent = self._remove_comments_from_line(
-                stories_line[2:start_of_entity]
-            ).rstrip()
+            intent = self._remove_comments_from_line(stories_line[2:start_of_entity]).rstrip()
             return intent, entities_list
         else:
             intent = self._remove_comments_from_line(stories_line[2:]).rstrip()
@@ -260,14 +252,12 @@ class RasaConverter(Converter):
 
                         if self._is_action(line):
                             current_actions.append(
-                                RasaConverter._remove_comments_from_line(
-                                    line[3:]
-                                ).rstrip()
+                                RasaConverter._remove_comments_from_line(line[3:]).rstrip()
                             )
 
-                            if (
-                                (line_num + 1) < max_lines
-                            ) and RasaConverter._is_action(stories_lines[line_num + 1]):
+                            if ((line_num + 1) < max_lines) and RasaConverter._is_action(
+                                stories_lines[line_num + 1]
+                            ):
                                 continue
 
                             current_step["actions"] = copy.deepcopy(current_actions)
@@ -276,15 +266,11 @@ class RasaConverter(Converter):
                             current_step.clear()
                         elif len(line.strip()) == 0:
                             if current_story_name != "":
-                                stories_dictionary[current_story_name] = copy.deepcopy(
-                                    steps
-                                )
+                                stories_dictionary[current_story_name] = copy.deepcopy(steps)
                                 steps.clear()
                                 current_story_name = ""
                         if line_num == (max_lines - 1):
-                            stories_dictionary[current_story_name] = copy.deepcopy(
-                                steps
-                            )
+                            stories_dictionary[current_story_name] = copy.deepcopy(steps)
                             steps.clear()
                             current_story_name = ""
                     f.close()
@@ -346,9 +332,10 @@ class RasaConverter(Converter):
             else:
                 # We can add an extra space for rasa_entity since rasa_entity is rstripped
                 # during it's processing
-                delimiter, rasa_entity = (line + ' ').split(' ', maxsplit=1)
-                delimiter == '-' and self._add_example_to_training_file(  # pylint: disable=expression-not-assigned  # noqa: E501
-                    current_intent_path, rasa_entity)
+                delimiter, rasa_entity = (line + " ").split(" ", maxsplit=1)
+                delimiter == "-" and self._add_example_to_training_file(  # pylint: disable=expression-not-assigned  # noqa: E501
+                    current_intent_path, rasa_entity
+                )
 
         # create all entity folders
         for entity in self.all_entities:
@@ -356,12 +343,12 @@ class RasaConverter(Converter):
 
     def _write_init_header(self):
         initialization_strings = [
-            'from mindmeld import Application',
-            'from mindmeld.components.custom_action import CustomAction',
-            'from . import custom_features  # noqa: F401',
-            '\n',
-            'app = Application(__name__)',
-            "__all__ = ['app']"
+            "from mindmeld import Application",
+            "from mindmeld.components.custom_action import CustomAction",
+            "from . import custom_features  # noqa: F401",
+            "\n",
+            "app = Application(__name__)",
+            "__all__ = ['app']",
         ]
 
         url = self._get_action_endpoint()
@@ -371,7 +358,7 @@ class RasaConverter(Converter):
 
         initialization_strings.append("\n")
         f = open(self.mindmeld_project_directory + "/__init__.py", "w+")
-        f.write('\n'.join(initialization_strings))
+        f.write("\n".join(initialization_strings))
         return f
 
     @staticmethod
@@ -419,9 +406,7 @@ class RasaConverter(Converter):
                     newprompt = prompt.replace(entity, "{" + str(i) + "}")
                     entities_list.append(entity.replace("{", "").replace("}", ""))
                 entities_args = ", ".join(map(str, entities_list))
-                prompts_list.append(
-                    '"' + newprompt + '".format({})'.format(entities_args)
-                )
+                prompts_list.append('"' + newprompt + '".format({})'.format(entities_args))
                 for entity in entities_list:
                     newentity = entity.replace("{", "").replace("}", "")
                     entities_string = "    {}_s = [e['text'] for e in ".format(
@@ -532,9 +517,7 @@ class RasaConverter(Converter):
             # we note non-custom actions as a string list
             file_lines.insert(
                 current_line + 1,
-                "    additional_actions = {actions}\n".format(
-                    actions=additional_actions
-                ),
+                "    additional_actions = {actions}\n".format(actions=additional_actions),
             )
 
     def create_mindmeld_init(self):
@@ -557,14 +540,10 @@ class RasaConverter(Converter):
                 actions = [action.strip() for action in step["actions"]]
                 # attach handle to correct function
                 app_handle_string = RasaConverter._get_app_handle(intent, entities)
-                self._attach_handle_to_function(
-                    app_handle_string, actions[0], file_lines
-                )
+                self._attach_handle_to_function(app_handle_string, actions[0], file_lines)
                 # check if more than 1 action per intent
                 if len(actions) > 1:
-                    self._attach_actions_to_function(
-                        actions[0], actions[1:], file_lines
-                    )
+                    self._attach_actions_to_function(actions[0], actions[1:], file_lines)
         # write all lines back to file
         with open(self.mindmeld_project_directory + "/__init__.py", "w") as f:
             f.writelines(file_lines)

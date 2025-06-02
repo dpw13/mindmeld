@@ -80,7 +80,9 @@ class Gazetteer:
             # so the references only need to be copies. For all other types, like strings,
             # they can just be passed by value.
             setattr(
-                self, key, value.copy() if isinstance(value, (list, dict)) else value
+                self,
+                key,
+                value.copy() if isinstance(value, (list, dict)) else value,
             )
 
     def dump(self, gaz_path):
@@ -127,9 +129,8 @@ class Gazetteer:
         # Only update the relevant data structures when the entity isn't
         # already in the gazetteer. Update the popularity either way.
         tokenized_gaz_entry = tuple(
-            token["entity"] for token in self.text_preparation_pipeline.tokenize_and_normalize(
-                entity
-            )
+            token["entity"]
+            for token in self.text_preparation_pipeline.tokenize_and_normalize(entity)
         )
 
         if self.pop_dict[tokenized_gaz_entry] == 0:
@@ -202,9 +203,7 @@ class Gazetteer:
                 line_count,
             )
 
-    def update_with_entity_map(
-        self, mapping, normalizer, update_if_missing_canonical=True
-    ):
+    def update_with_entity_map(self, mapping, normalizer, update_if_missing_canonical=True):
         """Update gazetteer with a list of normalized key,value pairs from the input mapping list
 
         Args:
@@ -221,7 +220,6 @@ class Gazetteer:
         if len(self.pop_dict) > 0:
             min_popularity = min(self.pop_dict.values())
         for item in mapping:
-
             tokenized_canonical = tuple(normalizer(item["cname"]).split())
             for syn in item["whitelist"]:
                 line_count += 1
@@ -229,7 +227,8 @@ class Gazetteer:
 
                 if update_if_missing_canonical or tokenized_canonical in self.pop_dict:
                     self._update_entity(
-                        synonym, self.pop_dict.get(tokenized_canonical, min_popularity)
+                        synonym,
+                        self.pop_dict.get(tokenized_canonical, min_popularity),
                     )
                     synonyms_added += 1
                 if tokenized_canonical not in self.pop_dict:
@@ -240,7 +239,9 @@ class Gazetteer:
                         str(tokenized_canonical),
                     )
         logger.info(
-            "Added %d/%d synonyms from file into gazetteer", synonyms_added, line_count
+            "Added %d/%d synonyms from file into gazetteer",
+            synonyms_added,
+            line_count,
         )
         if update_if_missing_canonical and missing_canonicals:
             logger.info(
@@ -254,8 +255,14 @@ class NestedGazetteer:
     This class represents a gazetteer entry corresponding to a Query object
     """
 
-    def __init__(self, start_token_index, end_token_index_plus_one,
-                 gaz_name, token_ngram, raw_ngram):
+    def __init__(
+        self,
+        start_token_index,
+        end_token_index_plus_one,
+        gaz_name,
+        token_ngram,
+        raw_ngram,
+    ):
         self._start_token_index = start_token_index
         self._end_token_index_plus_one = end_token_index_plus_one
         self._gaz_name = gaz_name

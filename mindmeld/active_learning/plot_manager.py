@@ -71,8 +71,8 @@ class PlotManager:
         self.aggregate_statistic = MindMeldALClassifier._validate_aggregate_statistic(
             aggregate_statistic
         )
-        self.class_level_statistic = (
-            MindMeldALClassifier._validate_class_level_statistic(class_level_statistic)
+        self.class_level_statistic = MindMeldALClassifier._validate_class_level_statistic(
+            class_level_statistic
         )
         self.accuracies_data = self.get_accuracies_json_data()
         self.queries_data = self.get_queries_json_data()
@@ -117,10 +117,8 @@ class PlotManager:
         Returns:
             data (List[dict]): Data loaded from selected_queries.json.
         """
-        classifier_selected_queries_json_path = (
-            AL_CLASSIFIER_SELECTED_QUERIES_PATH.format(
-                experiment_folder=self.experiment_dir_path
-            )
+        classifier_selected_queries_json_path = AL_CLASSIFIER_SELECTED_QUERIES_PATH.format(
+            experiment_folder=self.experiment_dir_path
         )
         tagger_selected_queries_json_path = AL_TAGGER_SELECTED_QUERIES_PATH.format(
             experiment_folder=self.experiment_dir_path
@@ -248,13 +246,8 @@ class PlotManager:
         first_strategy = self.strategies[key][0]
         if FIRST_EPOCH not in self.accuracies_data[key][first_strategy]:
             raise MissingDataError("Did not find data for the first epoch.")
-        if (
-            FIRST_ITERATION
-            not in self.accuracies_data[key][first_strategy][FIRST_EPOCH]
-        ):
-            raise MissingDataError(
-                "Did not find data for the first iteration in the first epoch."
-            )
+        if FIRST_ITERATION not in self.accuracies_data[key][first_strategy][FIRST_EPOCH]:
+            raise MissingDataError("Did not find data for the first iteration in the first epoch.")
 
     def get_domain_list(self) -> List:
         """Method to get a list of domains included in training from the first epoch and iteration.
@@ -283,9 +276,9 @@ class PlotManager:
         key = 1 if self.plot_entities else 0
         first_strategy = self.strategies[key][0]
         intent_list = list(
-            self.accuracies_data[key][first_strategy][FIRST_EPOCH][FIRST_ITERATION][
-                "accuracies"
-            ][domain].keys()
+            self.accuracies_data[key][first_strategy][FIRST_EPOCH][FIRST_ITERATION]["accuracies"][
+                domain
+            ].keys()
         )
         # The 'overall' score across intents is removed as it is not an intent
         if "overall" in intent_list:
@@ -302,9 +295,9 @@ class PlotManager:
         """
         first_strategy = self.strategies[1][0]
         entity_list = list(
-            self.accuracies_data[1][first_strategy][FIRST_EPOCH][FIRST_ITERATION][
-                "accuracies"
-            ][domain][intent]["entities"].keys()
+            self.accuracies_data[1][first_strategy][FIRST_EPOCH][FIRST_ITERATION]["accuracies"][
+                domain
+            ][intent]["entities"].keys()
         )
         # The 'overall' score across entities is removed as it is not an entity
         entity_list.remove("overall")
@@ -353,19 +346,13 @@ class PlotManager:
         if strategies:
             for strategy in strategies:
                 epoch_dict = self.accuracies_data[key][strategy][str(epoch)]
-                x_values = PlotManager.get_across_iterations(
-                    epoch_dict, ["num_sampled"]
-                )
-                y_values = PlotManager.get_across_iterations(
-                    epoch_dict, ["accuracies"] + y_keys
-                )
+                x_values = PlotManager.get_across_iterations(epoch_dict, ["num_sampled"])
+                y_values = PlotManager.get_across_iterations(epoch_dict, ["accuracies"] + y_keys)
                 self.plt.plot(x_values, y_values)
 
             self.plt.xlabel("Number of selected queries")
             y_label = (
-                self.aggregate_statistic
-                if use_aggregate_statistic
-                else self.class_level_statistic
+                self.aggregate_statistic if use_aggregate_statistic else self.class_level_statistic
             )
             self.plt.ylabel(y_label.capitalize())
             title = f"Epoch_{epoch}_Results_({'-'.join(y_keys)})"
@@ -404,9 +391,7 @@ class PlotManager:
                 all_y_values = []
                 for epoch in range(n_epochs):
                     epoch_dict = self.accuracies_data[key][strategy][str(epoch)]
-                    x_values = PlotManager.get_across_iterations(
-                        epoch_dict, ["num_sampled"]
-                    )
+                    x_values = PlotManager.get_across_iterations(epoch_dict, ["num_sampled"])
                     y_values = PlotManager.get_across_iterations(
                         epoch_dict, ["accuracies"] + y_keys
                     )
@@ -417,9 +402,7 @@ class PlotManager:
 
             self.plt.xlabel("Number of selected queries")
             y_label = (
-                self.aggregate_statistic
-                if use_aggregate_statistic
-                else self.class_level_statistic
+                self.aggregate_statistic if use_aggregate_statistic else self.class_level_statistic
             )
             self.plt.ylabel(y_label.capitalize())
             title = f"Avg_Across_Epochs_({'-'.join(y_keys)})"
@@ -458,9 +441,7 @@ class PlotManager:
                 all_y_values = []
                 for epoch in range(n_epochs):
                     epoch_dict = self.accuracies_data[key][strategy][str(epoch)]
-                    x_values = PlotManager.get_across_iterations(
-                        epoch_dict, ["num_sampled"]
-                    )
+                    x_values = PlotManager.get_across_iterations(epoch_dict, ["num_sampled"])
                     y_values = PlotManager.get_across_iterations(
                         epoch_dict, ["accuracies"] + y_keys
                     )
@@ -598,7 +579,10 @@ class PlotManager:
         iterations = [str(i) for i in range(num_iters)]
         for label in label_set_counter:
             ax.bar(
-                iterations, label_set_counter[label], bottom=total_bottom, label=label
+                iterations,
+                label_set_counter[label],
+                bottom=total_bottom,
+                label=label,
             )
             total_bottom = np.add(total_bottom, label_set_counter[label])
 

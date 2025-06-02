@@ -17,7 +17,11 @@ This module contains the application manager
 import logging
 import copy
 
-from .components import DialogueManager, NaturalLanguageProcessor, QuestionAnswerer
+from .components import (
+    DialogueManager,
+    NaturalLanguageProcessor,
+    QuestionAnswerer,
+)
 from .components._config import get_max_history_len
 from .components.dialogue import DialogueResponder
 from .components.request import FrozenParams, Params, Request
@@ -104,12 +108,8 @@ class ApplicationManager:
         )
         self.request_class = request_class or Request
         self.responder_class = responder_class or DialogueResponder
-        self.dialogue_manager = DialogueManager(
-            self.responder_class, async_mode=self.async_mode
-        )
-        self.max_history_len = (
-            get_max_history_len(self._app_path) or self.MAX_HISTORY_LEN
-        )
+        self.dialogue_manager = DialogueManager(self.responder_class, async_mode=self.async_mode)
+        self.max_history_len = get_max_history_len(self._app_path) or self.MAX_HISTORY_LEN
 
     @property
     def ready(self):
@@ -160,7 +160,14 @@ class ApplicationManager:
         return request, response
 
     def parse(
-        self, text, params=None, context=None, frame=None, form=None, history=None, verbose=False
+        self,
+        text,
+        params=None,
+        context=None,
+        frame=None,
+        form=None,
+        history=None,
+        verbose=False,
     ):
         """
         Args:
@@ -205,14 +212,16 @@ class ApplicationManager:
         frame = frame or {}
         form = form or {}
         context = context or {}
-        processed_query = self.nlp.process(query_text=text,
-                                           allowed_intents=params.allowed_intents,
-                                           locale=params.locale,
-                                           language=params.language,
-                                           time_zone=params.time_zone,
-                                           timestamp=params.timestamp,
-                                           dynamic_resource=params.dynamic_resource,
-                                           verbose=verbose)
+        processed_query = self.nlp.process(
+            query_text=text,
+            allowed_intents=params.allowed_intents,
+            locale=params.locale,
+            language=params.language,
+            time_zone=params.time_zone,
+            timestamp=params.timestamp,
+            dynamic_resource=params.dynamic_resource,
+            verbose=verbose,
+        )
         request, response = self._pre_dm(
             processed_query=processed_query,
             context=context,
@@ -222,13 +231,22 @@ class ApplicationManager:
             params=params,
         )
         dm_responder = self.dialogue_manager.apply_handler(
-            request, response, target_dialogue_state=params.target_dialogue_state
+            request,
+            response,
+            target_dialogue_state=params.target_dialogue_state,
         )
         modified_dm_responder = self._post_dm(dm_responder)
         return modified_dm_responder
 
     async def _parse_async(
-        self, text, params=None, context=None, frame=None, form=None, history=None, verbose=False
+        self,
+        text,
+        params=None,
+        context=None,
+        frame=None,
+        form=None,
+        history=None,
+        verbose=False,
     ):
         """
         Args:
@@ -263,14 +281,16 @@ class ApplicationManager:
         frame = frame or {}
         form = form or {}
         # TODO: make an async nlp
-        processed_query = self.nlp.process(query_text=text,
-                                           allowed_intents=params.allowed_intents,
-                                           locale=params.locale,
-                                           language=params.language,
-                                           time_zone=params.time_zone,
-                                           timestamp=params.timestamp,
-                                           dynamic_resource=params.dynamic_resource,
-                                           verbose=verbose)
+        processed_query = self.nlp.process(
+            query_text=text,
+            allowed_intents=params.allowed_intents,
+            locale=params.locale,
+            language=params.language,
+            time_zone=params.time_zone,
+            timestamp=params.timestamp,
+            dynamic_resource=params.dynamic_resource,
+            verbose=verbose,
+        )
 
         request, response = self._pre_dm(
             processed_query=processed_query,
@@ -282,7 +302,9 @@ class ApplicationManager:
         )
 
         dm_responder = await self.dialogue_manager.apply_handler(
-            request, response, target_dialogue_state=params.target_dialogue_state
+            request,
+            response,
+            target_dialogue_state=params.target_dialogue_state,
         )
         modified_dm_responder = self._post_dm(dm_responder)
         return modified_dm_responder
@@ -294,7 +316,9 @@ class ApplicationManager:
         prev_request["request"].pop("history", None)
 
         # limit length of history
-        new_history = [prev_request, ] + dm_response.history
+        new_history = [
+            prev_request,
+        ] + dm_response.history
         dm_response.history = new_history[: self.max_history_len]
         return dm_response
 

@@ -46,9 +46,7 @@ def test_get_entities_from_tags_where_tag_idx_in_sys_candidate(
     )
 
     if res_entity[0].to_dict()["value"]["grain"] == "minute":
-        assert res_entity[0].to_dict()["value"]["value"][MINUTE_GRAIN_INDEX:] in set(
-            expected_time
-        )
+        assert res_entity[0].to_dict()["value"]["value"][MINUTE_GRAIN_INDEX:] in set(expected_time)
     else:
         assert res_entity[0].to_dict()["value"]["value"] in set(expected_time)
 
@@ -163,7 +161,9 @@ def test_get_entities_from_tags_where_entities_end_with_query_end(
         ),
     ],
 )
-def test_get_entities_from_tags_with_multi_token_entities(kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags):
+def test_get_entities_from_tags_with_multi_token_entities(
+    kwik_e_mart_nlp: NaturalLanguageProcessor, query, tags
+):
     """Tests the behavior with multi token entities"""
 
     processed_query = kwik_e_mart_nlp.create_query(query)
@@ -223,10 +223,19 @@ def test_get_entities_from_tags_with_multi_token_entities(kwik_e_mart_nlp: Natur
             ["B|A", "I|A", "O|", "O|", "B|A", "I|A"],
             {"lbe": 1, "be": 1},
         ),
-        (["O|", "O|", "B|A", "I|A"], ["O|", "O|", "B|A", "O|"], {"tn": 1, "be": 1}),
+        (
+            ["O|", "O|", "B|A", "I|A"],
+            ["O|", "O|", "B|A", "O|"],
+            {"tn": 1, "be": 1},
+        ),
     ],
 )
-def test_get_boundary_counts(kwik_e_mart_nlp: NaturalLanguageProcessor, expected, predicted, expected_counts):
+def test_get_boundary_counts(
+    kwik_e_mart_nlp: NaturalLanguageProcessor,
+    expected,
+    predicted,
+    expected_counts,
+):
     predicted_counts = taggers.get_boundary_counts(
         expected, predicted, taggers.BoundaryCounts()
     ).to_dict()
@@ -258,7 +267,10 @@ def test_get_boundary_counts(kwik_e_mart_nlp: NaturalLanguageProcessor, expected
     ],
 )
 def test_get_boundary_counts_sequential(
-    kwik_e_mart_nlp: NaturalLanguageProcessor, expected, predicted, expected_counts
+    kwik_e_mart_nlp: NaturalLanguageProcessor,
+    expected,
+    predicted,
+    expected_counts,
 ):
     boundary_counts = taggers.BoundaryCounts()
     for expected_sequence, predicted_sequence in zip(expected, predicted):
@@ -274,10 +286,15 @@ def test_get_boundary_counts_sequential(
 
 @pytest.mark.parametrize(
     "model_type,params",
-    [("memm", {"penalty": "l2", "C": 10000}), ("crf", {"feat_type": "dict"}),
-     ("crf", {"feat_type": "hash"})],
+    [
+        ("memm", {"penalty": "l2", "C": 10000}),
+        ("crf", {"feat_type": "dict"}),
+        ("crf", {"feat_type": "hash"}),
+    ],
 )
-def test_view_extracted_features(kwik_e_mart_nlp: NaturalLanguageProcessor, model_type, params, caplog):
+def test_view_extracted_features(
+    kwik_e_mart_nlp: NaturalLanguageProcessor, model_type, params, caplog
+):
     caplog.set_level(logging.DEBUG)
     config = {
         "model_type": "tagger",
@@ -296,9 +313,7 @@ def test_view_extracted_features(kwik_e_mart_nlp: NaturalLanguageProcessor, mode
         },
     }
     er: EntityRecognizer = (
-        kwik_e_mart_nlp.domains["store_info"]
-            .intents["get_store_hours"]
-            .entity_recognizer
+        kwik_e_mart_nlp.domains["store_info"].intents["get_store_hours"].entity_recognizer
     )
     er.fit(**config)
     extracted_features = er.view_extracted_features("Main st store hours")
@@ -316,7 +331,7 @@ def test_view_extracted_features(kwik_e_mart_nlp: NaturalLanguageProcessor, mode
     [
         ("Main st store hours", "memm", {"penalty": "l2", "C": 10000}),
         ("Main st store hours", "crf", {"feat_type": "dict"}),
-        ("Main st store hours", "crf", {"feat_type": "hash"})
+        ("Main st store hours", "crf", {"feat_type": "hash"}),
     ],
 )
 def test_fetch_distribution(kwik_e_mart_nlp: NaturalLanguageProcessor, query, model_type, params):
@@ -337,15 +352,11 @@ def test_fetch_distribution(kwik_e_mart_nlp: NaturalLanguageProcessor, query, mo
         },
     }
     er: EntityRecognizer = (
-        kwik_e_mart_nlp.domains["store_info"]
-            .intents["get_store_hours"]
-            .entity_recognizer
+        kwik_e_mart_nlp.domains["store_info"].intents["get_store_hours"].entity_recognizer
     )
     er.fit(**config)
     processed_query = kwik_e_mart_nlp.create_query(query)
-    output_tags_probas = er._model.predict_proba(
-        [processed_query], fetch_distribution=True
-    )
+    output_tags_probas = er._model.predict_proba([processed_query], fetch_distribution=True)
 
     # check length of probability distribution is always equal to number of tokens
     for idx, tags_probas in enumerate(output_tags_probas):
@@ -377,9 +388,7 @@ def test_lstm_er_model_no_tf(kwik_e_mart_nlp: NaturalLanguageProcessor):
         },
     }
     er: EntityRecognizer = (
-        kwik_e_mart_nlp.domains["store_info"]
-            .intents["get_store_hours"]
-            .entity_recognizer
+        kwik_e_mart_nlp.domains["store_info"].intents["get_store_hours"].entity_recognizer
     )
     with pytest.raises(ValueError) as exc_info:
         er.fit(**config)
@@ -416,9 +425,7 @@ def test_lstm_er_model(kwik_e_mart_nlp: NaturalLanguageProcessor):
         },
     }
     er: EntityRecognizer = (
-        kwik_e_mart_nlp.domains["store_info"]
-            .intents["get_store_hours"]
-            .entity_recognizer
+        kwik_e_mart_nlp.domains["store_info"].intents["get_store_hours"].entity_recognizer
     )
     er.fit(**config)
     response = kwik_e_mart_nlp.process("Does the 156th location open on Saturday?")

@@ -48,13 +48,9 @@ GEN_INTENT_CHECKPOINT_FOLDER = os.path.join(GEN_DOMAIN_CHECKPOINT_FOLDER, "{inte
 ENTITY_MODEL_PATH = os.path.join(GEN_INTENT_FOLDER, "entity.pkl")
 ENTITY_MODEL_CHECKPOINT_PATH = os.path.join(GEN_INTENT_CHECKPOINT_FOLDER, "entity.pkl")
 RESOLVER_MODEL_PATH = os.path.join(GEN_INTENT_FOLDER, "{entity}-resolver.pkl")
-RESOLVER_MODEL_CHECKPOINT_PATH = os.path.join(
-    GEN_INTENT_CHECKPOINT_FOLDER, "{entity}-resolver.pkl"
-)
+RESOLVER_MODEL_CHECKPOINT_PATH = os.path.join(GEN_INTENT_CHECKPOINT_FOLDER, "{entity}-resolver.pkl")
 ROLE_MODEL_PATH = os.path.join(GEN_INTENT_FOLDER, "{entity}-role.pkl")
-ROLE_MODEL_CHECKPOINT_PATH = os.path.join(
-    GEN_INTENT_CHECKPOINT_FOLDER, "{entity}-role.pkl"
-)
+ROLE_MODEL_CHECKPOINT_PATH = os.path.join(GEN_INTENT_CHECKPOINT_FOLDER, "{entity}-role.pkl")
 GAZETTEER_PATH = os.path.join(GEN_FOLDER, "gaz-{entity}.pkl")
 GEN_INDEXES_FOLDER = os.path.join(GEN_FOLDER, "indexes")
 GEN_INDEX_FOLDER = os.path.join(GEN_INDEXES_FOLDER, "{index}")
@@ -67,9 +63,7 @@ NATIVE_QUESTION_ANSWERER_INDICES_CACHE_DEFAULT_FOLDER = os.path.join(
 DEPRECATED_GEN_EMBEDDER_MODEL_PATH = os.path.join(
     GEN_INDEXES_FOLDER, "{embedder_type}_{model_name}_cache.pkl"
 )
-GEN_EMBEDDER_MODEL_PATH = os.path.join(
-    GEN_INDEXES_FOLDER, "{model_id}_cache.pkl"
-)
+GEN_EMBEDDER_MODEL_PATH = os.path.join(GEN_INDEXES_FOLDER, "{model_id}_cache.pkl")
 
 # Domains sub tree for labeled queries
 DOMAINS_FOLDER = os.path.join(APP_PATH, "domains")
@@ -97,20 +91,12 @@ DVC_LOCAL_REMOTE_PATH = os.path.join(APP_PATH, "dvc_local_remote")
 
 # Default config files
 RESOURCES_FOLDER = os.path.join(PACKAGE_ROOT, "resources")
-DEFAULT_PROCESSOR_CONFIG_PATH = os.path.join(
-    RESOURCES_FOLDER, "default_processor_config.json"
-)
+DEFAULT_PROCESSOR_CONFIG_PATH = os.path.join(RESOURCES_FOLDER, "default_processor_config.json")
 ASCII_FOLDING_DICT_PATH = os.path.join(RESOURCES_FOLDER, "ascii_folding_dict.txt")
 
-DUCKLING_UBUNTU16_PATH = os.path.join(
-    RESOURCES_FOLDER, "duckling-x86_64-linux-ubuntu-16"
-)
-DUCKLING_UBUNTU18_PATH = os.path.join(
-    RESOURCES_FOLDER, "duckling-x86_64-linux-ubuntu-18"
-)
-DUCKLING_UBUNTU20_PATH = os.path.join(
-    RESOURCES_FOLDER, "duckling-x86_64-linux-ubuntu-20"
-)
+DUCKLING_UBUNTU16_PATH = os.path.join(RESOURCES_FOLDER, "duckling-x86_64-linux-ubuntu-16")
+DUCKLING_UBUNTU18_PATH = os.path.join(RESOURCES_FOLDER, "duckling-x86_64-linux-ubuntu-18")
+DUCKLING_UBUNTU20_PATH = os.path.join(RESOURCES_FOLDER, "duckling-x86_64-linux-ubuntu-20")
 DUCKLING_OSX_PATH = os.path.join(RESOURCES_FOLDER, "duckling-x86_64-osx")
 DUCKLING_UBUNTU16_SHA = "db730a5ffb045ef41d385316ddec00b02412e22da9a2c9e61ce0843f0fcb319a"
 DUCKLING_UBUNTU18_SHA = "c43b6c9ad987154e490ae6a3290aeaedd554e400015021160ebc36e3840a206e"
@@ -141,7 +127,7 @@ PREVIOUSLY_USED_WORD_EMBEDDINGS_FILE_PATH = os.path.join(
 PARAPHRASER_FILE_PATH = os.path.join(EMBEDDINGS_FOLDER_PATH, "paraphrase_retain_entities.zip")
 PARAPHRASER_MODEL_PATH = os.path.join(EMBEDDINGS_FOLDER_PATH, "paraphrase_retain_entities")
 # Download default model from huggingface model hub. We may want to upload this to a S3 bucket too.
-HUGGINGFACE_PARAPHRASER_MODEL_PATH = 'tuner007/pegasus_paraphrase'
+HUGGINGFACE_PARAPHRASER_MODEL_PATH = "tuner007/pegasus_paraphrase"
 
 # User specific directories
 USER_CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".mindmeld")
@@ -155,7 +141,9 @@ AL_PARAMS_PATH = os.path.join(AL_EXPERIMENT_FOLDER, "params.json")
 AL_RESULTS_FOLDER = os.path.join(AL_EXPERIMENT_FOLDER, "results")
 AL_CLASSIFIER_ACCURACIES_PATH = os.path.join(AL_RESULTS_FOLDER, "classifier_accuracies.json")
 AL_TAGGER_ACCURACIES_PATH = os.path.join(AL_RESULTS_FOLDER, "tagger_accuracies.json")
-AL_CLASSIFIER_SELECTED_QUERIES_PATH = os.path.join(AL_RESULTS_FOLDER, "classifier_selected_queries.json")
+AL_CLASSIFIER_SELECTED_QUERIES_PATH = os.path.join(
+    AL_RESULTS_FOLDER, "classifier_selected_queries.json"
+)
 AL_TAGGER_SELECTED_QUERIES_PATH = os.path.join(AL_RESULTS_FOLDER, "tagger_selected_queries.json")
 AL_PLOTS_FOLDER = os.path.join(AL_EXPERIMENT_FOLDER, "plots")
 
@@ -169,9 +157,14 @@ def safe_path(func):
     @wraps(func)
     def _wrapper(*args, **kwargs):
         res = func(*args, **kwargs)
-        # Replace with relpath to avoid replacing : (root dir) with _ in Windows
+        # Replace with relpath to avoid replacing:(root dir) with _ in Windows
         if isinstance(res, tuple):
-            return tuple(map(lambda x: os.path.relpath(x).replace(":", "_") if x else x, res))
+            return tuple(
+                map(
+                    lambda x: os.path.relpath(x).replace(":", "_") if x else x,
+                    res,
+                )
+            )
         elif isinstance(res, str):
             return os.path.relpath(res).replace(":", "_")
         else:
@@ -270,7 +263,9 @@ def get_labeled_query_tree(app_path, patterns=None):
     for pattern in found_pattern:
         if not found_pattern[pattern]:
             logger.error(
-                "Couldn't find %s pattern files in %s directory", patterns, domains_dir
+                "Couldn't find %s pattern files in %s directory",
+                patterns,
+                domains_dir,
             )
 
     return tree
@@ -346,9 +341,7 @@ def get_domain_model_paths(app_path, model_name=None, timestamp=None):
 
     ts_path = None
     if timestamp:
-        ts_path = DOMAIN_MODEL_TIMESTAMP_PATH.format(
-            app_path=app_path, timestamp=timestamp
-        )
+        ts_path = DOMAIN_MODEL_TIMESTAMP_PATH.format(app_path=app_path, timestamp=timestamp)
         ts_path = _resolve_model_name(ts_path, model_name)
 
     return main_path, ts_path
@@ -398,9 +391,7 @@ def get_entity_model_paths(app_path, domain, intent, model_name=None, timestamp=
         (tuple) A tuple with the main model path and the cached model path
 
     """
-    main_path = ENTITY_MODEL_PATH.format(
-        app_path=app_path, domain=domain, intent=intent
-    )
+    main_path = ENTITY_MODEL_PATH.format(app_path=app_path, domain=domain, intent=intent)
     main_path = _resolve_model_name(main_path)
 
     ts_path = None
@@ -414,9 +405,7 @@ def get_entity_model_paths(app_path, domain, intent, model_name=None, timestamp=
 
 
 @safe_path
-def get_role_model_paths(
-    app_path, domain, intent, entity, model_name=None, timestamp=None
-):
+def get_role_model_paths(app_path, domain, intent, entity, model_name=None, timestamp=None):
     """Gets the path to the role classifier model as well as the path to a
     timestamp-cached role classifier model.
 
@@ -452,9 +441,7 @@ def get_role_model_paths(
 
 
 @safe_path
-def get_resolver_model_path(
-    app_path, domain, intent, entity, model_name=None, timestamp=None
-):
+def get_resolver_model_path(app_path, domain, intent, entity, model_name=None, timestamp=None):
     """Gets the path to the resolver model as well as the path to a
     timestamp-cached resolver model.
 
@@ -602,10 +589,7 @@ def get_embedder_cache_file_path(app_path, embedder_type, model_name=None):
             model_name=model_name,
         )
     else:
-        return GEN_EMBEDDER_MODEL_PATH.format(
-            app_path=app_path,
-            model_id=embedder_type
-        )
+        return GEN_EMBEDDER_MODEL_PATH.format(app_path=app_path, model_id=embedder_type)
 
 
 @safe_path
@@ -692,9 +676,7 @@ def get_app(app_path):
     try:
         # check if package is already imported
         if package_name in sys.modules:
-            logger.warning(
-                "The application package %s is already imported.", package_name
-            )
+            logger.warning("The application package %s is already imported.", package_name)
             mod = __import__(package_name)
             return mod.app
         # try to load as package first

@@ -94,9 +94,7 @@ def test_transform_index_backward(query):
     norm_index = 5
     norm_char = query.normalized_text[norm_index]
 
-    proc_index = query.transform_index(
-        norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED
-    )
+    proc_index = query.transform_index(norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED)
     proc_char = query.processed_text[proc_index]
 
     raw_index = query.transform_index(norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_RAW)
@@ -116,9 +114,7 @@ def test_transform_index_backward_2(query):
     norm_index = 7
     norm_char = query.normalized_text[norm_index]
 
-    proc_index = query.transform_index(
-        norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED
-    )
+    proc_index = query.transform_index(norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED)
     proc_char = query.processed_text[proc_index]
 
     raw_index = query.transform_index(norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_RAW)
@@ -138,9 +134,7 @@ def test_transform_index_backward_3(query):
     norm_index = 8
     norm_char = query.normalized_text[norm_index]
 
-    proc_index = query.transform_index(
-        norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED
-    )
+    proc_index = query.transform_index(norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED)
     proc_char = query.processed_text[proc_index]
 
     raw_index = query.transform_index(norm_index, TEXT_FORM_NORMALIZED, TEXT_FORM_RAW)
@@ -180,9 +174,7 @@ def test_transform_span_backward(query):
     norm_span = Span(0, 7)
     norm_text = query.normalized_text[norm_span.start : norm_span.end + 1]
 
-    proc_span = query.transform_span(
-        norm_span, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED
-    )
+    proc_span = query.transform_span(norm_span, TEXT_FORM_NORMALIZED, TEXT_FORM_PROCESSED)
     proc_text = query.processed_text[proc_span.start : proc_span.end + 1]
 
     raw_span = query.transform_span(norm_span, TEXT_FORM_NORMALIZED, TEXT_FORM_RAW)
@@ -214,9 +206,7 @@ def test_query_equality(query_factory):
 
 def test_query_equality_2(query_factory):
     """Tests query equality"""
-    query_a = query_factory.create_query(
-        "Hello. There.", time_zone="America/Los_Angeles"
-    )
+    query_a = query_factory.create_query("Hello. There.", time_zone="America/Los_Angeles")
     query_b = query_factory.create_query("Hello. There.", time_zone="America/Bahia")
 
     assert query_a != query_b
@@ -298,9 +288,7 @@ def test_create_entity_from_query(query_factory):
     """Tests the QueryEntity generated has the correct character indices based on raw query"""
     query = query_factory.create_query("!!Connect me with Paul's meeting room please.")
     norm_span = Span(16, 19)
-    entity = QueryEntity.from_query(
-        query, normalized_span=norm_span, entity_type="test_type"
-    )
+    entity = QueryEntity.from_query(query, normalized_span=norm_span, entity_type="test_type")
 
     assert entity.span.start == 18
     assert entity.span.end == 21
@@ -312,9 +300,7 @@ def test_query_time_zone(query_factory):
 
     assert len(query.system_entity_candidates) == 4
 
-    entity_times = [
-        qe.entity.value["value"][10:] for qe in query.system_entity_candidates
-    ]
+    entity_times = [qe.entity.value["value"][10:] for qe in query.system_entity_candidates]
 
     # time in 'America/Bahia' is always -3 (no daylight savings time)
     assert "T12:00:00.000-03:00" in entity_times
@@ -326,9 +312,7 @@ def test_query_time_zone_2(query_factory):
 
     assert len(query.system_entity_candidates) == 4
 
-    entity_times = [
-        qe.entity.value["value"][10:] for qe in query.system_entity_candidates
-    ]
+    entity_times = [qe.entity.value["value"][10:] for qe in query.system_entity_candidates]
     assert "T12:00:00.000+00:00" in entity_times
 
 
@@ -340,9 +324,7 @@ def test_query_timestamp(query_factory):
 
     assert len(query.system_entity_candidates) == 4
 
-    entity_predictions = [
-        qe.entity.value["value"] for qe in query.system_entity_candidates
-    ]
+    entity_predictions = [qe.entity.value["value"] for qe in query.system_entity_candidates]
 
     # time in 'America/Bahia' is always -3 (no daylight savings time)
     assert "2018-01-23T12:00:00.000-03:00" in entity_predictions
@@ -356,9 +338,7 @@ def test_sort_system_entities(query_factory):
         timestamp=1516748906000,
     )
 
-    time_entities = [
-        e for e in query.system_entity_candidates if e.entity.type == "sys_time"
-    ]
+    time_entities = [e for e in query.system_entity_candidates if e.entity.type == "sys_time"]
 
     assert len(time_entities) == 19
 
@@ -402,24 +382,24 @@ def test_system_entity_time_resolution(home_assistant_nlp):
 @pytest.mark.parametrize(
     "raw_query,valid_spans,entity_type",
     [
-        ("3456$", {(0, 0)}, 'sys_amount-of-money'),
-        ("ok 3456$ now", {(1, 1)}, 'sys_amount-of-money'),
-        ("skk 3456$", {(1, 1)}, 'sys_amount-of-money'),
-        ("$23.45", {(0, 0)}, 'sys_amount-of-money'),
-        ("ok $23.45 now", {(1, 1)}, 'sys_amount-of-money'),
-        ("skk $23.45", {(1, 1)}, 'sys_amount-of-money'),
-        ("7:30", {(0, 0)}, 'sys_time'),
-        ("ok 7:30 now", {(1, 1), (2, 2)}, 'sys_time'),
-        ("skk 7:30", {(1, 1)}, 'sys_time'),
-        ("2:30pm", {(0, 0)}, 'sys_time'),
-        ("ok 2:30pm now", {(1, 1), (2, 2)}, 'sys_time'),
-        ("skk 2:30pm", {(1, 1)}, 'sys_time'),
-        ("2.00 am", {(0, 0), (0, 1), (1, 1)}, 'sys_time'),
-        ("ok 2.00 am now", {(1, 1), (1, 2), (2, 2), (3, 3)}, 'sys_time'),
-        ("skk 2.00 am", {(1, 1), (1, 2), (2, 2)}, 'sys_time'),
-        ("$20 5", {(1, 1), (0, 0), (0, 1)}, 'sys_amount-of-money'),
-        ("ok cool $20 5", {(3, 3), (2, 2), (2, 3)}, 'sys_amount-of-money'),
-        ("1時間のミーティングを30分後から予約", {(0,1), (5,6)}, 'sys_duration'),
+        ("3456$", {(0, 0)}, "sys_amount-of-money"),
+        ("ok 3456$ now", {(1, 1)}, "sys_amount-of-money"),
+        ("skk 3456$", {(1, 1)}, "sys_amount-of-money"),
+        ("$23.45", {(0, 0)}, "sys_amount-of-money"),
+        ("ok $23.45 now", {(1, 1)}, "sys_amount-of-money"),
+        ("skk $23.45", {(1, 1)}, "sys_amount-of-money"),
+        ("7:30", {(0, 0)}, "sys_time"),
+        ("ok 7:30 now", {(1, 1), (2, 2)}, "sys_time"),
+        ("skk 7:30", {(1, 1)}, "sys_time"),
+        ("2:30pm", {(0, 0)}, "sys_time"),
+        ("ok 2:30pm now", {(1, 1), (2, 2)}, "sys_time"),
+        ("skk 2:30pm", {(1, 1)}, "sys_time"),
+        ("2.00 am", {(0, 0), (0, 1), (1, 1)}, "sys_time"),
+        ("ok 2.00 am now", {(1, 1), (1, 2), (2, 2), (3, 3)}, "sys_time"),
+        ("skk 2.00 am", {(1, 1), (1, 2), (2, 2)}, "sys_time"),
+        ("$20 5", {(1, 1), (0, 0), (0, 1)}, "sys_amount-of-money"),
+        ("ok cool $20 5", {(3, 3), (2, 2), (2, 3)}, "sys_amount-of-money"),
+        ("1時間のミーティングを30分後から予約", {(0, 1), (5, 6)}, "sys_duration"),
     ],
 )
 def test_sys_entities_normalized_token_span(query_factory, raw_query, valid_spans, entity_type):

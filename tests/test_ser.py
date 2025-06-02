@@ -10,7 +10,10 @@ Tests for `system_entity_recognizer` module
 import pytest
 import requests
 
-from mindmeld.system_entity_recognizer import SystemEntityRecognizer, DucklingRecognizer
+from mindmeld.system_entity_recognizer import (
+    SystemEntityRecognizer,
+    DucklingRecognizer,
+)
 
 
 NOW_TIMESTAMP = 1544706000000
@@ -50,9 +53,7 @@ def test_duration(query, predicted_texts, predicted_values, conversion):
     responses = res.json()
     response_texts = [r["body"] for r in responses]
     response_values_normalized_seconds = [
-        r["value"]["normalized"]["value"]
-        for r in responses
-        if r["value"].get("normalized")
+        r["value"]["normalized"]["value"] for r in responses if r["value"].get("normalized")
     ]
 
     for p in predicted_texts:
@@ -104,12 +105,8 @@ def test_interval(query, predicted_texts, predicted_from, predicted_to):
     res = requests.post(DUCKLING_URL, data=data)
     responses = res.json()
     response_texts = [r["body"] for r in responses]
-    response_from_value = [
-        r["value"]["from"]["value"] for r in responses if r["value"].get("from")
-    ]
-    response_to_value = [
-        r["value"]["to"]["value"] for r in responses if r["value"].get("to")
-    ]
+    response_from_value = [r["value"]["from"]["value"] for r in responses if r["value"].get("from")]
+    response_to_value = [r["value"]["to"]["value"] for r in responses if r["value"].get("to")]
 
     for p in predicted_texts:
         assert p in response_texts
@@ -147,9 +144,7 @@ def test_number(query, predicted_texts, predicted_values):
     responses = res.json()
     response_texts = [r["body"] for r in responses if r["dim"] == "number"]
     response_values = [
-        r["value"]["value"]
-        for r in responses
-        if r["value"].get("value") and r["dim"] == "number"
+        r["value"]["value"] for r in responses if r["value"].get("value") and r["dim"] == "number"
     ]
 
     for p in predicted_texts:
@@ -181,9 +176,7 @@ def test_ordinal(query, predicted_texts, predicted_values):
     res = requests.post(DUCKLING_URL, data=data)
     responses = res.json()
     response_texts = [r["body"] for r in responses]
-    response_values = [
-        r["value"]["value"] for r in responses if r["value"].get("value")
-    ]
+    response_values = [r["value"]["value"] for r in responses if r["value"].get("value")]
 
     for p in predicted_texts:
         assert p in response_texts
@@ -219,9 +212,7 @@ def test_phone_number(query, predicted_texts, predicted_values):
     res = requests.post(DUCKLING_URL, data=data)
     responses = res.json()
     response_texts = [r["body"] for r in responses]
-    response_values = [
-        r["value"]["value"] for r in responses if r["value"].get("value")
-    ]
+    response_values = [r["value"]["value"] for r in responses if r["value"].get("value")]
 
     for p in predicted_texts:
         assert p in response_texts
@@ -240,9 +231,21 @@ def test_phone_number(query, predicted_texts, predicted_values):
 @pytest.mark.parametrize(
     "query, predicted_texts, predicted_values",
     [
-        ("try 4111-1111-1111-1111", ["4111-1111-1111-1111"], ["4111111111111111"]),
-        ("3714-496353-98431 from amex", ["3714-496353-98431"], ["371449635398431"]),
-        ("card number 6011-1111-1111-1117", ["6011-1111-1111-1117"], ["6011111111111117"]),
+        (
+            "try 4111-1111-1111-1111",
+            ["4111-1111-1111-1111"],
+            ["4111111111111111"],
+        ),
+        (
+            "3714-496353-98431 from amex",
+            ["3714-496353-98431"],
+            ["371449635398431"],
+        ),
+        (
+            "card number 6011-1111-1111-1117",
+            ["6011-1111-1111-1117"],
+            ["6011111111111117"],
+        ),
         ("1899028724221", ["1899028724221"], ["1899028724221"]),
     ],
 )
@@ -252,9 +255,7 @@ def test_credit_card(query, predicted_texts, predicted_values):
     res = requests.post(DUCKLING_URL, data=data)
     responses = res.json()
     response_texts = [r["body"] for r in responses]
-    response_values = [
-        r["value"]["value"] for r in responses if r["value"].get("value")
-    ]
+    response_values = [r["value"]["value"] for r in responses if r["value"].get("value")]
 
     for p in predicted_texts:
         assert p in response_texts
@@ -319,7 +320,11 @@ def test_temperature(query, predicted_texts, predicted_values):
             ["10", "11"],
             ["2018-12-13T10:00:00.000-08:00", "2018-12-13T11:00:00.000-08:00"],
         ),
-        ("is this room reserved at noon", ["noon"], ["2018-12-13T12:00:00.000-08:00"]),
+        (
+            "is this room reserved at noon",
+            ["noon"],
+            ["2018-12-13T12:00:00.000-08:00"],
+        ),
         (
             "does anyone have this room booked today for 7:06 am",
             ["7:06 am"],
@@ -330,7 +335,11 @@ def test_temperature(query, predicted_texts, predicted_values):
             ["5 p.m."],
             ["2018-12-13T17:00:00.000-08:00"],
         ),
-        ("start the 10:29 meeting", ["10:29"], ["2018-12-13T10:29:00.000-08:00"]),
+        (
+            "start the 10:29 meeting",
+            ["10:29"],
+            ["2018-12-13T10:29:00.000-08:00"],
+        ),
         (
             "what is the forecast for right now",
             ["right now"],
@@ -351,9 +360,7 @@ def test_time(query, predicted_texts, predicted_values):
     responses = res.json()
     response_texts = [r["body"] for r in responses if r["dim"] == "time"]
     response_values = [
-        r["value"]["value"]
-        for r in responses
-        if r["value"].get("value") and r["dim"] == "time"
+        r["value"]["value"] for r in responses if r["value"].get("value") and r["dim"] == "time"
     ]
 
     for p in predicted_texts:
@@ -378,7 +385,9 @@ def test_system_entity_recognizer_component_no_config(kwik_e_mart_app_path):
     assert result[1] == 200
 
 
-def test_system_entity_recognizer_component_empty_config(food_ordering_app_path):
+def test_system_entity_recognizer_component_empty_config(
+    food_ordering_app_path,
+):
     # If the app has an empty config (ie. {}), then it should not run system entity
     recognizer = SystemEntityRecognizer.load_from_app_path(food_ordering_app_path)
     result = recognizer.parse("today is sunday")
@@ -396,9 +405,7 @@ test_data = [
 
 @pytest.mark.parametrize("text, language, expected_entity", test_data)
 def test_get_candidates_for_text_language(text, language, expected_entity):
-    candidates = DucklingRecognizer.get_instance().get_candidates_for_text(
-        text, language=language
-    )
+    candidates = DucklingRecognizer.get_instance().get_candidates_for_text(text, language=language)
     assert candidates[0]["body"] == expected_entity
 
 
@@ -412,7 +419,5 @@ test_data = [
 
 @pytest.mark.parametrize("text, locale, expected_entity", test_data)
 def test_get_candidates_for_text_locale(text, locale, expected_entity):
-    candidates = DucklingRecognizer.get_instance().get_candidates_for_text(
-        text, locale=locale
-    )
+    candidates = DucklingRecognizer.get_instance().get_candidates_for_text(text, locale=locale)
     assert candidates[0]["body"] == expected_entity

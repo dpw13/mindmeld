@@ -23,12 +23,14 @@ DUCKLING_VERSION = "20211005"
 
 EMBEDDINGS_VERSION = "6B"
 EMBEDDINGS_FILE = f"glove.{EMBEDDINGS_VERSION}.zip"
-EMBEDDINGS_URL = '/'.join([
-    BINARIES_URL,
-    "glove",
-    EMBEDDINGS_VERSION,
-    EMBEDDINGS_FILE,
-])
+EMBEDDINGS_URL = "/".join(
+    [
+        BINARIES_URL,
+        "glove",
+        EMBEDDINGS_VERSION,
+        EMBEDDINGS_FILE,
+    ]
+)
 
 
 # ACTIVE LEARNING CONSTANTS
@@ -36,6 +38,7 @@ class TuneLevel(Enum):
     DOMAIN = "domain"
     INTENT = "intent"
     ENTITY = "entity"
+
 
 class TuningType(Enum):
     CLASSIFIER = "classifier"
@@ -91,7 +94,12 @@ SPACY_SUPPORTED_LANGUAGES = SPACY_WEB_TRAINED_LANGUAGES + SPACY_NEWS_TRAINED_LAN
 SPACY_MODEL_SIZES = ["sm", "md", "lg"]
 
 UNANNOTATE_ALL_RULE = [
-    {"domains": ".*", "intents": ".*", "files": ".*", "entities": ".*",}
+    {
+        "domains": ".*",
+        "intents": ".*",
+        "files": ".*",
+        "entities": ".*",
+    }
 ]
 
 ANNOTATOR_TO_SYS_ENTITY_MAPPINGS = {
@@ -151,7 +159,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
     ],
     "bn": ["sys_number"],
     "cs": ["sys_distance", "sys_number"],
-    "da": ["sys_duration", "sys_number", "sys_ordinal", "sys_time", "sys_interval"],
+    "da": [
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_time",
+        "sys_interval",
+    ],
     "de": [
         "sys_distance",
         "sys_duration",
@@ -161,7 +175,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
         "sys_interval",
         "sys_phone-number",
     ],
-    "el": ["sys_duration", "sys_number", "sys_ordinal", "sys_time", "sys_interval"],
+    "el": [
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_time",
+        "sys_interval",
+    ],
     "en": [
         "sys_distance",
         "sys_duration",
@@ -204,7 +224,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
         "sys_interval",
         "sys_amount-of-money",
     ],
-    "he": ["sys_duration", "sys_number", "sys_ordinal", "sys_time", "sys_interval"],
+    "he": [
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_time",
+        "sys_interval",
+    ],
     "hi": ["sys_duration", "sys_number", "sys_ordinal"],
     "hr": [
         "sys_distance",
@@ -216,7 +242,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
         "sys_interval",
         "sys_amount-of-money",
     ],
-    "hu": ["sys_duration", "sys_number", "sys_ordinal", "sys_time", "sys_interval"],
+    "hu": [
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_time",
+        "sys_interval",
+    ],
     "id": ["sys_number", "sys_ordinal", "sys_amount-of-money"],
     "is": ["sys_number"],
     "it": [
@@ -228,7 +260,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
         "sys_interval",
         "sys_phone-number",
     ],
-    "ja": ["sys_duration", "sys_number", "sys_ordinal", "sys_time", "sys_phone-number"],
+    "ja": [
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_time",
+        "sys_phone-number",
+    ],
     "ka": [
         "sys_duration",
         "sys_number",
@@ -251,7 +289,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
     ],
     "lo": ["sys_number"],
     "ml": ["sys_number", "sys_ordinal"],
-    "mn": ["sys_distance", "sys_duration", "sys_number", "sys_ordinal", "sys_quantity"],
+    "mn": [
+        "sys_distance",
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_quantity",
+    ],
     "my": ["sys_number"],
     "nb": [
         "sys_duration",
@@ -272,7 +316,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
         "sys_interval",
         "sys_amount-of-money",
     ],
-    "pl": ["sys_duration", "sys_number", "sys_ordinal", "sys_time", "sys_interval"],
+    "pl": [
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_time",
+        "sys_interval",
+    ],
     "pt": [
         "sys_distance",
         "sys_duration",
@@ -316,7 +366,13 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
     "te": ["sys_number"],
     "th": ["sys_number"],
     "tr": ["sys_distance", "sys_duration", "sys_number", "sys_ordinal"],
-    "uk": ["sys_duration", "sys_number", "sys_ordinal", "sys_time", "sys_interval"],
+    "uk": [
+        "sys_duration",
+        "sys_number",
+        "sys_ordinal",
+        "sys_time",
+        "sys_interval",
+    ],
     "vi": [
         "sys_duration",
         "sys_number",
@@ -339,9 +395,7 @@ DUCKLING_TO_SYS_ENTITY_MAPPINGS = {
 
 # fetches all currency symbols in unicode by iterating through the character set and
 # selecting the currency symbols based on the unicode currency category 'Sc'
-CURRENCY_SYMBOLS = u"".join(
-    chr(i) for i in range(0xFFFF) if unicodedata.category(chr(i)) == "Sc"
-)
+CURRENCY_SYMBOLS = "".join(chr(i) for i in range(0xFFFF) if unicodedata.category(chr(i)) == "Sc")
 UNICODE_NON_LATIN_CATEGORY = "Lo"
 UNICODE_SPACE_CATEGORY = "Zs"
 

@@ -92,9 +92,7 @@ class WordSequenceEmbedding:
             corresponding embedding
         """
         if token not in self.token_to_embedding_mapping:
-            random_vector = np.random.uniform(
-                -1, 1, size=(self.token_embedding_dimension,)
-            )
+            random_vector = np.random.uniform(-1, 1, size=(self.token_embedding_dimension,))
             self.token_to_embedding_mapping[token] = random_vector
         return self.token_to_embedding_mapping[token]
 
@@ -109,9 +107,7 @@ class WordSequenceEmbedding:
 
         for word in historic_word_embeddings:
             if len(historic_word_embeddings[word]) == self.token_embedding_dimension:
-                self.token_to_embedding_mapping[word] = historic_word_embeddings.get(
-                    word
-                )
+                self.token_to_embedding_mapping[word] = historic_word_embeddings.get(word)
 
     def save_embeddings(self):
         """Save extracted embeddings to historic pickle file."""
@@ -183,9 +179,7 @@ class CharacterSequenceEmbedding:
             corresponding embedding
         """
         if token not in self.token_to_embedding_mapping:
-            random_vector = np.random.uniform(
-                -1, 1, size=(self.token_embedding_dimension,)
-            )
+            random_vector = np.random.uniform(-1, 1, size=(self.token_embedding_dimension,))
             self.token_to_embedding_mapping[token] = random_vector
         return self.token_to_embedding_mapping[token]
 

@@ -9,7 +9,7 @@ from mindmeld.models import (
     ENTITIES_LABEL_TYPE,
     QUERY_EXAMPLE_TYPE,
     ENTITY_EXAMPLE_TYPE,
-    ModelConfig
+    ModelConfig,
 )
 from mindmeld.models.tagger_models import PytorchTaggerModel
 from mindmeld.models.text_models import TextModel, PytorchTextModel

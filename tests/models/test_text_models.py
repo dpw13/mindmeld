@@ -18,9 +18,7 @@ from mindmeld.models.text_models import TextModel
 from mindmeld.resource_loader import ResourceLoader, ProcessedQueryList
 
 APP_NAME = "kwik_e_mart"
-APP_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), APP_NAME
-)
+APP_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), APP_NAME)
 
 
 @pytest.fixture
@@ -100,7 +98,10 @@ class TestTextModel:
                 "param_selection": {
                     "type": "k-fold",
                     "k": 10,
-                    "grid": {"C": [10, 100, 1000], "fit_intercept": [True, False]},
+                    "grid": {
+                        "C": [10, 100, 1000],
+                        "fit_intercept": [True, False],
+                    },
                 },
                 "features": {
                     "bag-of-words": {"lengths": [1]},
@@ -166,7 +167,5 @@ class TestTextModel:
             "bag_of_words|length:1|ngram:hi": 1,
             "bag_of_words|length:1|ngram:OOV": 1,
         }
-        extracted_features = model.view_extracted_features(
-            markup.load_query("hi there").query
-        )
+        extracted_features = model.view_extracted_features(markup.load_query("hi there").query)
         assert extracted_features == expected_features

@@ -118,8 +118,7 @@ class IntentClassifier(Classifier):
 
     def _get_queries_from_label_set(self, label_set=DEFAULT_TRAIN_SET_REGEX):
         return self._resource_loader.get_flattened_label_set(
-            domain=self.domain,
-            label_set=label_set
+            domain=self.domain, label_set=label_set
         )
 
     def _get_examples_and_labels(self, queries):
@@ -128,8 +127,6 @@ class IntentClassifier(Classifier):
     def _get_examples_and_labels_hash(self, queries):
         raw_queries = []
         for intent, raw_query in zip(queries.intents(), queries.raw_queries()):
-            raw_queries.append(
-                self.domain + "###" + intent + "###" + mark_down(raw_query)
-            )
+            raw_queries.append(self.domain + "###" + intent + "###" + mark_down(raw_query))
         raw_queries.sort()
         return self._resource_loader.hash_list(raw_queries)

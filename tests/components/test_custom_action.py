@@ -37,9 +37,7 @@ def test_custom_action():
         mock_object.return_value.status_code = 200
         mock_object.return_value.json.return_value = {}
 
-        request = Request(
-            text="sing a song", domain="some domain", intent="some intent"
-        )
+        request = Request(text="sing a song", domain="some domain", intent="some intent")
         responder = DialogueResponder()
         assert action.invoke(request, responder)
         assert mock_object.call_args[1]["url"] == action_config["url"]
@@ -57,7 +55,10 @@ def test_custom_action_merge():
         mock_object.return_value = Mock()
         mock_object.return_value.status_code = 200
         mock_object.return_value.json.return_value = {
-            "directives": [{"payload": "directive3"}, {"payload": "directive4"}],
+            "directives": [
+                {"payload": "directive3"},
+                {"payload": "directive4"},
+            ],
             "frame": {"k2": "v2"},
             "slots": {"s2": "v2"},
             "params": {
@@ -71,11 +72,12 @@ def test_custom_action_merge():
             },
         }
 
-        request = Request(
-            text="sing a song", domain="some domain", intent="some intent"
-        )
+        request = Request(text="sing a song", domain="some domain", intent="some intent")
         responder = DialogueResponder()
-        responder.directives = [{"payload": "directive1"}, {"payload": "directive2"}]
+        responder.directives = [
+            {"payload": "directive1"},
+            {"payload": "directive2"},
+        ]
         responder.frame = {"k1": "v1"}
         responder.slots = {"s1": "v1"}
         responder.params.allowed_intents = ("intent1", "intent2")
@@ -112,7 +114,10 @@ def test_custom_action_no_merge():
         mock_object.return_value = Mock()
         mock_object.return_value.status_code = 200
         mock_object.return_value.json.return_value = {
-            "directives": [{"payload": "directive3"}, {"payload": "directive4"}],
+            "directives": [
+                {"payload": "directive3"},
+                {"payload": "directive4"},
+            ],
             "frame": {"k2": "v2"},
             "slots": {"s2": "v2"},
             "params": {
@@ -126,9 +131,7 @@ def test_custom_action_no_merge():
             },
         }
 
-        request = Request(
-            text="sing a song", domain="some domain", intent="some intent"
-        )
+        request = Request(text="sing a song", domain="some domain", intent="some intent")
         responder = DialogueResponder()
         responder.directives = ["directive1", "directive2"]
         responder.frame = {"k1": "v1"}
@@ -136,8 +139,10 @@ def test_custom_action_no_merge():
         responder.params.allowed_intents = ("intent1", "intent2")
         responder.params.dynamic_resource = {"r1": "v1"}
         assert action.invoke(request, responder)
-        assert responder.directives == [{"payload": "directive3"},
-                                        {"payload": "directive4"}]
+        assert responder.directives == [
+            {"payload": "directive3"},
+            {"payload": "directive4"},
+        ]
         assert responder.frame == {"k2": "v2"}
         assert responder.slots == {"s2": "v2"}
         assert tuple(responder.params.allowed_intents) == (
@@ -161,13 +166,9 @@ def test_invoke_custom_action():
         mock_object.return_value.status_code = 200
         mock_object.return_value.json.return_value = {}
 
-        request = Request(
-            text="sing a song", domain="some domain", intent="some intent"
-        )
+        request = Request(text="sing a song", domain="some domain", intent="some intent")
         responder = DialogueResponder()
-        assert invoke_custom_action(
-            "action_call_people", action_config, request, responder
-        )
+        assert invoke_custom_action("action_call_people", action_config, request, responder)
         assert mock_object.call_args[1]["url"] == action_config["url"]
         assert "request" in mock_object.call_args[1]["json"]
         assert "responder" in mock_object.call_args[1]["json"]
@@ -186,9 +187,7 @@ async def test_custom_action_async():
             return 200, {}
 
         mock_object.return_value = mock_coroutine()
-        request = Request(
-            text="sing a song", domain="some domain", intent="some intent"
-        )
+        request = Request(text="sing a song", domain="some domain", intent="some intent")
         responder = DialogueResponder()
         assert await action.invoke_async(request, responder)
         call_args = mock_object.call_args_list[0][0][0]
@@ -208,9 +207,7 @@ async def test_invoke_custom_action_async():
             return 200, {}
 
         mock_object.return_value = mock_coroutine()
-        request = Request(
-            text="sing a song", domain="some domain", intent="some intent"
-        )
+        request = Request(text="sing a song", domain="some domain", intent="some intent")
         responder = DialogueResponder()
         assert await invoke_custom_action_async(
             "action_call_people", action_config, request, responder
@@ -256,9 +253,7 @@ def test_custom_action_sequence(home_assistant_nlp):
     app = Application("home_assistant")
     app.lazy_init(home_assistant_nlp)
     app.custom_action_config = {"url": "some-url"}
-    app.custom_action(
-        intent="set_thermostat", actions=["set-thermostat", "clear-thermostat"]
-    )
+    app.custom_action(intent="set_thermostat", actions=["set-thermostat", "clear-thermostat"])
 
     with patch("requests.post") as mock_object:
         mock_object.return_value = Mock()
@@ -266,7 +261,10 @@ def test_custom_action_sequence(home_assistant_nlp):
         mock_object.return_value.json.return_value = {"directives": [{"payload": "some-directive"}]}
         # invoke set thermostat intent and we should expect two directives
         res = app.app_manager.parse("turn it to 70 degrees")
-        assert res.directives == [{"payload": "some-directive"}, {"payload": "some-directive"}]
+        assert res.directives == [
+            {"payload": "some-directive"},
+            {"payload": "some-directive"},
+        ]
         assert mock_object.call_args[1]["url"] == "some-url"
 
 

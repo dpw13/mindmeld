@@ -82,8 +82,8 @@ def validate_locale_code(value: Optional[str]) -> Optional[str]:
     if not validate_language_code(language_code):
         raise ValidationError(
             "Invalid locale_code param: %s is not a valid ISO 639-1 language code. "
-            "See https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes for valid codes." %
-            language_code
+            "See https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes for valid codes."
+            % language_code
         )
 
     # pycountry requires the country code to be upper-cased
@@ -91,16 +91,16 @@ def validate_locale_code(value: Optional[str]) -> Optional[str]:
     if not pycountry.countries.get(alpha_2=country_code):
         raise ValidationError(
             "Invalid %r param: %s is not a valid ISO3166 alpha 2 country code. "
-            "See https://www.iso.org/obp/ui/#search for valid codes." %
-            ("locale", country_code)
+            "See https://www.iso.org/obp/ui/#search for valid codes." % ("locale", country_code)
         )
 
     # return the validated locale
     return language_code + "_" + country_code
 
 
-def validate_locale_code_with_ref_language_code(locale: Optional[str],
-                                                reference_language_code: str) -> Optional[str]:
+def validate_locale_code_with_ref_language_code(
+    locale: Optional[str], reference_language_code: str
+) -> Optional[str]:
     """This function makes sure the locale is consistent with the app's language code"""
     locale = validate_locale_code(locale)
     # if the developer or app doesnt specify the locale, we just use the default locale
@@ -111,7 +111,9 @@ def validate_locale_code_with_ref_language_code(locale: Optional[str],
         logger.error(
             "Locale %s is inconsistent with app language code %s. "
             "Set the language code in the config.py file."
-            "Using the default locale code instead.", locale, reference_language_code
+            "Using the default locale code instead.",
+            locale,
+            reference_language_code,
         )
         return
 
@@ -124,13 +126,14 @@ def validate_timestamp(value: Union[int, float, str]) -> int:
 
         num_digits = math.floor(math.log10(result) + 1)
         if num_digits > 13:
-            raise ValueError('Too many digits for millisecond timestamp')
+            raise ValueError("Too many digits for millisecond timestamp")
 
         if num_digits <= 10:
             # Convert a second grain unix timestamp to millisecond
             logger.debug(
                 "Warning: Possible non-millisecond unix timestamp passed in %r. "
-                "Multiplying it by 1000 to represent the timestamp in milliseconds.", value
+                "Multiplying it by 1000 to represent the timestamp in milliseconds.",
+                value,
             )
             result *= 1000
 
@@ -144,11 +147,11 @@ def validate_timestamp(value: Union[int, float, str]) -> int:
         raise ValidationError(error_message) from exc
 
 
-def _validate_mask_nlp(nlp: Any,
-                       list_of_allow_nlp: Optional[List[str]] = None,
-                       list_of_deny_nlp: Optional[List[str]] = None,
-                       ) -> Tuple[List[str], List[str]]:
-
+def _validate_mask_nlp(
+    nlp: Any,
+    list_of_allow_nlp: Optional[List[str]] = None,
+    list_of_deny_nlp: Optional[List[str]] = None,
+) -> Tuple[List[str], List[str]]:
     if not nlp or not (list_of_allow_nlp or list_of_deny_nlp):
         return list_of_allow_nlp, list_of_deny_nlp
 
@@ -163,21 +166,19 @@ def _validate_mask_nlp(nlp: Any,
                 )
 
             nlp_entries = [None, None, None, None]
-            entries = allowed_nlp_component.split(".")[:len(nlp_entries)]
+            entries = allowed_nlp_component.split(".")[: len(nlp_entries)]
             for idx, entry in enumerate(entries):
                 nlp_entries[idx] = entry
 
             domain, intent, entity, role = nlp_entries
 
             if not domain or domain not in nlp.domains:
-                raise ValidationError(
-                    f"Domain: {domain} is not in the NLP component hierarchy"
-                )
+                raise ValidationError(f"Domain: {domain} is not in the NLP component hierarchy")
 
             if not intent:
                 continue
 
-            valid_intents = nlp.domains[domain].intents if intent == '*' else [intent]
+            valid_intents = nlp.domains[domain].intents if intent == "*" else [intent]
             for valid_intent in valid_intents:
                 if valid_intent not in nlp.domains[domain].intents:
                     raise ValidationError(
@@ -185,27 +186,26 @@ def _validate_mask_nlp(nlp: Any,
                     )
 
                 # Ignore further validation if the star operator is present
-                if entity == '*':
+                if entity == "*":
                     continue
 
-                if entity and entity != '*':
+                if entity and entity != "*":
                     if entity not in nlp.domains[domain].intents[valid_intent].entities:
                         raise ValidationError(
                             f"Entity: {entity} is not in the NLP component hierarchy"
                         )
 
-                if role and role != '*':
+                if role and role != "*":
                     entities = nlp.domains[domain].intents[valid_intent].entities
                     if role not in entities[entity].role_classifier.roles:
-                        raise ValidationError(
-                            f"Role: {role} is not in the NLP component hierarchy"
-                        )
+                        raise ValidationError(f"Role: {role} is not in the NLP component hierarchy")
 
     return list_of_allow_nlp, list_of_deny_nlp
 
 
-def _validate_target_dialogue_state(target_dialogue_state: Optional[str],
-                                    dialogue_handler_map: Optional[Dict]) -> Optional[str]:
+def _validate_target_dialogue_state(
+    target_dialogue_state: Optional[str], dialogue_handler_map: Optional[Dict]
+) -> Optional[str]:
     if not target_dialogue_state:
         return None
 
@@ -249,21 +249,24 @@ def serialize_to_lists_of_list_of_dicts(values):
 
 
 class LanguageCodeField(fields.String):
-
-    def _serialize(self,
-                   value,
-                   attribute,  # pylint: disable=unused-argument
-                   obj,  # pylint: disable=unused-argument
-                   **kwargs):
+    def _serialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        obj,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         if value is None:
             return
         return str(value)
 
-    def _deserialize(self,
-                     value,
-                     attribute,  # pylint: disable=unused-argument
-                     data,  # pylint: disable=unused-argument
-                     **kwargs):
+    def _deserialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        data,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         try:
             return validate_language_code(value)
         except ValueError as error:
@@ -273,111 +276,133 @@ class LanguageCodeField(fields.String):
 
 
 class LocaleCodeField(fields.String):
-
-    def _serialize(self,
-                   value,
-                   attribute,  # pylint: disable=unused-argument
-                   obj,  # pylint: disable=unused-argument
-                   **kwargs):
+    def _serialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        obj,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         if value is None:
             return None
         return str(value)
 
-    def _deserialize(self,
-                     value,
-                     attribute,  # pylint: disable=unused-argument
-                     data,  # pylint: disable=unused-argument
-                     **kwargs):
+    def _deserialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        data,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         try:
             return validate_locale_code(value)
         except ValueError as error:
             raise ValidationError(
                 f"Invalid locale_code param: {value} has a "
-                f"wrong value that caused {str(error)}.") from error
+                f"wrong value that caused {str(error)}."
+            ) from error
 
 
 class TimeZoneField(fields.String):
-
-    def _serialize(self,
-                   value,
-                   attribute,  # pylint: disable=unused-argument
-                   obj,  # pylint: disable=unused-argument
-                   **kwargs):
+    def _serialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        obj,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         if value is None:
             return
         return str(value)
 
-    def _deserialize(self,
-                     value,
-                     attribute,  # pylint: disable=unused-argument
-                     data,  # pylint: disable=unused-argument
-                     **kwargs):
+    def _deserialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        data,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         try:
             return timezone(value)
         except ValueError as error:
-            raise ValidationError(f"Invalid time_zone param: {value} "
-                                  f"has a wrong value that caused {str(error)}.") from error
+            raise ValidationError(
+                f"Invalid time_zone param: {value} " f"has a wrong value that caused {str(error)}."
+            ) from error
         except UnknownTimeZoneError as error:
-            raise ValidationError(f"Invalid time_zone param: {value} "
-                                  f"is not a valid time zone.") from error
+            raise ValidationError(
+                f"Invalid time_zone param: {value} " f"is not a valid time zone."
+            ) from error
 
 
 class TimestampField(fields.Integer):
-    def _serialize(self,
-                   value,
-                   attribute,  # pylint: disable=unused-argument
-                   obj,  # pylint: disable=unused-argument
-                   **kwargs):
+    def _serialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        obj,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         if value is None:
             return
         return str(value)
 
-    def _deserialize(self,
-                     value,
-                     attribute,  # pylint: disable=unused-argument
-                     data,  # pylint: disable=unused-argument
-                     **kwargs):
+    def _deserialize(
+        self,
+        value,
+        attribute,  # pylint: disable=unused-argument
+        data,  # pylint: disable=unused-argument
+        **kwargs,
+    ):
         try:
             return validate_timestamp(value)
         except ValueError as error:
-            raise ValidationError(f"Invalid timestamp param: {value} has "
-                                  f"a wrong value that caused {str(error)}.") from error
+            raise ValidationError(
+                f"Invalid timestamp param: {value} has " f"a wrong value that caused {str(error)}."
+            ) from error
 
 
 class ParamsSchema(Schema):
-    allowed_intents = fields.Method("serialize_allowed_intents",
-                                    deserialize="deserialize_allowed_intents",
-                                    allow_none=True)
+    allowed_intents = fields.Method(
+        "serialize_allowed_intents",
+        deserialize="deserialize_allowed_intents",
+        allow_none=True,
+    )
     time_zone = TimeZoneField(allow_none=True)
-    dynamic_resource = fields.Method("serialize_dynamic_resource",
-                                     deserialize="deserialize_dynamic_resource",
-                                     allow_none=True)
+    dynamic_resource = fields.Method(
+        "serialize_dynamic_resource",
+        deserialize="deserialize_dynamic_resource",
+        allow_none=True,
+    )
     language = LanguageCodeField(allow_none=True)
     locale = LocaleCodeField(allow_none=True)
     timestamp = TimestampField(allow_none=True)
-    target_dialogue_state = fields.Method("serialize_target_dialogue_state",
-                                          deserialize="deserialize_target_dialogue_state",
-                                          allow_none=True)
+    target_dialogue_state = fields.Method(
+        "serialize_target_dialogue_state",
+        deserialize="deserialize_target_dialogue_state",
+        allow_none=True,
+    )
 
     def serialize_allowed_intents(self, params) -> List[str]:
-        return list(_validate_mask_nlp(
-            self.context.get('nlp'),
-            list_of_allow_nlp=params.allowed_intents)[0])
+        return list(
+            _validate_mask_nlp(
+                self.context.get("nlp"),
+                list_of_allow_nlp=params.allowed_intents,
+            )[0]
+        )
 
     def deserialize_allowed_intents(self, allowed_intents: List[str]) -> List[str]:
-        return _validate_mask_nlp(
-            self.context.get('nlp'),
-            list_of_allow_nlp=allowed_intents)[0]
+        return _validate_mask_nlp(self.context.get("nlp"), list_of_allow_nlp=allowed_intents)[0]
 
     def serialize_target_dialogue_state(self, params) -> Optional[str]:
         return _validate_target_dialogue_state(
             params.target_dialogue_state,
-            self.context.get('dialogue_handler_map'))
+            self.context.get("dialogue_handler_map"),
+        )
 
     def deserialize_target_dialogue_state(self, target_dialogue_state: str) -> Optional[str]:
         return _validate_target_dialogue_state(
-            target_dialogue_state,
-            self.context.get('dialogue_handler_map'))
+            target_dialogue_state, self.context.get("dialogue_handler_map")
+        )
 
     def serialize_dynamic_resource(self, params):  # pylint: disable=no-self-use
         return dict(params.dynamic_resource)
@@ -419,26 +444,22 @@ class RequestSchema(Schema):
     domain = fields.String()
     intent = fields.String()
     verbose = fields.Boolean()
-    entities = fields.Method("serialize_entities",
-                             deserialize="deserialize_list_of_maps")
-    history = fields.Method("serialize_history",
-                            deserialize="deserialize_list_of_maps")
+    entities = fields.Method("serialize_entities", deserialize="deserialize_list_of_maps")
+    history = fields.Method("serialize_history", deserialize="deserialize_list_of_maps")
     params = fields.Nested(ParamsSchema)
-    frame = fields.Method("serialize_frame",
-                          deserialize="deserialize_map")
-    context = fields.Method("serialize_context",
-                            deserialize="deserialize_map")
-    confidences = fields.Method("serialize_confidences",
-                                deserialize="deserialize_map")
+    frame = fields.Method("serialize_frame", deserialize="deserialize_map")
+    context = fields.Method("serialize_context", deserialize="deserialize_map")
+    confidences = fields.Method("serialize_confidences", deserialize="deserialize_map")
     nbest_transcripts_text = fields.List(fields.String)
     nbest_transcripts_entities = fields.Method(
         "serialize_nbest_transcripts_entities",
-        deserialize="deserialize_list_of_list_of_immutable_maps")
+        deserialize="deserialize_list_of_list_of_immutable_maps",
+    )
     nbest_aligned_entities = fields.Method(
         "serialize_nbest_aligned_entities",
-        deserialize="deserialize_list_of_list_of_immutable_maps")
-    form = fields.Method("serialize_form",
-                         deserialize="deserialize_map")
+        deserialize="deserialize_list_of_list_of_immutable_maps",
+    )
+    form = fields.Method("serialize_form", deserialize="deserialize_map")
     request_id = fields.String()
 
     def deserialize_list_of_maps(self, value):  # pylint: disable=no-self-use

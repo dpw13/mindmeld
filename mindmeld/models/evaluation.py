@@ -34,7 +34,8 @@ logger = logging.getLogger(__name__)
 
 class EvaluatedExample(
     namedtuple(
-        "EvaluatedExample", ["example", "expected", "predicted", "probas", "label_type"]
+        "EvaluatedExample",
+        ["example", "expected", "predicted", "probas", "label_type"],
     )
 ):
     """Represents the evaluation of a single example
@@ -75,7 +76,12 @@ class RawResults:
     """
 
     def __init__(
-        self, predicted, expected, text_labels, predicted_flat=None, expected_flat=None
+        self,
+        predicted,
+        expected,
+        text_labels,
+        predicted_flat=None,
+        expected_flat=None,
     ):
         self.predicted = predicted
         self.expected = expected
@@ -239,9 +245,7 @@ class ModelEvaluation(namedtuple("ModelEvaluation", ["config", "results"])):
             dict: A structured dictionary containing precision, recall, f_beta, and support \
                   vectors (1 x number of classes)
         """
-        precision, recall, f_beta, support = score(
-            y_true=y_true, y_pred=y_pred, labels=labels
-        )
+        precision, recall, f_beta, support = score(y_true=y_true, y_pred=y_pred, labels=labels)
 
         stats = {
             "precision": precision,
@@ -260,15 +264,9 @@ class ModelEvaluation(namedtuple("ModelEvaluation", ["config", "results"])):
             dict: A structured dictionary containing scalar values for f1 scores and overall \
                   accuracy.
         """
-        f1_weighted = f1_score(
-            y_true=y_true, y_pred=y_pred, labels=labels, average="weighted"
-        )
-        f1_macro = f1_score(
-            y_true=y_true, y_pred=y_pred, labels=labels, average="macro"
-        )
-        f1_micro = f1_score(
-            y_true=y_true, y_pred=y_pred, labels=labels, average="micro"
-        )
+        f1_weighted = f1_score(y_true=y_true, y_pred=y_pred, labels=labels, average="weighted")
+        f1_macro = f1_score(y_true=y_true, y_pred=y_pred, labels=labels, average="macro")
+        f1_micro = f1_score(y_true=y_true, y_pred=y_pred, labels=labels, average="micro")
         accuracy = accuracy_score(y_true=y_true, y_pred=y_pred)
 
         stats_overall = {
@@ -322,9 +320,7 @@ class ModelEvaluation(namedtuple("ModelEvaluation", ["config", "results"])):
         return {
             "confusion_matrix": confusion_mat,
             "counts_by_class": Counts(tp_arr, tn_arr, fp_arr, fn_arr),
-            "counts_overall": Counts(
-                sum(tp_arr), sum(tn_arr), sum(fp_arr), sum(fn_arr)
-            ),
+            "counts_overall": Counts(sum(tp_arr), sum(tn_arr), sum(fp_arr), sum(fn_arr)),
         }
 
     def _print_class_stats_table(self, stats, text_labels, title="Statistics by class"):
@@ -351,9 +347,7 @@ class ModelEvaluation(namedtuple("ModelEvaluation", ["config", "results"])):
             + "{:>12.0f}" * 5
             + "{:>12.3f}" * (len(stats) - len(common_stats))
         )
-        table_titles = common_stats + [
-            stat for stat in stats.keys() if stat not in common_stats
-        ]
+        table_titles = common_stats + [stat for stat in stats.keys() if stat not in common_stats]
         print(title + ": \n")
         print(title_format.format("class", *table_titles))
         for label_index, label in enumerate(text_labels):
@@ -381,17 +375,11 @@ class ModelEvaluation(namedtuple("ModelEvaluation", ["config", "results"])):
         labels = range(len(text_labels))
         title_format = "{:>15}" * (len(labels) + 1)
         stat_row_format = "{:>15}" * (len(labels) + 1)
-        table_titles = [
-            self._truncate_label(text_labels[label], 10) for label in labels
-        ]
+        table_titles = [self._truncate_label(text_labels[label], 10) for label in labels]
         print("Confusion matrix: \n")
         print(title_format.format("", *table_titles))
         for label_index, label in enumerate(text_labels):
-            print(
-                stat_row_format.format(
-                    self._truncate_label(label, 10), *matrix[label_index]
-                )
-            )
+            print(stat_row_format.format(self._truncate_label(label, 10), *matrix[label_index]))
         print("\n\n")
 
     @staticmethod
@@ -435,13 +423,9 @@ class StandardModelEvaluation(ModelEvaluation):
             text_labels, predicted = self._update_raw_result(
                 result.predicted, text_labels, predicted
             )
-            text_labels, expected = self._update_raw_result(
-                result.expected, text_labels, expected
-            )
+            text_labels, expected = self._update_raw_result(result.expected, text_labels, expected)
 
-        return RawResults(
-            predicted=predicted, expected=expected, text_labels=text_labels
-        )
+        return RawResults(predicted=predicted, expected=expected, text_labels=text_labels)
 
     def get_stats(self):
         """Prints model evaluation stats in a table to stdout"""
@@ -478,9 +462,9 @@ class SequenceModelEvaluation(ModelEvaluation):
             raw_predicted = self.label_encoder.encode(
                 [result.predicted], examples=[result.example]
             )[0]
-            raw_expected = self.label_encoder.encode(
-                [result.expected], examples=[result.example]
-            )[0]
+            raw_expected = self.label_encoder.encode([result.expected], examples=[result.example])[
+                0
+            ]
 
             vec = []
             for entity in raw_predicted:
@@ -545,9 +529,7 @@ class SequenceModelEvaluation(ModelEvaluation):
         raw_results = self.raw_results()
         stats = self.get_stats()
 
-        self._print_overall_stats_table(
-            stats["stats_overall"], "Overall tag-level statistics"
-        )
+        self._print_overall_stats_table(stats["stats_overall"], "Overall tag-level statistics")
         self._print_class_stats_table(
             stats["class_stats"],
             raw_results.text_labels,
@@ -570,12 +552,8 @@ class EntityModelEvaluation(SequenceModelEvaluation):
         for expected_sequence, predicted_sequence in zip(
             raw_results.expected, raw_results.predicted
         ):
-            expected_seq_labels = [
-                raw_results.text_labels[i] for i in expected_sequence
-            ]
-            predicted_seq_labels = [
-                raw_results.text_labels[i] for i in predicted_sequence
-            ]
+            expected_seq_labels = [raw_results.text_labels[i] for i in expected_sequence]
+            predicted_seq_labels = [raw_results.text_labels[i] for i in predicted_sequence]
             boundary_counts = get_boundary_counts(
                 expected_seq_labels, predicted_seq_labels, boundary_counts
             )
@@ -605,9 +583,7 @@ class EntityModelEvaluation(SequenceModelEvaluation):
         raw_results = self.raw_results()
         stats = self.get_stats()
 
-        self._print_overall_stats_table(
-            stats["stats_overall"], "Overall tag-level statistics"
-        )
+        self._print_overall_stats_table(stats["stats_overall"], "Overall tag-level statistics")
         self._print_class_stats_table(
             stats["class_stats"],
             raw_results.text_labels,

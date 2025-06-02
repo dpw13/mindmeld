@@ -28,7 +28,10 @@ import nltk
 from sklearn.metrics import make_scorer
 
 from ..gazetteer import Gazetteer
-from ..text_preparation.text_preparation_pipeline import TextPreparationPipeline, TextPreparationPipelineFactory
+from ..text_preparation.text_preparation_pipeline import (
+    TextPreparationPipeline,
+    TextPreparationPipelineFactory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -128,9 +131,7 @@ def create_annotator(config: Dict) -> Annotator:
         ValueError: When model configuration is invalid or required key is missing
     """
     if "annotator_class" not in config:
-        raise KeyError(
-            "Missing required argument in AUTO_ANNOTATOR_CONFIG: 'annotator_class'"
-        )
+        raise KeyError("Missing required argument in AUTO_ANNOTATOR_CONFIG: 'annotator_class'")
     if config["annotator_class"] in ANNOTATOR_MAP:
         return ANNOTATOR_MAP[config.pop("annotator_class")](**config)
     else:
@@ -291,9 +292,7 @@ def register_label(label_type: str, label_encoder: Type[LabelEncoder]) -> None:
         ValueError: If the label type is already registered
     """
     if label_type in LABEL_MAP:
-        msg = "Label encoder for label type {!r} is already registered.".format(
-            label_type
-        )
+        msg = "Label encoder for label type {!r} is already registered.".format(label_type)
         raise ValueError(msg)
 
     LABEL_MAP[label_type] = label_encoder
@@ -338,14 +337,14 @@ def get_ngram(tokens: Iterable[str], start: int, length: int) -> str:
 
     ngram_tokens = []
     for index in range(start, start + length):
-        token = (
-            OUT_OF_BOUNDS_TOKEN if index < 0 or index >= len(tokens) else tokens[index]
-        )
+        token = OUT_OF_BOUNDS_TOKEN if index < 0 or index >= len(tokens) else tokens[index]
         ngram_tokens.append(token)
     return " ".join(ngram_tokens)
 
 
-def get_ngrams_upto_n(tokens: Iterable[str], n: int) -> Generator[Tuple[Tuple, Tuple[int, int]], Any, None]:
+def get_ngrams_upto_n(
+    tokens: Iterable[str], n: int
+) -> Generator[Tuple[Tuple, Tuple[int, int]], Any, None]:
     """This function returns a generator that returns ngram tuples with length upto n
 
     Args:
@@ -394,9 +393,7 @@ def sequence_accuracy_scoring(y_true: Iterable[str], y_pred: Iterable[str]) -> f
     if not total:
         return 0
 
-    matches = sum(
-        1 for yseq_true, yseq_pred in zip(y_true, y_pred) if yseq_true == yseq_pred
-    )
+    matches = sum(1 for yseq_true, yseq_pred in zip(y_true, y_pred) if yseq_true == yseq_pred)
 
     return float(matches) / float(total)
 
@@ -421,9 +418,7 @@ def sequence_tag_accuracy_scoring(y_true: Iterable[str], y_pred: Iterable[str]) 
         return 0
 
     matches = sum(
-        1
-        for (y_true_tag, y_pred_tag) in zip(y_true_flat, y_pred_flat)
-        if y_true_tag == y_pred_tag
+        1 for (y_true_tag, y_pred_tag) in zip(y_true_flat, y_pred_flat) if y_true_tag == y_pred_tag
     )
 
     return float(matches) / float(total)
@@ -451,7 +446,11 @@ def entity_seqs_equal(expected: Iterable, predicted: Iterable) -> bool:
     return True
 
 
-def merge_gazetteer_resource(resource: Dict, dynamic_resource: Dict, text_preparation_pipeline: TextPreparationPipeline) -> Dict:
+def merge_gazetteer_resource(
+    resource: Dict,
+    dynamic_resource: Dict,
+    text_preparation_pipeline: TextPreparationPipeline,
+) -> Dict:
     """
     Returns a new resource that is a merge between the original resource and the dynamic
     resource passed in for only the gazetteer values
@@ -495,7 +494,11 @@ def merge_gazetteer_resource(resource: Dict, dynamic_resource: Dict, text_prepar
     return return_obj
 
 
-def ingest_dynamic_gazetteer(resource: Dict, dynamic_resource: Dict=None, text_preparation_pipeline: TextPreparationPipeline=None) -> Dict:
+def ingest_dynamic_gazetteer(
+    resource: Dict,
+    dynamic_resource: Dict = None,
+    text_preparation_pipeline: TextPreparationPipeline = None,
+) -> Dict:
     """Ingests dynamic gazetteers from the app and adds them to the resource
 
     Args:

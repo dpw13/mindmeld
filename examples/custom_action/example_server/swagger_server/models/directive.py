@@ -24,7 +24,11 @@ class Directive(Model):
         """
         self.swagger_types = {"name": str, "type": str, "payload": object}
 
-        self.attribute_map = {"name": "name", "type": "type", "payload": "payload"}
+        self.attribute_map = {
+            "name": "name",
+            "type": "type",
+            "payload": "payload",
+        }
         self._name = name
         self._type = type
         self._payload = payload
@@ -86,9 +90,7 @@ class Directive(Model):
         allowed_values = ["view", "action"]
         if type not in allowed_values:
             raise ValueError(
-                "Invalid value for `type` ({0}), must be one of {1}".format(
-                    type, allowed_values
-                )
+                "Invalid value for `type` ({0}), must be one of {1}".format(type, allowed_values)
             )
 
         self._type = type

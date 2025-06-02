@@ -16,7 +16,7 @@ This module contains all code required to perform sequence tagging.
 """
 import copy
 import logging
-from typing import Any, Iterable, Dict, Tuple, Self
+from typing import Any, Iterable, Dict, Tuple
 
 from ...core import (
     TEXT_FORM_NORMALIZED,
@@ -26,8 +26,12 @@ from ...core import (
     Span,
     _sort_by_lowest_time_grain,
 )
+from ..model_config import ModelConfig
 from ...markup import MarkupError
-from ...system_entity_recognizer import SystemEntityRecognizer, SystemEntityResolutionError
+from ...system_entity_recognizer import (
+    SystemEntityRecognizer,
+    SystemEntityResolutionError,
+)
 from ..helpers import ENABLE_STEMMING, get_feature_extractor
 
 logger = logging.getLogger(__name__)
@@ -69,7 +73,7 @@ class Tagger:
         attributes = self.__dict__.copy()
         return attributes
 
-    def fit(self, X, y) -> Self:
+    def fit(self, X, y) -> "Tagger":
         """Trains the model. X and y are the format of what is returned by extract_features. There is no
         restriction on their type or content. X should be the fully processed data with extracted
         features that are ready to be used to train the model. y should be a list of classes as
@@ -118,10 +122,12 @@ class Tagger:
         raise NotImplementedError
 
     def setup_model(self, config: Dict[str, Any]):
-        """"Not implemented."""
+        """ "Not implemented."""
         raise NotImplementedError
 
-    def extract_features(self, examples: Iterable[Query], config: "ModelConfig", resources: Dict) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], Iterable]:
+    def extract_features(
+        self, examples: Iterable[Query], config: ModelConfig, resources: Dict
+    ) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], Iterable]:
         """Extracts all features from a list of MindMeld examples. Processes the data and returns the
         features in the format that is expected as an input to fit(). Note that the MindMeld config
         and resources are passed in each time to make the underlying model implementation stateless.
@@ -142,7 +148,9 @@ class Tagger:
         """
         raise NotImplementedError
 
-    def extract_and_predict(self, examples: Iterable[Query], config: "ModelConfig", resources: Dict) -> Iterable:
+    def extract_and_predict(
+        self, examples: Iterable[Query], config: ModelConfig, resources: Dict
+    ) -> Iterable:
         """Does both feature extraction and prediction. Often necessary for sequence models when the
         prediction of the previous example is used as a feature for the next example. If this is
         not the case, extract is simply called before predict here. Note that the MindMeld config
@@ -162,7 +170,7 @@ class Tagger:
         y = self.predict(X)
         return y
 
-    def predict_proba(self, examples, config: "ModelConfig", resources):
+    def predict_proba(self, examples, config: ModelConfig, resources):
         """
         Args:
             examples (list of mindmeld.core.Query): A list of queries to extract features for and
@@ -217,7 +225,9 @@ class Tagger:
         pass
 
 
-def get_tags_from_entities(query: Query, entities: Iterable[QueryEntity], scheme="IOB") -> Iterable[str]:
+def get_tags_from_entities(
+    query: Query, entities: Iterable[QueryEntity], scheme="IOB"
+) -> Iterable[str]:
     """Get joint app and system IOB tags from a query's entities.
 
     Args:
@@ -246,7 +256,6 @@ def _get_tags_from_entities(query: Query, entities: Iterable[QueryEntity], schem
 
     # tag I and type for all tag schemes
     for entity in entities:
-
         for i in entity.normalized_token_span:
             iobs[i] = I_TAG
             types[i] = entity.entity.type
@@ -265,7 +274,11 @@ def _get_tags_from_entities(query: Query, entities: Iterable[QueryEntity], schem
     return iobs, types
 
 
-def get_entities_from_tags(query: Query, tags: Iterable[str], system_entity_recognizer: SystemEntityRecognizer) -> Iterable[QueryEntity]:
+def get_entities_from_tags(
+    query: Query,
+    tags: Iterable[str],
+    system_entity_recognizer: SystemEntityRecognizer,
+) -> Iterable[QueryEntity]:
     """From a set of joint IOB tags, parse the app and system entities.
 
     This performs the reverse operation of get_tags_from_entities.
@@ -295,9 +308,7 @@ def get_entities_from_tags(query: Query, tags: Iterable[str], system_entity_reco
         end = start - 1 + len(" ".join(tokens))
 
         norm_span = Span(start, end)
-        entity = QueryEntity.from_query(
-            query, normalized_span=norm_span, entity_type=entity_type
-        )
+        entity = QueryEntity.from_query(query, normalized_span=norm_span, entity_type=entity_type)
         entities.append(entity)
         logger.debug("Appended %s.", entity)
 
@@ -314,9 +325,7 @@ def get_entities_from_tags(query: Query, tags: Iterable[str], system_entity_reco
         span = query.transform_span(norm_span, TEXT_FORM_NORMALIZED, TEXT_FORM_RAW)
 
         try:
-            entity = system_entity_recognizer.resolve_system_entity(
-                query, entity_type, span
-            )
+            entity = system_entity_recognizer.resolve_system_entity(query, entity_type, span)
             entities.append(entity)
             logger.debug("Appended system entity %s.", entity)
         except SystemEntityResolutionError:
@@ -333,9 +342,7 @@ def get_entities_from_tags(query: Query, tags: Iterable[str], system_entity_reco
         iob, ent_type = tag.split("|")
 
         # Close entity and reset if the tag indicates a new entity
-        if entity_start is not None and (
-            iob in (O_TAG, B_TAG, S_TAG) or ent_type != prev_ent_type
-        ):
+        if entity_start is not None and (iob in (O_TAG, B_TAG, S_TAG) or ent_type != prev_ent_type):
             logger.debug("Entity closed at prev")
             if _is_system_entity(prev_ent_type):
                 _append_system_entity(entity_start, tag_idx, prev_ent_type)
@@ -375,11 +382,7 @@ def get_entities_from_tags(query: Query, tags: Iterable[str], system_entity_reco
                     entity_start = tag_idx
 
         # Append the current token to the current entity, if applicable.
-        if (
-            iob != O_TAG
-            and entity_start is not None
-            and not _is_system_entity(ent_type)
-        ):
+        if iob != O_TAG and entity_start is not None and not _is_system_entity(ent_type):
             entity_tokens.append(normalized_tokens[tag_idx])
 
         # Close the entity if the tag indicates it closed
@@ -488,9 +491,7 @@ def _new_tag(last_entity, curr_tag):
     """Returns true if the current tag is different than the tag of the last entity"""
     if len(last_entity) < 1 or not curr_tag:
         return False
-    elif (
-        last_entity[-1][0] == I_TAG or last_entity[-1][0] == B_TAG
-    ) and curr_tag == B_TAG:
+    elif (last_entity[-1][0] == I_TAG or last_entity[-1][0] == B_TAG) and curr_tag == B_TAG:
         return True
     else:
         return False
@@ -549,9 +550,7 @@ def get_boundary_counts(expected_sequence, predicted_sequence, boundary_counts):
 
         # If we are entering a new coding region (with a new tag), determine the boundary count and
         # reset entity history
-        elif _new_tag(last_pred_entity, predicted_tag) or _new_tag(
-            last_exp_entity, expected_tag
-        ):
+        elif _new_tag(last_pred_entity, predicted_tag) or _new_tag(last_exp_entity, expected_tag):
             if in_coding_region:
                 boundary_counts = _determine_count_type(
                     last_pred_entity, last_exp_entity, boundary_counts

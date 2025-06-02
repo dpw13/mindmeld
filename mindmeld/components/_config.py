@@ -50,9 +50,16 @@ DEFAULT_DOMAIN_CLASSIFIER_CONFIG = {
     "param_selection": {
         "type": "k-fold",
         "k": 10,
-        "grid": {"fit_intercept": [True, False], "C": [10, 100, 1000, 10000, 100000]},
+        "grid": {
+            "fit_intercept": [True, False],
+            "C": [10, 100, 1000, 10000, 100000],
+        },
     },
-    "features": {"bag-of-words": {"lengths": [1]}, "freq": {"bins": 5}, "in-gaz": {}},
+    "features": {
+        "bag-of-words": {"lengths": [1]},
+        "freq": {"bins": 5},
+        "in-gaz": {},
+    },
 }
 
 DEFAULT_INTENT_CLASSIFIER_CONFIG = {
@@ -112,7 +119,9 @@ DEFAULT_ENTITY_RECOGNIZER_CONFIG = {
 
 DEFAULT_ENTITY_RESOLVER_CONFIG = {
     "model_type": "resolver",
-    "model_settings": {"resolver_type": "text_relevance", },
+    "model_settings": {
+        "resolver_type": "text_relevance",
+    },
 }
 
 DEFAULT_ROLE_CLASSIFIER_CONFIG = {
@@ -120,21 +129,15 @@ DEFAULT_ROLE_CLASSIFIER_CONFIG = {
     "model_settings": {"classifier_type": "logreg"},
     "params": {"C": 100, "penalty": "l1", "solver": "liblinear"},
     "features": {
-        "bag-of-words-before": {
-            "ngram_lengths_to_start_positions": {1: [-2, -1], 2: [-2, -1]}
-        },
-        "bag-of-words-after": {
-            "ngram_lengths_to_start_positions": {1: [0, 1], 2: [0, 1]}
-        },
+        "bag-of-words-before": {"ngram_lengths_to_start_positions": {1: [-2, -1], 2: [-2, -1]}},
+        "bag-of-words-after": {"ngram_lengths_to_start_positions": {1: [0, 1], 2: [0, 1]}},
         "other-entities": {},
     },
 }
 
 DEFAULT_QUESTION_ANSWERER_CONFIG = {
     "model_type": "elasticsearch",
-    "model_settings": {
-        "query_type": "keyword"
-    }
+    "model_settings": {"query_type": "keyword"},
 }
 
 ENGLISH_LANGUAGE_CODE = "en"
@@ -212,7 +215,10 @@ PHONETIC_ES_SYNONYM_MAPPING = {
                         "type": "text",
                         "analyzer": "keyword_match_analyzer",
                     },
-                    "char_ngram": {"type": "text", "analyzer": "char_ngram_analyzer", },
+                    "char_ngram": {
+                        "type": "text",
+                        "analyzer": "char_ngram_analyzer",
+                    },
                     "double_metaphone": {
                         "type": "text",
                         "analyzer": "phonetic_analyzer",
@@ -283,7 +289,10 @@ DEFAULT_ES_INDEX_TEMPLATE = {
                                 "type": "text",
                                 "analyzer": "keyword_match_analyzer",
                             },
-                            "processed_text": {"type": "text", "analyzer": "english", },
+                            "processed_text": {
+                                "type": "text",
+                                "analyzer": "english",
+                            },
                             "char_ngram": {
                                 "type": "text",
                                 "analyzer": "char_ngram_analyzer",
@@ -356,7 +365,11 @@ DEFAULT_ES_INDEX_TEMPLATE = {
                     "output_unigrams": "true",
                     "type": "shingle",
                 },
-                "ngram_filter": {"type": "ngram", "min_gram": "3", "max_gram": "3"},
+                "ngram_filter": {
+                    "type": "ngram",
+                    "min_gram": "3",
+                    "max_gram": "3",
+                },
             },
             "analyzer": {
                 "default_analyzer": {
@@ -430,7 +443,10 @@ DEFAULT_ES_QA_MAPPING = {
                             "name": {
                                 "type": "text",
                                 "fields": {
-                                    "raw": {"type": "keyword", "ignore_above": 256},
+                                    "raw": {
+                                        "type": "keyword",
+                                        "ignore_above": 256,
+                                    },
                                     "normalized_keyword": {
                                         "type": "text",
                                         "analyzer": "keyword_match_analyzer",
@@ -473,7 +489,13 @@ DEFAULT_NLP_CONFIG = {
 DEFAULT_AUGMENTATION_CONFIG = {
     "augmentor_class": "EnglishParaphraser",
     "batch_size": 8,
-    "paths": [{"domains": ".*", "intents": ".*", "files": ".*", }],
+    "paths": [
+        {
+            "domains": ".*",
+            "intents": ".*",
+            "files": ".*",
+        }
+    ],
     "path_suffix": "-augment.txt",
 }
 
@@ -481,7 +503,12 @@ DEFAULT_AUTO_ANNOTATOR_CONFIG = {
     "annotator_class": "MultiLingualAnnotator",
     "overwrite": False,
     "annotation_rules": [
-        {"domains": ".*", "intents": ".*", "files": ".*", "entities": ".*", }
+        {
+            "domains": ".*",
+            "intents": ".*",
+            "files": ".*",
+            "entities": ".*",
+        }
     ],
     "unannotate_supported_entities_only": True,
     "unannotation_rules": None,
@@ -530,27 +557,27 @@ DEFAULT_ACTIVE_LEARNING_CONFIG = {
 }
 
 DEFAULT_NORMALIZERS = [
-    'RemoveAposAtEndOfPossesiveForm',
-    'RemoveAdjacentAposAndSpace',
-    'RemoveBeginningSpace',
-    'RemoveTrailingSpace',
-    'ReplaceSpacesWithSpace',
-    'ReplaceUnderscoreWithSpace',
-    'SeparateAposS',
-    'ReplacePunctuationAtWordStartWithSpace',
-    'ReplacePunctuationAtWordEndWithSpace',
-    'ReplaceSpecialCharsBetweenLettersAndDigitsWithSpace',
-    'ReplaceSpecialCharsBetweenDigitsAndLettersWithSpace',
-    'ReplaceSpecialCharsBetweenLettersWithSpace',
-    'Lowercase',
-    'ASCIIFold'
+    "RemoveAposAtEndOfPossesiveForm",
+    "RemoveAdjacentAposAndSpace",
+    "RemoveBeginningSpace",
+    "RemoveTrailingSpace",
+    "ReplaceSpacesWithSpace",
+    "ReplaceUnderscoreWithSpace",
+    "SeparateAposS",
+    "ReplacePunctuationAtWordStartWithSpace",
+    "ReplacePunctuationAtWordEndWithSpace",
+    "ReplaceSpecialCharsBetweenLettersAndDigitsWithSpace",
+    "ReplaceSpecialCharsBetweenDigitsAndLettersWithSpace",
+    "ReplaceSpecialCharsBetweenLettersWithSpace",
+    "Lowercase",
+    "ASCIIFold",
 ]
 
 DEFAULT_EN_TEXT_PREPARATION_CONFIG = {
     "preprocessors": [],
     "normalizers": DEFAULT_NORMALIZERS,
     "tokenizer": "WhiteSpaceTokenizer",
-    "stemmer": "EnglishNLTKStemmer"
+    "stemmer": "EnglishNLTKStemmer",
 }
 
 
@@ -563,7 +590,10 @@ def merge_param_configs(default_dict, user_defined_dict):
     if "params" not in default_dict:
         return new_dict
     if "params" in user_defined_dict:
-        new_dict["params"] = {**default_dict["params"], **user_defined_dict["params"]}
+        new_dict["params"] = {
+            **default_dict["params"],
+            **user_defined_dict["params"],
+        }
     else:
         new_dict["params"] = default_dict["params"]
     return new_dict
@@ -573,9 +603,7 @@ def get_custom_action_config(app_path):
     if not app_path:
         return None
     try:
-        custom_action_config = getattr(
-            _get_config_module(app_path), "CUSTOM_ACTION_CONFIG", None
-        )
+        custom_action_config = getattr(_get_config_module(app_path), "CUSTOM_ACTION_CONFIG", None)
         return custom_action_config
     except (OSError, IOError):
         logger.info("No app configuration file found.")
@@ -586,9 +614,7 @@ def get_max_history_len(app_path):
     if not app_path:
         return None
     try:
-        custom_action_config = getattr(
-            _get_config_module(app_path), "MAX_HISTORY_LEN", None
-        )
+        custom_action_config = getattr(_get_config_module(app_path), "MAX_HISTORY_LEN", None)
         return custom_action_config
     except (OSError, IOError):
         logger.info("No app configuration file found.")
@@ -600,16 +626,16 @@ def get_language_config(app_path):
         return ENGLISH_LANGUAGE_CODE, ENGLISH_US_LOCALE
     try:
         language_config = getattr(
-            _get_config_module(app_path), "LANGUAGE_CONFIG", DEFAULT_LANGUAGE_CONFIG
+            _get_config_module(app_path),
+            "LANGUAGE_CONFIG",
+            DEFAULT_LANGUAGE_CONFIG,
         )
         locale = language_config.get("locale")
         language = language_config.get("language")
         resolved_language = resolve_language(language, locale)
         return resolved_language, locale
     except (OSError, IOError):
-        logger.info(
-            "No app configuration file found. Using default language and locale."
-        )
+        logger.info("No app configuration file found. Using default language and locale.")
         return ENGLISH_LANGUAGE_CODE, ENGLISH_US_LOCALE
 
 
@@ -648,7 +674,8 @@ def get_app_namespace(app_path):
     _app_namespace = os.path.split(app_path)[1]
     if "JUPYTER_USER" in os.environ:
         _app_namespace = "{jupyter_user}_{app_namespace}".format(
-            jupyter_user=os.environ["JUPYTER_USER"], app_namespace=_app_namespace
+            jupyter_user=os.environ["JUPYTER_USER"],
+            app_namespace=_app_namespace,
         )
     return _app_namespace
 
@@ -689,14 +716,12 @@ def get_system_entity_url_config(app_path):
 
     return (
         get_nlp_config(app_path)
-            .get("system_entity_recognizer", {})
-            .get("url", DEFAULT_DUCKLING_URL)
+        .get("system_entity_recognizer", {})
+        .get("url", DEFAULT_DUCKLING_URL)
     )
 
 
-def get_classifier_config(
-    clf_type, app_path=None, domain=None, intent=None, entity=None
-):
+def get_classifier_config(clf_type, app_path=None, domain=None, intent=None, entity=None):
     """Returns the config for the specified classifier, with the
     following  order of precedence.
 
@@ -752,22 +777,31 @@ def get_classifier_config(
         except AttributeError:
             try:
                 func = getattr(module_conf, CONFIG_DEPRECATION_MAPPING[func_name])
-                msg = (
-                    "%s config key is deprecated. Please use the equivalent %s config "
-                    "key" % (CONFIG_DEPRECATION_MAPPING[func_name], func_name)
+                msg = "%s config key is deprecated. Please use the equivalent %s config " "key" % (
+                    CONFIG_DEPRECATION_MAPPING[func_name],
+                    func_name,
                 )
                 warnings.warn(msg, DeprecationWarning)
             except AttributeError:
                 pass
         if func:
             try:
-                raw_args = {"domain": domain, "intent": intent, "entity": entity}
+                raw_args = {
+                    "domain": domain,
+                    "intent": intent,
+                    "entity": entity,
+                }
                 args = {k: raw_args[k] for k in func_args}
-                return merge_param_configs(_get_default_classifier_config(clf_type), copy.deepcopy(func(**args)))
+                return merge_param_configs(
+                    _get_default_classifier_config(clf_type),
+                    copy.deepcopy(func(**args)),
+                )
             except Exception as exc:  # pylint: disable=broad-except
                 # Note: this is intentionally broad -- provider could raise any exception
                 logger.warning(
-                    "%r configuration provider raised exception: %s", clf_type, exc
+                    "%r configuration provider raised exception: %s",
+                    clf_type,
+                    exc,
                 )
 
     attr_name = {
@@ -779,16 +813,19 @@ def get_classifier_config(
         "question_answering": "QUESTION_ANSWERER_CONFIG",
     }[clf_type]
     try:
-        return merge_param_configs(_get_default_classifier_config(clf_type),
-                                   copy.deepcopy(getattr(module_conf, attr_name)))
+        return merge_param_configs(
+            _get_default_classifier_config(clf_type),
+            copy.deepcopy(getattr(module_conf, attr_name)),
+        )
     except AttributeError:
         try:
-            result = merge_param_configs(_get_default_classifier_config(clf_type), copy.deepcopy(
-                getattr(module_conf, CONFIG_DEPRECATION_MAPPING[attr_name]))
+            result = merge_param_configs(
+                _get_default_classifier_config(clf_type),
+                copy.deepcopy(getattr(module_conf, CONFIG_DEPRECATION_MAPPING[attr_name])),
             )
-            msg = (
-                "%s config is deprecated. Please use the equivalent %s config "
-                "key" % (CONFIG_DEPRECATION_MAPPING[attr_name], attr_name)
+            msg = "%s config is deprecated. Please use the equivalent %s config " "key" % (
+                CONFIG_DEPRECATION_MAPPING[attr_name],
+                attr_name,
             )
             warnings.warn(msg, DeprecationWarning)
             return result
@@ -870,10 +907,7 @@ def _get_default_parser_config():
 
 def _expand_parser_config(config):
     # Replace with -- since | has a special meaning for parser
-    return {
-        head.replace("|", "--"): _expand_group_config(group)
-        for head, group in config.items()
-    }
+    return {head.replace("|", "--"): _expand_group_config(group) for head, group in config.items()}
 
 
 def _expand_group_config(group_config):
@@ -972,13 +1006,16 @@ def _expand_group_config(group_config):
             expanded[dep_type.replace("|", "--")] = config
     return expanded
 
+
 def _get_config_module(app_path: str):
     module_path = path.get_config_module_path(app_path)
 
     # Thanks to
     # https://github.com/conan-io/conan/issues/3441#issuecomment-419810150
     # for the migration to importlib
-    spec = importlib.util.spec_from_file_location("config_module_" + os.path.basename(app_path), module_path)
+    spec = importlib.util.spec_from_file_location(
+        "config_module_" + os.path.basename(app_path), module_path
+    )
     config_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config_module)
 
@@ -1044,9 +1081,7 @@ def get_augmentation_config(app_path=None):
         )
         return augmentation_config
     except (OSError, IOError, AttributeError):
-        logger.info(
-            "No app configuration file found. Using the default augmentation config."
-        )
+        logger.info("No app configuration file found. Using the default augmentation config.")
         return DEFAULT_AUGMENTATION_CONFIG
 
 
@@ -1110,9 +1145,7 @@ def get_text_preparation_config(app_path=None):
     if not app_path:
         return DEFAULT_EN_TEXT_PREPARATION_CONFIG
     try:
-        tokenizer_config = getattr(
-            _get_config_module(app_path), "TEXT_PREPARATION_CONFIG"
-        )
+        tokenizer_config = getattr(_get_config_module(app_path), "TEXT_PREPARATION_CONFIG")
         return tokenizer_config
     except (OSError, IOError, AttributeError):
         logger.info("No app configuration file found. Using default text_preparation_config.")

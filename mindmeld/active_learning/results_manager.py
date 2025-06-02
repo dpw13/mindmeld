@@ -52,7 +52,10 @@ class ResultsManager:
         self.experiment_folder_name = None
 
     def set_experiment_folder_name(
-        self, tuning_level, classifier_tuning_strategies, tagger_tuning_strategies
+        self,
+        tuning_level,
+        classifier_tuning_strategies,
+        tagger_tuning_strategies,
     ) -> str:
         """
         Args:
@@ -64,28 +67,23 @@ class ResultsManager:
                 based on the current timestamp.
         """
         classifier_strategies = "_".join(
-            STRATEGY_ABRIDGED[s]
-            for s in classifier_tuning_strategies
-            if s in STRATEGY_ABRIDGED
+            STRATEGY_ABRIDGED[s] for s in classifier_tuning_strategies if s in STRATEGY_ABRIDGED
         )
         tagger_strategies = "_".join(
-            STRATEGY_ABRIDGED[s]
-            for s in tagger_tuning_strategies
-            if s in STRATEGY_ABRIDGED
+            STRATEGY_ABRIDGED[s] for s in tagger_tuning_strategies if s in STRATEGY_ABRIDGED
         )
 
         classifier_strategies = (
             "classifier-none"
             if not classifier_strategies
             or not (
-                TuneLevel.DOMAIN.value in tuning_level
-                or TuneLevel.INTENT.value in tuning_level
+                TuneLevel.DOMAIN.value in tuning_level or TuneLevel.INTENT.value in tuning_level
             )
             else "classifier-" + classifier_strategies
         )
         tagger_strategies = (
             "tagger-none"
-            if not tagger_strategies or not TuneLevel.ENTITY.value in tuning_level
+            if not tagger_strategies or TuneLevel.ENTITY.value not in tuning_level
             else "tagger-" + tagger_strategies
         )
 
@@ -150,9 +148,7 @@ class ResultsManager:
         Returns:
             json_data (Dict): Loaded JSON data.
         """
-        formatted_path = unformatted_path.format(
-            experiment_folder=self.experiment_folder
-        )
+        formatted_path = unformatted_path.format(experiment_folder=self.experiment_folder)
         if not os.path.isfile(formatted_path):
             self.dump_json(formatted_path, data={})
         with open(formatted_path, "r") as infile:
@@ -170,7 +166,12 @@ class ResultsManager:
             json.dump(data, outfile, indent=4)
 
     def update_json(
-        self, unformatted_path: str, strategy: str, epoch: int, iteration: int, data
+        self,
+        unformatted_path: str,
+        strategy: str,
+        epoch: int,
+        iteration: int,
+        data,
     ):
         """Helper method to update json files.
         Args:
@@ -182,9 +183,7 @@ class ResultsManager:
         """
         json_data = self.load_json(unformatted_path)
         json_data[strategy] = json_data.get(strategy, {})
-        json_data[strategy][str(epoch)] = json_data[strategy].get(
-            str(epoch), {str(epoch): {}}
-        )
+        json_data[strategy][str(epoch)] = json_data[strategy].get(str(epoch), {str(epoch): {}})
         json_data[strategy][str(epoch)][str(iteration)] = data
         self.dump_json(unformatted_path, json_data)
 
@@ -220,9 +219,7 @@ class ResultsManager:
             if tuning_type == TuningType.CLASSIFIER
             else AL_TAGGER_SELECTED_QUERIES_PATH
         )
-        self.update_json(
-            AL_SELECTED_QUERIES_PATH, strategy, epoch, iteration, query_dicts
-        )
+        self.update_json(AL_SELECTED_QUERIES_PATH, strategy, epoch, iteration, query_dicts)
 
     def write_log_selected_queries_json(self, strategy: str, queries, tuning_type):
         """Update accuracies.json with iteration metrics"""

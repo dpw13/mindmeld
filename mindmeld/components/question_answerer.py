@@ -40,7 +40,10 @@ from ._config import (
     get_classifier_config,
 )
 from ._util import _is_module_available, _get_module_or_attr as _getattr
-from .entity_resolver import EmbedderCosSimEntityResolver, TfIdfSparseCosSimEntityResolver
+from .entity_resolver import (
+    EmbedderCosSimEntityResolver,
+    TfIdfSparseCosSimEntityResolver,
+)
 from ..core import Bunch
 from ..exceptions import (
     ElasticsearchKnowledgeBaseConnectionError,
@@ -50,12 +53,14 @@ from ..exceptions import (
 from ..models import create_embedder_model
 from ..path import (
     get_question_answerer_index_cache_file_path,
-    NATIVE_QUESTION_ANSWERER_INDICES_CACHE_DEFAULT_FOLDER as DEFAULT_APP_PATH
+    NATIVE_QUESTION_ANSWERER_INDICES_CACHE_DEFAULT_FOLDER as DEFAULT_APP_PATH,
 )
 from ..query_factory import QueryFactory
 from ..resource_loader import Hasher, ResourceLoader
 from ..system_entity_recognizer import NoOpSystemEntityRecognizer
-from ..text_preparation.text_preparation_pipeline import TextPreparationPipelineFactory
+from ..text_preparation.text_preparation_pipeline import (
+    TextPreparationPipelineFactory,
+)
 from ..text_preparation.tokenizers import WhiteSpaceTokenizer
 
 if _is_module_available("elasticsearch"):
@@ -76,7 +81,13 @@ if _is_module_available("elasticsearch"):
 logger = logging.getLogger(__name__)
 
 DEFAULT_QUERY_TYPE = "keyword"
-ALL_QUERY_TYPES = ["keyword", "text", "embedder", "embedder_keyword", "embedder_text"]
+ALL_QUERY_TYPES = [
+    "keyword",
+    "text",
+    "embedder",
+    "embedder_keyword",
+    "embedder_text",
+]
 EMBEDDING_FIELD_STRING = "_embedding"
 
 
@@ -109,7 +120,10 @@ class QuestionAnswererFactory:
         question_answerer_class = cls._get_question_answerer_class(model_type)
 
         return question_answerer_class(
-            app_path=app_path, config=reformatted_config, app_namespace=app_namespace, **kwargs
+            app_path=app_path,
+            config=reformatted_config,
+            app_namespace=app_namespace,
+            **kwargs,
         )
 
     @staticmethod
@@ -153,10 +167,13 @@ class QuestionAnswererFactory:
                 raise ValueError(msg)
             if model_type in QUESTION_ANSWERER_MODEL_MAPPINGS:
                 raise ValueError(
-                    "Could not find `query_type` in `model_settings` of question answerer")
+                    "Could not find `query_type` in `model_settings` of question answerer"
+                )
             else:
-                msg = "Using deprecated config format for Question Answerer. " \
-                      "See https://www.mindmeld.com/docs/userguide/kb.html for more details."
+                msg = (
+                    "Using deprecated config format for Question Answerer. "
+                    "See https://www.mindmeld.com/docs/userguide/kb.html for more details."
+                )
                 warnings.warn(msg, DeprecationWarning)
                 config = copy.deepcopy(config)
                 model_settings = config.get("model_settings", {})
@@ -167,10 +184,11 @@ class QuestionAnswererFactory:
 
     @staticmethod
     def _get_question_answerer_class(model_type):
-
         if model_type not in QUESTION_ANSWERER_MODEL_MAPPINGS:
-            msg = f"Expected 'model_type' in config of Question Answerer among " \
-                  f"{[*QUESTION_ANSWERER_MODEL_MAPPINGS]} but found {model_type}"
+            msg = (
+                f"Expected 'model_type' in config of Question Answerer among "
+                f"{[*QUESTION_ANSWERER_MODEL_MAPPINGS]} but found {model_type}"
+            )
             raise ValueError(msg)
 
         if model_type == "elasticsearch" and not _is_module_available("elasticsearch"):
@@ -198,22 +216,26 @@ class BaseQuestionAnswerer(ABC):
         """
 
         if not app_path and not app_namespace:
-            msg = f"At least one of 'app_path' or 'app_namespace' must be inputted as arguments " \
-                  f"while creating an instance of {self.__class__.__name__} in order to " \
-                  f"distinctly identify the Knowledge Base indices being created."
+            msg = (
+                f"At least one of 'app_path' or 'app_namespace' must be inputted as arguments "
+                f"while creating an instance of {self.__class__.__name__} in order to "
+                f"distinctly identify the Knowledge Base indices being created."
+            )
             logger.error(msg)
             raise ValueError(msg)
 
         self.app_path = os.path.abspath(app_path) if app_path else app_path
         self.app_namespace = app_namespace or get_app_namespace(self.app_path)
 
-        self._qa_config = (
-            config or get_classifier_config("question_answering", app_path=self.app_path)
+        self._qa_config = config or get_classifier_config(
+            "question_answering", app_path=self.app_path
         )
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} query_type:{self.query_type} " \
-               f"app_path:{self.app_path} app_namespace:{self.app_namespace}>"
+        return (
+            f"<{self.__class__.__name__} query_type:{self.query_type} "
+            f"app_path:{self.app_path} app_namespace:{self.app_namespace}>"
+        )
 
     @property
     def model_type(self) -> str:
@@ -236,8 +258,10 @@ class BaseQuestionAnswerer(ABC):
             default_pretrained_name_or_abspath = "sentence-transformers/bert-base-nli-mean-tokens"
             pretrained_name_or_abspath = model_settings.get("pretrained_name_or_abspath")
             if not pretrained_name_or_abspath:
-                msg = f"Using a default value ('{default_pretrained_name_or_abspath}') " \
-                      f"for the parameter 'pretrained_name_or_abspath' as NoneType value inputted."
+                msg = (
+                    f"Using a default value ('{default_pretrained_name_or_abspath}') "
+                    f"for the parameter 'pretrained_name_or_abspath' as NoneType value inputted."
+                )
                 logger.warning(msg)
                 pretrained_name_or_abspath = default_pretrained_name_or_abspath
             model_settings["pretrained_name_or_abspath"] = pretrained_name_or_abspath
@@ -245,8 +269,10 @@ class BaseQuestionAnswerer(ABC):
             default_token_embedding_dimension = 300
             token_embedding_dimension = model_settings.get("token_embedding_dimension")
             if not token_embedding_dimension:
-                msg = f"Using a default value ('{default_token_embedding_dimension}') " \
-                      f"for the parameter 'token_embedding_dimension' as NoneType value inputted."
+                msg = (
+                    f"Using a default value ('{default_token_embedding_dimension}') "
+                    f"for the parameter 'token_embedding_dimension' as NoneType value inputted."
+                )
                 logger.warning(msg)
                 token_embedding_dimension = default_token_embedding_dimension
             model_settings["token_embedding_dimension"] = token_embedding_dimension
@@ -283,17 +309,25 @@ class BaseQuestionAnswerer(ABC):
             connect_timeout (int): The amount of time for a connection to the Elasticsearch host.
         """
 
-        if (
-            ("config" in kwargs and kwargs["config"])
-            or ("app_path" in kwargs and kwargs["app_path"])
+        if ("config" in kwargs and kwargs["config"]) or (
+            "app_path" in kwargs and kwargs["app_path"]
         ):
-            msg = "Passing 'config' or 'app_path' to '.load_kb()' method is no longer " \
-                  "supported. Create a Question Answerer instance with the required " \
-                  "configurations and/or app path before calling '.load_kb()'."
+            msg = (
+                "Passing 'config' or 'app_path' to '.load_kb()' method is no longer "
+                "supported. Create a Question Answerer instance with the required "
+                "configurations and/or app path before calling '.load_kb()'."
+            )
             raise ValueError(msg)
         self._load_kb(index_name, data_file, **kwargs)
 
-    def get(self, index_name=None, size=10, query_type=None, app_namespace=None, **kwargs):
+    def get(
+        self,
+        index_name=None,
+        size=10,
+        query_type=None,
+        app_namespace=None,
+        **kwargs,
+    ):
         """
         Args:
             index_name (str): The name of an index.
@@ -311,8 +345,13 @@ class BaseQuestionAnswerer(ABC):
         """
 
         index_name = self._resolve_deprecated_index_name(index_name, kwargs.pop("index", None))
-        return self._get(index=index_name, size=size, query_type=query_type,
-                         app_namespace=app_namespace, **kwargs)
+        return self._get(
+            index=index_name,
+            size=size,
+            query_type=query_type,
+            app_namespace=app_namespace,
+            **kwargs,
+        )
 
     def build_search(self, index_name=None, ranking_config=None, app_namespace=None, **kwargs):
         """Build a search object for advanced filtered search.
@@ -327,14 +366,20 @@ class BaseQuestionAnswerer(ABC):
         """
 
         index_name = self._resolve_deprecated_index_name(index_name, kwargs.pop("index", None))
-        return self._build_search(index=index_name, ranking_config=ranking_config,
-                                  app_namespace=app_namespace, **kwargs)
+        return self._build_search(
+            index=index_name,
+            ranking_config=ranking_config,
+            app_namespace=app_namespace,
+            **kwargs,
+        )
 
     @staticmethod
     def _resolve_deprecated_index_name(index_name, index):
         if index:
-            msg = "Input the index name to a question answerer method by using the argument name " \
-                  "'index_name' instead of 'index'."
+            msg = (
+                "Input the index name to a question answerer method by using the argument name "
+                "'index_name' instead of 'index'."
+            )
             warnings.warn(msg, DeprecationWarning)
         index_name = index_name or index
         if not index_name:
@@ -388,29 +433,30 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
         # update class' resource loader; use one if already passed-in
         resource_loader = kwargs.get("resource_loader")
         if not resource_loader:
-            text_preparation_pipeline = \
+            text_preparation_pipeline = (
                 TextPreparationPipelineFactory.create_text_preparation_pipeline(
-                    language="en",
-                    tokenizer=WhiteSpaceTokenizer()
+                    language="en", tokenizer=WhiteSpaceTokenizer()
                 )
+            )
             query_factory = QueryFactory.create_query_factory(
                 app_path=None,
                 text_preparation_pipeline=text_preparation_pipeline,
-                system_entity_recognizer=NoOpSystemEntityRecognizer.get_instance()
+                system_entity_recognizer=NoOpSystemEntityRecognizer.get_instance(),
             )
             resource_loader = ResourceLoader.create_resource_loader(
-                app_path=None,
-                query_factory=query_factory
+                app_path=None, query_factory=query_factory
             )
         NativeQuestionAnswerer.RESOURCE_LOADER = resource_loader
 
-    def _load_kb(self,
-                 index_name,
-                 data_file,
-                 app_namespace=None,
-                 clean=False,
-                 embedding_fields=None,
-                 **kwargs):
+    def _load_kb(
+        self,
+        index_name,
+        data_file,
+        app_namespace=None,
+        clean=False,
+        embedding_fields=None,
+        **kwargs,
+    ):
         """Loads documents from disk into the specified index in the knowledge
         base. If an index with the specified name doesn't exist, a new index
         with that name will be created in the knowledge base.
@@ -444,20 +490,24 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 logger.info(msg)
                 NativeQuestionAnswerer.ALL_INDICES.delete_index(scoped_index_name)
             else:
-                msg = f"Index '{index_name}' does not exist for app '{app_namespace}', " \
-                      f"creating a new index."
+                msg = (
+                    f"Index '{index_name}' does not exist for app '{app_namespace}', "
+                    f"creating a new index."
+                )
                 logger.warning(msg)
 
         # determine embedding fields
-        embedding_fields = (
-            embedding_fields or model_settings.get("embedding_fields", {}).get(index_name, [])
+        embedding_fields = embedding_fields or model_settings.get("embedding_fields", {}).get(
+            index_name, []
         )
         if embedding_fields:
             if "embedder" not in query_type:
-                msg = f"Found KB fields to upload embedding (fields: {embedding_fields}) for " \
-                      f"index '{index_name}' but query_type configured for this QA " \
-                      f"({query_type}) has no 'embedder' phrase in it leading to not setting up " \
-                      f"an embedder model. Ignoring provided 'embedding_fields'."
+                msg = (
+                    f"Found KB fields to upload embedding (fields: {embedding_fields}) for "
+                    f"index '{index_name}' but query_type configured for this QA "
+                    f"({query_type}) has no 'embedder' phrase in it leading to not setting up "
+                    f"an embedder model. Ignoring provided 'embedding_fields'."
+                )
                 logger.error(msg)
                 embedding_fields = []
         else:
@@ -498,8 +548,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 logger.warning(msg)
             if not _id:
                 _id = uuid.uuid4()
-                msg = f"Found an entry in {data_file} without a corresponding id. " \
-                      f"Assigning a randomly generated new id ({_id}) for this KB object."
+                msg = (
+                    f"Found an entry in {data_file} without a corresponding id. "
+                    f"Assigning a randomly generated new id ({_id}) for this KB object."
+                )
                 logger.warning(msg)
             _id = str(_id)
             all_ids.update({_id: None})
@@ -531,7 +583,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 resolver_model_settings=model_settings,  # same settings for all fields
                 clean=clean,
                 processor_type="text" if "text" in query_type else "keyword",
-                resource_loader=NativeQuestionAnswerer.RESOURCE_LOADER  # one to all resolvers
+                resource_loader=NativeQuestionAnswerer.RESOURCE_LOADER,  # one to all resolvers
             )
             index_resources.update({kb_field_name: field_resource})
 
@@ -541,7 +593,6 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
         )
 
     def _get(self, index, size=10, query_type=None, app_namespace=None, **kwargs):
-
         doc_id = kwargs.get("id")
 
         query_type = query_type or self.query_type
@@ -551,9 +602,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
         # If an id was passed in, simply retrieve the specified document
         if doc_id:
-            logger.info(
-                "Retrieve object from KB: index= '%s', id= '%s'.", index, doc_id
-            )
+            logger.info("Retrieve object from KB: index= '%s', id= '%s'.", index, doc_id)
             s = self.build_search(index, app_namespace=app_namespace)
 
             if NativeQuestionAnswerer.FieldResource.is_number(doc_id):
@@ -571,7 +620,8 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
         location = kwargs.pop("_sort_location", None)
 
         s = self.build_search(index, app_namespace=app_namespace).query(
-            query_type=query_type, **kwargs)
+            query_type=query_type, **kwargs
+        )
         if field and (sort_type or location):
             s.sort(field, sort_type=sort_type, location=location)
 
@@ -603,7 +653,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
         return NativeQuestionAnswerer.Search(index=scoped_index_name)
 
     class Indices:
-        """ An object that hold all the indices for an app_path
+        """An object that hold all the indices for an app_path
 
         'self._indices' has the following dictionary format, with keys as the index name and
         the value as the metadata of that index
@@ -636,9 +686,11 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
         def __contains__(self, index_name):
             if (index_name not in self._indices) ^ (index_name not in self._indices_all_ids):
-                msg = f"Found an index name ({index_name}) present in only one of " \
-                      f"`self._indices` and `self._indices_all_ids`. Maybe an error during " \
-                      f"updating or loading the index?"
+                msg = (
+                    f"Found an index name ({index_name}) present in only one of "
+                    f"`self._indices` and `self._indices_all_ids`. Maybe an error during "
+                    f"updating or loading the index?"
+                )
                 logger.debug(msg)
                 raise KeyError(msg)
             return index_name in self._indices
@@ -684,8 +736,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             try:
                 return self._indices_all_ids[index_name]
             except KeyError as e:
-                msg = f"Index {index_name} does not exist in scope of {self.app_path}. " \
-                      f"Consider creating or loading it before calling '.get_all_ids()'."
+                msg = (
+                    f"Index {index_name} does not exist in scope of {self.app_path}. "
+                    f"Consider creating or loading it before calling '.get_all_ids()'."
+                )
                 raise KeyError(msg) from e
 
         def get_metadata(self, index_name):
@@ -707,8 +761,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                     for field_name, field_resource in self._indices[index_name].items()
                 }
             except KeyError as e:
-                msg = f"Index {index_name} does not exist in scope of {self.app_path}. " \
-                      f"Consider creating or loading it before calling '.get_all_ids()'."
+                msg = (
+                    f"Index {index_name} does not exist in scope of {self.app_path}. "
+                    f"Consider creating or loading it before calling '.get_all_ids()'."
+                )
                 raise KeyError(msg) from e
 
             return metadata
@@ -753,8 +809,8 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                     index_all_ids = metadata_objects.pop("__all_ids")
                     index_resources = {}
                     for field_name, cache_object in metadata_objects.items():
-                        field_resource = (
-                            NativeQuestionAnswerer.FieldResource.from_metadata(cache_object)
+                        field_resource = NativeQuestionAnswerer.FieldResource.from_metadata(
+                            cache_object
                         )
                         field_resource.load_resolvers(
                             resource_loader=NativeQuestionAnswerer.RESOURCE_LOADER
@@ -763,8 +819,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                     self._indices.update({index_name: index_resources})
                     self._indices_all_ids.update({index_name: index_all_ids})
             else:
-                msg = f"Consider creating indices first before using them. Specified scoped " \
-                      f"index name {index_name} not found in list of known indices."
+                msg = (
+                    f"Consider creating indices first before using them. Specified scoped "
+                    f"index name {index_name} not found in list of known indices."
+                )
                 raise KnowledgeBaseError(msg)
 
             return self._indices[index_name]
@@ -812,17 +870,38 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 pickle.dump(metadata, opfile)
 
     class FieldResourceDataHelper:
-        """ A class that holds methods to aid validating, formatting and scoring different data
+        """A class that holds methods to aid validating, formatting and scoring different data
         types in a FieldResource object.
         """
 
         DATA_TYPES = ["bool", "number", "string", "date", "location", "unknown"]
 
         DATE_FORMATS = (
-            '%Y', '%d %b', '%d %B', '%b %d', '%B %d', '%b %Y', '%B %Y', '%b, %Y', '%B, %Y',
-            '%b %d, %Y', '%B %d, %Y', '%b %d %Y', '%B %d %Y', '%b %d,%Y', '%B %d,%Y',
-            '%d %b, %Y', '%d %B, %Y', '%d %b %Y', '%d %B %Y', '%d %b,%Y', '%d %B,%Y',
-            '%m/%d/%Y', '%m/%d/%y', '%d/%m/%Y', '%d/%m/%y'
+            "%Y",
+            "%d %b",
+            "%d %B",
+            "%b %d",
+            "%B %d",
+            "%b %Y",
+            "%B %Y",
+            "%b, %Y",
+            "%B, %Y",
+            "%b %d, %Y",
+            "%B %d, %Y",
+            "%b %d %Y",
+            "%B %d %Y",
+            "%b %d,%Y",
+            "%B %d,%Y",
+            "%d %b, %Y",
+            "%d %B, %Y",
+            "%d %b %Y",
+            "%d %B %Y",
+            "%d %b,%Y",
+            "%d %B,%Y",
+            "%m/%d/%Y",
+            "%m/%d/%y",
+            "%d/%m/%Y",
+            "%d/%m/%y",
         )
 
         @property
@@ -862,7 +941,6 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
         @staticmethod
         def _get_location(value: Union[dict, str, List]):
-
             # convert it into standard format, e.g. "37.77,122.41"
 
             if isinstance(value, dict) and "lat" in value and "lon" in value:
@@ -871,10 +949,12 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             elif isinstance(value, str) and "," in value and len(value.split(",")) == 2:
                 # eg. "37.77,122.41"
                 return value.strip()
-            elif (isinstance(value, list)
-                  and len(value) == 2
-                  and isinstance(value[0], numbers.Number)
-                  and isinstance(value[1], numbers.Number)):
+            elif (
+                isinstance(value, list)
+                and len(value) == 2
+                and isinstance(value[0], numbers.Number)
+                and isinstance(value[1], numbers.Number)
+            ):
                 # eg. [37.77, 122.41]
                 return ",".join([str(_value) for _value in value])
 
@@ -894,9 +974,11 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
         @staticmethod
         def is_list_of_strings(value):
-            return (isinstance(value, (list, set))
-                    and len(value) > 0
-                    and all([isinstance(val, str) for val in value]))
+            return (
+                isinstance(value, (list, set))
+                and len(value) > 0
+                and all([isinstance(val, str) for val in value])
+            )
 
         @staticmethod
         def is_date(value):
@@ -954,10 +1036,12 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 >>> # 278.54 kms
             """
 
-            some_location = \
-                NativeQuestionAnswerer.FieldResourceDataHelper._get_location(some_location)
-            source_location = \
-                NativeQuestionAnswerer.FieldResourceDataHelper._get_location(source_location)
+            some_location = NativeQuestionAnswerer.FieldResourceDataHelper._get_location(
+                some_location
+            )
+            source_location = NativeQuestionAnswerer.FieldResourceDataHelper._get_location(
+                source_location
+            )
 
             R = 6373.0  # constant based on Haversine formula
             lat1, lon1 = [radians(float(ii.strip())) for ii in some_location.split(",")]
@@ -980,11 +1064,9 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             return list_of_numbers
 
     class FieldResourceHelper(FieldResourceDataHelper):
-
         @staticmethod
-        def _auto_string_processor(string_or_strings, query_type, language='english'):
-
-            if language != 'english':
+        def _auto_string_processor(string_or_strings, query_type, language="english"):
+            if language != "english":
                 # TODO: implement support for non-english texts
                 msg = "Only allowed language for text processing in QA is 'english'. "
                 raise NotImplementedError(msg)
@@ -992,7 +1074,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             try:
                 english_stop_words = set(nltk_stopwords.words(language))
             except LookupError:
-                nltk.download('stopwords')
+                nltk.download("stopwords")
                 english_stop_words = set(nltk_stopwords.words(language))
 
             english_stemmer = PorterStemmer()
@@ -1000,14 +1082,19 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             try:
                 nltk_word_tokenize(" ")
             except LookupError:
-                nltk.download('punkt')
+                nltk.download("punkt")
 
             def lowercase(string):
                 return string.lower()
 
             def strip_accents(string):
-                return ''.join((c for c in unicodedata.normalize('NFD', string) if
-                                unicodedata.category(c) != 'Mn'))
+                return "".join(
+                    (
+                        c
+                        for c in unicodedata.normalize("NFD", string)
+                        if unicodedata.category(c) != "Mn"
+                    )
+                )
 
             def keyword_processor(string):
                 # TODO: can add char_filters like Elasticsearch; see 'keyword_match_analyzer' in
@@ -1018,7 +1105,8 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 string = strip_accents(lowercase(str(string)))
                 word_tokens = nltk_word_tokenize(string)
                 filtered_string = " ".join(
-                    [english_stemmer.stem(w) for w in word_tokens if w not in english_stop_words])
+                    [english_stemmer.stem(w) for w in word_tokens if w not in english_stop_words]
+                )
                 return filtered_string
 
             if "keyword" in query_type:
@@ -1036,7 +1124,6 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 raise ValueError("Input to auto processor must be string or list of strings")
 
         def _resolve_data_type(self, known_data_type, value):
-
             if known_data_type is not None:
                 return
 
@@ -1061,14 +1148,20 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             return observed_data_type
 
         def _validate_and_reformat_value(
-            self, known_data_type, value, _id=None, field_name=None, index_name=None
+            self,
+            known_data_type,
+            value,
+            _id=None,
+            field_name=None,
+            index_name=None,
         ):
-
             def _raise_error():
-                errmsg = f"Formatting error for the field {field_name}" \
-                         f"{' in doc id' if _id else ''} {str(_id) if _id else ''} " \
-                         f"in index {index_name}. Found an unexpected type {type(value)} " \
-                         f"but expected the field value to have type {known_data_type}"
+                errmsg = (
+                    f"Formatting error for the field {field_name}"
+                    f"{' in doc id' if _id else ''} {str(_id) if _id else ''} "
+                    f"in index {index_name}. Found an unexpected type {type(value)} "
+                    f"but expected the field value to have type {known_data_type}"
+                )
                 logger.error(errmsg)
                 raise TypeError(errmsg)
 
@@ -1113,8 +1206,9 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                     {
                         "id": _id,
                         "cname": self.get_resolvers_cname(value),
-                        "whitelist": _get_resolvers_whitelist(value)
-                    } for _id, value in id2value.items()
+                        "whitelist": _get_resolvers_whitelist(value),
+                    }
+                    for _id, value in id2value.items()
                 ]
             }
             return entity_map
@@ -1144,7 +1238,6 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
         """
 
         def __init__(self, index_name, field_name):
-
             # details to establish a scoped field name
             self.index_name = index_name
             self.field_name = field_name
@@ -1164,11 +1257,13 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             self._embedding_resolver = None  # an embedding based entity resolver
 
         def __repr__(self):
-            return f"{self.__class__.__name__} " \
-                   f"field_name: {self.field_name} " \
-                   f"data_type: {self.data_type} " \
-                   f"has_text_resolver: {self.has_text_resolver} " \
-                   f"has_embedding_resolver: {self.has_embedding_resolver}"
+            return (
+                f"{self.__class__.__name__} "
+                f"field_name: {self.field_name} "
+                f"data_type: {self.data_type} "
+                f"has_text_resolver: {self.has_text_resolver} "
+                f"has_embedding_resolver: {self.has_embedding_resolver}"
+            )
 
         def update_resource(
             self,
@@ -1179,7 +1274,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             clean=False,
             app_path=DEFAULT_APP_PATH,
             processor_type="keyword",
-            resource_loader=None
+            resource_loader=None,
         ):
             """
             Updates a field resource by fitting with latest data (if id2value is passed) or by
@@ -1216,7 +1311,11 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 # validation and re-formatting to update database, no change for unknown data type
                 try:
                     value = self._validate_and_reformat_value(
-                        self.data_type, value, _id, self.field_name, self.index_name
+                        self.data_type,
+                        value,
+                        _id,
+                        self.field_name,
+                        self.index_name,
                     )
                 except TypeError:
                     # implies that this field had different observed data type across different docs
@@ -1234,8 +1333,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             if self.data_type in ["bool", "number", "location", "unknown"]:
                 # discard input arguments as resolvers are not applicable to these data types
                 if has_text_resolver or has_embedding_resolver:
-                    msg = f"Unable to create any resolver for the field {self.field_name} due to " \
-                          f"its marked data type '{self.data_type}'. "
+                    msg = (
+                        f"Unable to create any resolver for the field {self.field_name} due to "
+                        f"its marked data type '{self.data_type}'. "
+                    )
                     logger.info(msg)
                 self.has_text_resolver = False
                 self.has_embedding_resolver = False
@@ -1244,10 +1345,12 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 self.has_text_resolver = has_text_resolver
                 self.has_embedding_resolver = has_embedding_resolver
                 if not self.has_text_resolver and not self.has_embedding_resolver:
-                    msg = f"At least one of text or embedder resolver can be applied " \
-                          f"for string type data field ({self.field_name}) but continuing " \
-                          f"without fitting any resolvers due to your input 'query_type'" \
-                          f"configuration. This might limit your search space during inference!"
+                    msg = (
+                        f"At least one of text or embedder resolver can be applied "
+                        f"for string type data field ({self.field_name}) but continuing "
+                        f"without fitting any resolvers due to your input 'query_type'"
+                        f"configuration. This might limit your search space during inference!"
+                    )
                     logger.warning(msg)
                     return
                 new_hash = Hasher(algorithm="sha256").hash(
@@ -1255,44 +1358,52 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 )
 
             # tfidf based text resolver
-            if (
-                self.has_text_resolver and
-                ((new_hash != self.hash) or (self.processor_type != processor_type))
+            if self.has_text_resolver and (
+                (new_hash != self.hash) or (self.processor_type != processor_type)
             ):
-                msg = f"Creating a text resolver for field '{self.field_name}' in " \
-                      f"index '{self.index_name}'."
+                msg = (
+                    f"Creating a text resolver for field '{self.field_name}' in "
+                    f"index '{self.index_name}'."
+                )
                 logger.info(msg)
                 # update processor type
-                if processor_type not in ['text', 'keyword']:
-                    msg = f"Expected 'processor_type' to be among ['text', " \
-                          f"'keyword'] but found to be of value '{processor_type}'"
+                if processor_type not in ["text", "keyword"]:
+                    msg = (
+                        f"Expected 'processor_type' to be among ['text', "
+                        f"'keyword'] but found to be of value '{processor_type}'"
+                    )
                     raise ValueError(msg)
                 self.processor_type = processor_type
                 # obtain a cache path
                 resolver_cache_path = get_question_answerer_index_cache_file_path(
-                    app_path, get_scoped_index_name(
+                    app_path,
+                    get_scoped_index_name(
                         get_scoped_index_name(self.index_name, self.field_name),
-                        "text_resolver"
-                    ))
+                        "text_resolver",
+                    ),
+                )
                 # create a new resolver and fit
                 resolver_model_settings = resolver_model_settings or {}
                 self._text_resolver = TfIdfSparseCosSimEntityResolver(
                     app_path=app_path,
                     entity_type=get_scoped_index_name(self.index_name, self.field_name),
-                    config={"model_settings": {
-                        **resolver_model_settings,
-                        "augment_max_synonyms_embeddings": False}
+                    config={
+                        "model_settings": {
+                            **resolver_model_settings,
+                            "augment_max_synonyms_embeddings": False,
+                        }
                     },
                     resource_loader=resource_loader,
                 )
                 entity_map = self._get_resolvers_entity_map(
-                    dict(zip(
-                        self.id2value.keys(),
-                        self._auto_string_processor(
-                            [*self.id2value.values()],
-                            self.processor_type
+                    dict(
+                        zip(
+                            self.id2value.keys(),
+                            self._auto_string_processor(
+                                [*self.id2value.values()], self.processor_type
+                            ),
                         )
-                    ))
+                    )
                 )
                 self._text_resolver.fit(entity_map=entity_map, clean=clean)
                 # dump
@@ -1305,22 +1416,26 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
             # embedder resolver
             if self.has_embedding_resolver and new_hash != self.hash:
-                msg = f"Creating an embedder resolver for field '{self.field_name}' in " \
-                      f"index '{self.index_name}'."
+                msg = (
+                    f"Creating an embedder resolver for field '{self.field_name}' in "
+                    f"index '{self.index_name}'."
+                )
                 logger.info(msg)
                 # obtain a cache path
                 resolver_cache_path = get_question_answerer_index_cache_file_path(
-                    app_path, get_scoped_index_name(
+                    app_path,
+                    get_scoped_index_name(
                         get_scoped_index_name(self.index_name, self.field_name),
-                        "embedder_resolver"
-                    ))
+                        "embedder_resolver",
+                    ),
+                )
                 # create a new resolver and fit
                 resolver_model_settings = resolver_model_settings or {}
                 self._embedding_resolver = EmbedderCosSimEntityResolver(
                     app_path=app_path,
                     entity_type=get_scoped_index_name(self.index_name, self.field_name),
                     config={"model_settings": {**resolver_model_settings}},
-                    resource_loader=resource_loader
+                    resource_loader=resource_loader,
                 )
                 entity_map = self._get_resolvers_entity_map(
                     self.id2value
@@ -1336,11 +1451,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
             self.hash = new_hash
 
-        def load_resolvers(
-            self,
-            app_path=DEFAULT_APP_PATH,
-            resource_loader=None
-        ):
+        def load_resolvers(self, app_path=DEFAULT_APP_PATH, resource_loader=None):
             """
             Loads a field resource by fitting with latest data (if id2value is passed) or by
             loading already fit resolvers if no data changes take place.
@@ -1354,50 +1465,64 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 logger.error(msg)
                 raise ValueError(msg)
 
-            err_msg = "Error in loading FieldResource: " \
-                      "'{name}' cannot be '{value}' when loading a " \
-                      "FieldResource from metadata object. Your metadata object might have " \
-                      "been corrupted.Consider loading kb with 'clean=True'."
+            err_msg = (
+                "Error in loading FieldResource: "
+                "'{name}' cannot be '{value}' when loading a "
+                "FieldResource from metadata object. Your metadata object might have "
+                "been corrupted.Consider loading kb with 'clean=True'."
+            )
             if self.data_type is None:
                 _err_fn(err_msg.format(name="data_type", value=self.data_type))
             if self.has_text_resolver is None:
                 _err_fn(err_msg.format(name="has_text_resolver", value=self.has_text_resolver))
             if self.has_embedding_resolver is None:
-                _err_fn(err_msg.format(
-                    name="has_embedding_resolver", value=self.has_embedding_resolver))
+                _err_fn(
+                    err_msg.format(
+                        name="has_embedding_resolver",
+                        value=self.has_embedding_resolver,
+                    )
+                )
 
             if self.data_type in ["bool", "number", "location", "unknown"]:
                 # discard input arguments as resolvers are not applicable to these data types
                 if self.has_text_resolver or self.has_embedding_resolver:
-                    msg = f"Unable to create any resolver for the field {self.field_name} due to " \
-                          f"its marked data type '{self.data_type}'. "
+                    msg = (
+                        f"Unable to create any resolver for the field {self.field_name} due to "
+                        f"its marked data type '{self.data_type}'. "
+                    )
                     logger.info(msg)
                 self.has_text_resolver = False
                 self.has_embedding_resolver = False
                 return
             else:  # ["string", "date"]
                 if not self.has_text_resolver and not self.has_embedding_resolver:
-                    msg = f"At least one of text or embedder resolver can be applied " \
-                          f"for string type data field ({self.field_name}) but continuing " \
-                          f"without fitting any resolvers due to your input 'query_type'" \
-                          f"configuration. This might limit your search space during inference!"
+                    msg = (
+                        f"At least one of text or embedder resolver can be applied "
+                        f"for string type data field ({self.field_name}) but continuing "
+                        f"without fitting any resolvers due to your input 'query_type'"
+                        f"configuration. This might limit your search space during inference!"
+                    )
                     logger.warning(msg)
                     return
 
             # tfidf based text resolver
             if self.has_text_resolver:
-                msg = f"Loading a text resolver for field '{self.field_name}' in " \
-                      f"index '{self.index_name}'."
+                msg = (
+                    f"Loading a text resolver for field '{self.field_name}' in "
+                    f"index '{self.index_name}'."
+                )
                 logger.info(msg)
                 if self.processor_type is None:
                     _err_fn(err_msg.format(name="processor_type", value=self.processor_type))
                 try:
                     # obtain a cache path
                     resolver_cache_path = get_question_answerer_index_cache_file_path(
-                        app_path, get_scoped_index_name(
+                        app_path,
+                        get_scoped_index_name(
                             get_scoped_index_name(self.index_name, self.field_name),
-                            "text_resolver"
-                        ))
+                            "text_resolver",
+                        ),
+                    )
                     # create a new instance of resolver and load it
                     self._text_resolver = TfIdfSparseCosSimEntityResolver(
                         app_path=app_path,
@@ -1405,33 +1530,41 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                         resource_loader=resource_loader,
                     )
                     entity_map = self._get_resolvers_entity_map(
-                        dict(zip(
-                            self.id2value.keys(),
-                            self._auto_string_processor(
-                                [*self.id2value.values()],
-                                self.processor_type
+                        dict(
+                            zip(
+                                self.id2value.keys(),
+                                self._auto_string_processor(
+                                    [*self.id2value.values()],
+                                    self.processor_type,
+                                ),
                             )
-                        ))
+                        )
                     )
                     self._text_resolver.load(path=resolver_cache_path, entity_map=entity_map)
                 except Exception as e:
-                    msg = "Couldn't load a text resolver from cache path. Consider " \
-                          "calling the 'load_kb()' method with argument 'clean=True'."
+                    msg = (
+                        "Couldn't load a text resolver from cache path. Consider "
+                        "calling the 'load_kb()' method with argument 'clean=True'."
+                    )
                     logger.error(msg)
                     raise KnowledgeBaseError(msg) from e
 
             # embedder resolver
             if self.has_embedding_resolver:
-                msg = f"Loading an embedder resolver for field '{self.field_name}' in " \
-                      f"index '{self.index_name}'."
+                msg = (
+                    f"Loading an embedder resolver for field '{self.field_name}' in "
+                    f"index '{self.index_name}'."
+                )
                 logger.info(msg)
                 try:
                     # obtain a cache path
                     resolver_cache_path = get_question_answerer_index_cache_file_path(
-                        app_path, get_scoped_index_name(
+                        app_path,
+                        get_scoped_index_name(
                             get_scoped_index_name(self.index_name, self.field_name),
-                            "embedder_resolver"
-                        ))
+                            "embedder_resolver",
+                        ),
+                    )
                     # create a new instance of resolver and load it
                     self._embedding_resolver = EmbedderCosSimEntityResolver(
                         app_path=app_path,
@@ -1441,12 +1574,12 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                     entity_map = self._get_resolvers_entity_map(
                         self.id2value
                     )  # use same data as text resolver but without any processing!
-                    self._embedding_resolver.load(
-                        path=resolver_cache_path, entity_map=entity_map
-                    )
+                    self._embedding_resolver.load(path=resolver_cache_path, entity_map=entity_map)
                 except Exception as e:
-                    msg = "Couldn't load embedder resolver from cache path. Consider " \
-                          "calling the 'load_kb()' method with argument 'clean=True'."
+                    msg = (
+                        "Couldn't load embedder resolver from cache path. Consider "
+                        "calling the 'load_kb()' method with argument 'clean=True'."
+                    )
                     logger.error(e)
                     raise KnowledgeBaseError(msg) from e
 
@@ -1467,8 +1600,13 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
             value = self._validate_and_reformat_value(self.data_type, value)
 
-            def update_scores(resolver, value_string, this_field_scores, n_scores, allowed_cnames):
-
+            def update_scores(
+                resolver,
+                value_string,
+                this_field_scores,
+                n_scores,
+                allowed_cnames,
+            ):
                 # obtain synonyms' scores without sorting! (saves compute time)
                 # also, do matching against selected cnames only
                 predictions = resolver.predict(
@@ -1510,40 +1648,56 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 # get processor type, process the value and then obtain similarities
                 processor_type = "text" if "text" in query_type else "keyword"
                 if processor_type != self.processor_type:
-                    msg = f"Using different text processing during loading KB " \
-                          f"({self.processor_type}) vs during inference ({processor_type}) " \
-                          f"for the field {self.field_name} in index {self.index_name}"
+                    msg = (
+                        f"Using different text processing during loading KB "
+                        f"({self.processor_type}) vs during inference ({processor_type}) "
+                        f"for the field {self.field_name} in index {self.index_name}"
+                    )
                     logger.warning(msg)
                 new_value = self._auto_string_processor(value, processor_type)
                 if allowed_ids:
                     filtered_cnames = [
                         self.get_resolvers_cname(self._auto_string_processor(val, processor_type))
-                        for _id, val in self.id2value.items() if _id in allowed_ids
+                        for _id, val in self.id2value.items()
+                        if _id in allowed_ids
                     ]
                 else:
                     filtered_cnames = None
                 this_field_scores, n_scores = update_scores(
-                    self._text_resolver, new_value, this_field_scores, n_scores, filtered_cnames
+                    self._text_resolver,
+                    new_value,
+                    this_field_scores,
+                    n_scores,
+                    filtered_cnames,
                 )
             elif "text" in query_type or "keyword" in query_type:
-                msg = f"No text based resolver configured for field {self.field_name} " \
-                      f"in index {self.index_name}."
+                msg = (
+                    f"No text based resolver configured for field {self.field_name} "
+                    f"in index {self.index_name}."
+                )
                 logger.warning(msg)
 
             if "embedder" in query_type and self._embedding_resolver:
                 if allowed_ids:
                     filtered_cnames = [
                         self.get_resolvers_cname(val)
-                        for _id, val in self.id2value.items() if _id in allowed_ids
+                        for _id, val in self.id2value.items()
+                        if _id in allowed_ids
                     ]
                 else:
                     filtered_cnames = None
                 this_field_scores, n_scores = update_scores(
-                    self._embedding_resolver, value, this_field_scores, n_scores, filtered_cnames
+                    self._embedding_resolver,
+                    value,
+                    this_field_scores,
+                    n_scores,
+                    filtered_cnames,
                 )
             elif "embedder" in query_type:
-                msg = f"No embedder based resolver configured for field {self.field_name} " \
-                      f"in index {self.index_name}."
+                msg = (
+                    f"No embedder based resolver configured for field {self.field_name} "
+                    f"in index {self.index_name}."
+                )
                 logger.warning(msg)
 
             # Case where-in no resolver exists (eg. "unknown" data type)
@@ -1552,8 +1706,17 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
             return this_field_scores
 
-        def do_filter(self, allowed_ids, filter_text=None, gt=None, gte=None, lt=None, lte=None,
-                      et=None, boolean=None):
+        def do_filter(
+            self,
+            allowed_ids,
+            filter_text=None,
+            gt=None,
+            gte=None,
+            lt=None,
+            lte=None,
+            et=None,
+            boolean=None,
+        ):
             """
             Filters a list of docs to a subset based on some criteria such as a boolean value
             or {>,<,=} operations or a text snippet.
@@ -1593,7 +1756,6 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                     return value == boolean
 
             elif self.data_type in ["string"]:
-
                 # different from Elasticsearch filtering on strings, this method only allows
                 #   exact presence of that input text and not a fuzzy match!
 
@@ -1607,13 +1769,15 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                         return True
                     return False
 
-            allowed_ids = {_id: None for _id in allowed_ids if
-                           _id in self.id2value and is_valid(self.id2value[_id])}
+            allowed_ids = {
+                _id: None
+                for _id in allowed_ids
+                if _id in self.id2value and is_valid(self.id2value[_id])
+            }
 
             return allowed_ids
 
         def do_sort(self, curated_docs, sort_type, location=None):
-
             if not curated_docs:
                 return curated_docs
 
@@ -1624,8 +1788,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 _id = doc["_id"]
                 value = self.id2value.get(_id)
                 if value is None:
-                    msg = f"Discarding doc with id: {doc['id']} while sorting as no " \
-                          f"{self.field_name} field available for it."
+                    msg = (
+                        f"Discarding doc with id: {doc['id']} while sorting as no "
+                        f"{self.field_name} field available for it."
+                    )
                     logger.info(msg)
                     continue
                 validated_curated_docs.append(doc)
@@ -1634,21 +1800,22 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
             if self.data_type == "location":
                 sort_type = "asc"
-                field_values = [
-                    self.location_scorer(value, location) for value in field_values
-                ]
+                field_values = [self.location_scorer(value, location) for value in field_values]
             elif self.data_type == "number":
                 field_values = [self.number_scorer(value) for value in field_values]
             elif self.data_type == "date":
                 field_values = [self.date_scorer(value) for value in field_values]
 
-            _, results = zip(*sorted(enumerate(curated_docs),
-                                     key=lambda x: field_values[x[0]],
-                                     reverse=sort_type != "asc"))
+            _, results = zip(
+                *sorted(
+                    enumerate(curated_docs),
+                    key=lambda x: field_values[x[0]],
+                    reverse=sort_type != "asc",
+                )
+            )
             return results
 
         def _do_search_validation(self, query_type):
-
             if self.data_type not in ["string", "date"]:
                 msg = f"Searching is not allowed for data type '{self.data_type}'. "
                 logger.error(msg)
@@ -1667,13 +1834,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             # code inspired and adapted from Elasticsearch QA class (see Sort/Filter/QueryClause)
 
             if self.data_type in ["number", "date"]:
-                if (
-                    not gt
-                    and not gte
-                    and not lt
-                    and not lte
-                    and not et
-                ):
+                if not gt and not gte and not lt and not lte and not et:
                     raise ValueError("No range parameter is specified")
                 elif gte and gt:
                     raise ValueError(
@@ -1690,14 +1851,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                     )
             elif self.data_type in ["bool"]:
                 if not isinstance(boolean, bool):
-                    raise ValueError(
-                        "Invalid boolean parameter."
-                    )
+                    raise ValueError("Invalid boolean parameter.")
             elif self.data_type in ["string"]:
                 if not self.is_string(filter_text):
-                    raise ValueError(
-                        "Invalid textual input parameter."
-                    )
+                    raise ValueError("Invalid textual input parameter.")
             else:
                 raise ValueError(
                     "Custom filter can only be defined for boolean, number, string or date field."
@@ -1712,24 +1869,16 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             SORT_TYPES = {SORT_ORDER_ASC, SORT_ORDER_DESC, SORT_DISTANCE}
 
             if sort_type not in SORT_TYPES:
-                raise ValueError(
-                    "Invalid value for sort type '{}'".format(sort_type)
-                )
+                raise ValueError("Invalid value for sort type '{}'".format(sort_type))
 
             if self.data_type == "location" and sort_type != SORT_DISTANCE:
-                raise ValueError(
-                    "Invalid value for sort type '{}'".format(sort_type)
-                )
+                raise ValueError("Invalid value for sort type '{}'".format(sort_type))
 
             if self.data_type == "location" and not location:
-                raise ValueError(
-                    "No origin location specified for sorting by distance."
-                )
+                raise ValueError("No origin location specified for sorting by distance.")
 
             if sort_type == SORT_DISTANCE and self.data_type != "location":
-                raise ValueError(
-                    "Sort by distance is only supported using 'location' field."
-                )
+                raise ValueError("Sort by distance is only supported using 'location' field.")
 
             if self.data_type not in ["number", "date", "location"]:
                 raise ValueError(
@@ -1759,9 +1908,11 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
             if _scores:
                 if len(_scores) != len(_ids):
-                    msg = f"Number of ids ({len(_ids)}) supplied did not match " \
-                          f"number of  scores ({len(_scores)}). Discarding inputted scores " \
-                          f"while curating docs for QA results. "
+                    msg = (
+                        f"Number of ids ({len(_ids)}) supplied did not match "
+                        f"number of  scores ({len(_scores)}). Discarding inputted scores "
+                        f"while curating docs for QA results. "
+                    )
                     logger.warning(msg)
                 else:
                     docs = {_id: {"_id": _id, "_score": _scores[i]} for i, _id in enumerate(_ids)}
@@ -1791,8 +1942,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             Returns:
                 FieldResource
             """
-            field_resource = cls(index_name=cache_object.index_name,
-                                 field_name=cache_object.field_name)
+            field_resource = cls(
+                index_name=cache_object.index_name,
+                field_name=cache_object.field_name,
+            )
             field_resource.data_type = cache_object.data_type
             field_resource.id2value = cache_object.id2value
             field_resource.hash = cache_object.hash
@@ -1820,12 +1973,12 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 hash=self.hash,
                 processor_type=self.processor_type,
                 has_text_resolver=self.has_text_resolver,
-                has_embedding_resolver=self.has_embedding_resolver
+                has_embedding_resolver=self.has_embedding_resolver,
             )
             return cache_object
 
     class Search:
-        """ Search class enabling functionality to query, filter and sort.
+        """Search class enabling functionality to query, filter and sort.
         Utilizes various methods from Indices and FiledResource to compute results.
 
         Currently, the following are supported data types for each clause type:
@@ -1842,26 +1995,25 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
         """
 
         def __init__(self, index):
-            """Initialize a Search object.
-            """
+            """Initialize a Search object."""
             self.index_name = index
             self._search_queries = {}
             self._filter_queries = {}
             self._sort_queries = {}
 
         def query(self, query_type=DEFAULT_QUERY_TYPE, **kwargs):
-
             for field, value in kwargs.items():
                 if field in self._search_queries:
-                    msg = f"Found a duplicate search clause against '{field}' field name. " \
-                          "Utilizing only latest input."
+                    msg = (
+                        f"Found a duplicate search clause against '{field}' field name. "
+                        "Utilizing only latest input."
+                    )
                     logger.warning(msg)
                 self._search_queries.update({field: {"query_type": query_type, "value": value}})
 
             return self
 
         def filter(self, query_type=DEFAULT_QUERY_TYPE, **kwargs):
-
             # Note: 'query_type' only kept to maintain similar arguments as ES based QA
             if query_type:
                 query_type = None
@@ -1877,49 +2029,60 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             # filter that operates on numeric values or date values or boolean
             if field:
                 if field in self._filter_queries:
-                    msg = f"Found a duplicate filter clause against '{field}' field name. " \
-                          "Utilizing only latest input."
+                    msg = (
+                        f"Found a duplicate filter clause against '{field}' field name. "
+                        "Utilizing only latest input."
+                    )
                     logger.warning(msg)
                 self._filter_queries.update(
-                    {field: {"gt": gt, "gte": gte, "lt": lt, "lte": lte, "et": et,
-                             "boolean": boolean}}
+                    {
+                        field: {
+                            "gt": gt,
+                            "gte": gte,
+                            "lt": lt,
+                            "lte": lte,
+                            "et": et,
+                            "boolean": boolean,
+                        }
+                    }
                 )
 
             # filter that operates on strings; extract field name and query strings then
             else:
                 for key, filter_text in kwargs.items():
                     if key in self._filter_queries:
-                        msg = f"Found a duplicate filter clause against '{key}' field name. " \
-                              "Utilizing only latest input."
+                        msg = (
+                            f"Found a duplicate filter clause against '{key}' field name. "
+                            "Utilizing only latest input."
+                        )
                         logger.warning(msg)
                     self._filter_queries.update({key: {"filter_text": filter_text}})
 
             return self
 
         def sort(self, field, sort_type=None, location=None):
-
             if field in self._sort_queries:
-                msg = f"Found a duplicate sort clause against '{field}' field name. " \
-                      "Utilizing only latest input."
+                msg = (
+                    f"Found a duplicate sort clause against '{field}' field name. "
+                    "Utilizing only latest input."
+                )
                 logger.warning(msg)
-            self._sort_queries.update(
-                {field: {"sort_type": sort_type, "location": location}})
+            self._sort_queries.update({field: {"sort_type": sort_type, "location": location}})
 
             return self
 
         def execute(self, size=10):
-
             try:
                 # fetch all indexes
                 index_resources = NativeQuestionAnswerer.ALL_INDICES.get_index(self.index_name)
                 # obtain all doc ids in the order they were present in the KB
-                index_all_ids = (
-                    NativeQuestionAnswerer.ALL_INDICES.get_all_ids(self.index_name)
-                )
+                index_all_ids = NativeQuestionAnswerer.ALL_INDICES.get_all_ids(self.index_name)
             except KeyError:
-                msg = f"The index '{self.index_name}' looks unavailable. " \
-                      f"Consider running '.load_kb(...)' to create indices " \
-                      f"before creating search/filter/sort queries. "
+                msg = (
+                    f"The index '{self.index_name}' looks unavailable. "
+                    f"Consider running '.load_kb(...)' to create indices "
+                    f"before creating search/filter/sort queries. "
+                )
                 logger.error(msg)
                 return []
 
@@ -1954,8 +2117,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 if not field_resource:
                     requires_field_resource(field_name, self.index_name)
                 this_field_scores = field_resource.do_search(query_type, value, allowed_ids)
-                scores = {_id: (scores.get(_id, 0.0) + _score) / (n_scores + 1)
-                          for _id, _score in this_field_scores.items()}
+                scores = {
+                    _id: (scores.get(_id, 0.0) + _score) / (n_scores + 1)
+                    for _id, _score in this_field_scores.items()
+                }
                 n_scores += 1
             # pass in all indices if no similarities computed
             if scores:
@@ -1963,9 +2128,8 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             else:
                 _ids, _scores = allowed_ids or index_all_ids, None
             has_similarity_scores = _scores is not None
-            curated_docs = (
-                NativeQuestionAnswerer.FieldResource.curate_docs_to_return(
-                    index_resources, _ids=_ids, _scores=_scores)
+            curated_docs = NativeQuestionAnswerer.FieldResource.curate_docs_to_return(
+                index_resources, _ids=_ids, _scores=_scores
             )
 
             # if sim scores are available, get the top_n and then sort only the top_n objects
@@ -1986,8 +2150,10 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
 
             curated_docs = curated_docs[:size]
             if len(curated_docs) < size:
-                msg = f"Retrieved only {len(curated_docs)} matches instead of asked number " \
-                      f"{size} for index '{self.index_name}'."
+                msg = (
+                    f"Retrieved only {len(curated_docs)} matches instead of asked number "
+                    f"{size} for index '{self.index_name}'."
+                )
                 logger.info(msg)
 
             # remove '_id' key field, as it meant for internal purposes only!
@@ -2031,7 +2197,8 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
         self._embedder_model = None
         if "embedder" in self.query_type:
             self._embedder_model = create_embedder_model(
-                app_path=self.app_path or DEFAULT_APP_PATH, config=self.model_settings
+                app_path=self.app_path or DEFAULT_APP_PATH,
+                config=self.model_settings,
             )  # An app path is necessary for creating a cache path for dumping embeddings cache
 
     @property
@@ -2062,9 +2229,9 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                     all_field_info = res[index]["mappings"][DOC_TYPE]["properties"]
                 for field_name in all_field_info:
                     field_type = all_field_info[field_name].get("type")
-                    self._es_field_info[index][field_name] = (
-                        ElasticsearchQuestionAnswerer.FieldInfo(field_name, field_type)
-                    )
+                    self._es_field_info[index][
+                        field_name
+                    ] = ElasticsearchQuestionAnswerer.FieldInfo(field_name, field_type)
             except _getattr("elasticsearch", "ConnectionError") as e:
                 logger.error(
                     "Unable to connect to Elasticsearch: %s details: %s",
@@ -2086,16 +2253,18 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             except _getattr("elasticsearch", "ElasticsearchException") as e:
                 raise KnowledgeBaseError from e
 
-    def _load_kb(self,
-                 index_name,
-                 data_file,
-                 app_namespace=None,
-                 clean=False,
-                 embedding_fields=None,
-                 es_host=None,
-                 es_client=None,
-                 connect_timeout=2,
-                 **kwargs):
+    def _load_kb(
+        self,
+        index_name,
+        data_file,
+        app_namespace=None,
+        clean=False,
+        embedding_fields=None,
+        es_host=None,
+        es_client=None,
+        connect_timeout=2,
+        **kwargs,
+    ):
         """Loads documents from disk into the specified index in the knowledge
         base. If an index with the specified name doesn't exist, a new index
         with that name will be created in the knowledge base.
@@ -2131,20 +2300,24 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             try:
                 delete_index(app_namespace, index_name, es_host, es_client)
             except ValueError:
-                msg = f"Index {index_name} does not exist for app {app_namespace}, " \
-                      f"creating a new index"
+                msg = (
+                    f"Index {index_name} does not exist for app {app_namespace}, "
+                    f"creating a new index"
+                )
                 logger.warning(msg)
 
         # determine embedding fields
-        embedding_fields = (
-            embedding_fields or model_settings.get("embedding_fields", {}).get(index_name, [])
+        embedding_fields = embedding_fields or model_settings.get("embedding_fields", {}).get(
+            index_name, []
         )
         if embedding_fields:
             if "embedder" not in query_type:
-                msg = f"Found KB fields to upload embedding (fields: {embedding_fields}) for " \
-                      f"index '{index_name}' but query_type configured for this QA " \
-                      f"({query_type}) has no 'embedder' phrase in it leading to not setting up " \
-                      f"an embedder model. Ignoring provided 'embedding_fields'."
+                msg = (
+                    f"Found KB fields to upload embedding (fields: {embedding_fields}) for "
+                    f"index '{index_name}' but query_type configured for this QA "
+                    f"({query_type}) has no 'embedder' phrase in it leading to not setting up "
+                    f"an embedder model. Ignoring provided 'embedding_fields'."
+                )
                 logger.error(msg)
                 embedding_fields = []
         else:
@@ -2180,9 +2353,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                         if match_regex(key, embedding_fields)
                     ]
                     embed_keys = list(zip(*embed_fields))[0]
-                    embed_vals = embedder_model.get_encodings(
-                        list(zip(*embed_fields))[1]
-                    )
+                    embed_vals = embedder_model.get_encodings(list(zip(*embed_fields))[1])
                     embedded_doc = {
                         key + EMBEDDING_FIELD_STRING: emb.tolist()
                         for key, emb in zip(embed_keys, embed_vals)
@@ -2227,9 +2398,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                     MAX_ES_VECTOR_LEN,
                 )
             for field in embedding_fields:
-                embedding_properties.append(
-                    {"field": field + EMBEDDING_FIELD_STRING, "dims": dims}
-                )
+                embedding_properties.append({"field": field + EMBEDDING_FIELD_STRING, "dims": dims})
 
             return mapping_data
 
@@ -2239,9 +2408,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             qa_mapping = create_index_mapping(DEFAULT_ES_QA_MAPPING, mapping_data)
         else:
             if embedder_model:
-                logger.error(
-                    "You must upgrade to ElasticSearch 7 to use the embedding features."
-                )
+                logger.error("You must upgrade to ElasticSearch 7 to use the embedding features.")
                 raise ElasticsearchVersionError
             qa_mapping = resolve_es_config_for_version(DEFAULT_ES_QA_MAPPING, es_client)
 
@@ -2304,9 +2471,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
 
         # If an id was passed in, simply retrieve the specified document
         if doc_id:
-            logger.info(
-                "Retrieve object from KB: index= '%s', id= '%s'.", index, doc_id
-            )
+            logger.info("Retrieve object from KB: index= '%s', id= '%s'.", index, doc_id)
             s = self.build_search(index, app_namespace=app_namespace)
             s = s.filter(query_type=query_type, id=doc_id)
             results = s.execute(size=size)
@@ -2339,8 +2504,11 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
 
         # build Search object with overriding ranking setting to require all query clauses are
         # matched.
-        s = self.build_search(index, app_namespace=app_namespace,
-                              ranking_config={"query_clauses_operator": "and"})
+        s = self.build_search(
+            index,
+            app_namespace=app_namespace,
+            ranking_config={"query_clauses_operator": "and"},
+        )
 
         # add query clauses to Search object.
         for clause in query_clauses:
@@ -2444,18 +2612,14 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                 else None
             )
             clause = ElasticsearchQuestionAnswerer.Search.QueryClause(
-                field, field_info, value, query_type, synonym_field)
+                field, field_info, value, query_type, synonym_field
+            )
             clause.validate()
             self._clauses[clause.get_type()].append(clause)
 
         def _build_filter_clause(self, query_type=DEFAULT_QUERY_TYPE, **kwargs):
             # set the filter type to be 'range' if any range operator is specified.
-            if (
-                kwargs.get("gt")
-                or kwargs.get("gte")
-                or kwargs.get("lt")
-                or kwargs.get("lte")
-            ):
+            if kwargs.get("gt") or kwargs.get("gte") or kwargs.get("lt") or kwargs.get("lte"):
                 field = kwargs.get("field")
                 gt = kwargs.get("gt")
                 gte = kwargs.get("gte")
@@ -2478,7 +2642,8 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                 if key not in self._kb_field_info:
                     raise ValueError("Invalid knowledge base field '{}'".format(key))
                 clause = ElasticsearchQuestionAnswerer.Search.FilterClause(
-                    field=key, value=value, query_type=query_type)
+                    field=key, value=value, query_type=query_type
+                )
             clause.validate()
             self._clauses[clause.get_type()].append(clause)
 
@@ -2601,9 +2766,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                                 sorting by 'distance'
             """
             new_search = self._clone()
-            new_search._build_clause(
-                "sort", field=field, sort_type=sort_type, location=location
-            )
+            new_search._build_clause("sort", field=field, sort_type=sort_type, location=location)
             return new_search
 
         def _get_field_stats(self, field):
@@ -2622,7 +2785,9 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             stats_query["aggs"][field + "_max"] = {"max": {"field": field}}
 
             res = self.client.search(
-                index=self.index, body=stats_query, search_type="query_then_fetch"
+                index=self.index,
+                body=stats_query,
+                search_type="query_then_fetch",
             )
 
             return {
@@ -2679,9 +2844,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                     # add all boost functions for the query clause
                     # right now the only boost functions supported are exact match boosting for
                     # CNAME and synonym whitelists.
-                    es_query["query"]["function_score"]["functions"].extend(
-                        es_boost_functions
-                    )
+                    es_query["query"]["function_score"]["functions"].extend(es_boost_functions)
 
                 if self._clauses["filter"]:
                     es_filter_clauses = {"bool": {"must": []}}
@@ -2720,17 +2883,23 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                 # construct results, removing embedding metadata and exposing score
                 results = []
                 for hit in response["hits"]["hits"]:
-                    item = {key: val for (key, val) in hit["_source"].items()
-                            if not key.endswith(EMBEDDING_FIELD_STRING)}
-                    item['_score'] = hit['_score']
+                    item = {
+                        key: val
+                        for (key, val) in hit["_source"].items()
+                        if not key.endswith(EMBEDDING_FIELD_STRING)
+                    }
+                    item["_score"] = hit["_score"]
                     results.append(item)
                 return results
             except _getattr("elasticsearch", "ConnectionError") as e:
                 logger.error(
-                    "Unable to connect to Elasticsearch: %s details: %s", e.error, e.info
+                    "Unable to connect to Elasticsearch: %s details: %s",
+                    e.error,
+                    e.info,
                 )
                 raise ElasticsearchKnowledgeBaseConnectionError(
-                    es_host=self.client.transport.hosts) from e
+                    es_host=self.client.transport.hosts
+                ) from e
             except _getattr("elasticsearch", "TransportError") as e:
                 logger.error(
                     "Unexpected error occurred when sending requests to Elasticsearch: %s "
@@ -2806,7 +2975,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                             "script_score": {
                                 "script": {
                                     "source": "cosineSimilarity(params.field_embedding,"
-                                              " doc[params.matching_field]) + 1.0",
+                                    " doc[params.matching_field]) + 1.0",
                                     "params": {
                                         "field_embedding": self.value.tolist(),
                                         "matching_field": self.field,
@@ -2821,12 +2990,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                         "bool": {
                             "should": [
                                 {"match": {self.field: {"query": self.value}}},
-                                {
-                                    "match": {
-                                        self.field
-                                        + ".processed_text": {"query": self.value}
-                                    }
-                                },
+                                {"match": {self.field + ".processed_text": {"query": self.value}}},
                             ]
                         }
                     }
@@ -2837,15 +3001,10 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                                 {"match": {self.field: {"query": self.value}}},
                                 {
                                     "match": {
-                                        self.field
-                                        + ".normalized_keyword": {"query": self.value}
+                                        self.field + ".normalized_keyword": {"query": self.value}
                                     }
                                 },
-                                {
-                                    "match": {
-                                        self.field + ".char_ngram": {"query": self.value}
-                                    }
-                                },
+                                {"match": {self.field + ".char_ngram": {"query": self.value}}},
                             ]
                         }
                     }
@@ -2856,9 +3015,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                     # Boost function for boosting conditions, e.g. exact match boosting
                     functions = [
                         {
-                            "filter": {
-                                "match": {self.field + ".normalized_keyword": self.value}
-                            },
+                            "filter": {"match": {self.field + ".normalized_keyword": self.value}},
                             "weight": self.DEFAULT_EXACT_MATCH_BOOSTING_WEIGHT,
                         }
                     ]
@@ -2883,16 +3040,13 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                                             },
                                             {
                                                 "match": {
-                                                    self.syn_field
-                                                    + ".name": {"query": self.value}
+                                                    self.syn_field + ".name": {"query": self.value}
                                                 }
                                             },
                                             {
                                                 "match": {
                                                     self.syn_field
-                                                    + ".name.char_ngram": {
-                                                        "query": self.value
-                                                    }
+                                                    + ".name.char_ngram": {"query": self.value}
                                                 }
                                             },
                                         ]
@@ -2910,8 +3064,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                                     "path": self.syn_field,
                                     "query": {
                                         "match": {
-                                            self.syn_field
-                                            + ".name.normalized_keyword": self.value
+                                            self.syn_field + ".name.normalized_keyword": self.value
                                         }
                                     },
                                 }
@@ -2923,10 +3076,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                 return clause, functions
 
             def validate(self):
-                if (
-                    not self.field_info.is_text_field()
-                    and not self.field_info.is_vector_field()
-                ):
+                if not self.field_info.is_text_field() and not self.field_info.is_vector_field():
                     raise ValueError(
                         "Query can only be defined on text and vector fields. If it is,"
                         " try running load_kb with clean=True and reinitializing your"
@@ -2975,15 +3125,10 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                         clause = {"term": {"id": self.value}}
                     else:
                         if self.query_type == "text":
-                            clause = {
-                                "match": {self.field + ".char_ngram": {"query": self.value}}
-                            }
+                            clause = {"match": {self.field + ".char_ngram": {"query": self.value}}}
                         else:
                             clause = {
-                                "match": {
-                                    self.field
-                                    + ".normalized_keyword": {"query": self.value}
-                                }
+                                "match": {self.field + ".normalized_keyword": {"query": self.value}}
                             }
                 elif self.filter_type == "range":
                     lower_bound = None
@@ -3087,9 +3232,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
                             else 1
                         )
                     else:
-                        scale = (
-                            0.5 * (max_value - min_value) if max_value != min_value else 1
-                        )
+                        scale = 0.5 * (max_value - min_value) if max_value != min_value else 1
 
                     if self.sort_type == "asc":
                         origin = min_value
@@ -3106,24 +3249,16 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             def validate(self):
                 # validate the sort type to be valid.
                 if self.sort_type not in self.SORT_TYPES:
-                    raise ValueError(
-                        "Invalid value for sort type '{}'".format(self.sort_type)
-                    )
+                    raise ValueError("Invalid value for sort type '{}'".format(self.sort_type))
 
                 if self.field == "location" and self.sort_type != self.SORT_DISTANCE:
-                    raise ValueError(
-                        "Invalid value for sort type '{}'".format(self.sort_type)
-                    )
+                    raise ValueError("Invalid value for sort type '{}'".format(self.sort_type))
 
                 if self.field == "location" and not self.location:
-                    raise ValueError(
-                        "No origin location specified for sorting by distance."
-                    )
+                    raise ValueError("No origin location specified for sorting by distance.")
 
                 if self.sort_type == self.SORT_DISTANCE and self.field != "location":
-                    raise ValueError(
-                        "Sort by distance is only supported using 'location' field."
-                    )
+                    raise ValueError("Sort by distance is only supported using 'location' field.")
 
                 # validate the sort field is number, date or location field
                 if not (
@@ -3169,8 +3304,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             return self.type
 
         def is_number_field(self):
-            """Returns True if the knowledge base field is a number field, otherwise returns False
-            """
+            """Returns True if the knowledge base field is a number field, otherwise returns False"""
 
             return self.type in self.NUMBER_TYPES
 
@@ -3180,8 +3314,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             return self.type in self.DATE_TYPES
 
         def is_location_field(self):
-            """Returns True if the knowledge base field is a location field, otherwise returns False
-            """
+            """Returns True if the knowledge base field is a location field, otherwise returns False"""
 
             return self.type in self.GEO_TYPES
 
@@ -3191,8 +3324,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
             return self.type in self.TEXT_TYPES
 
         def is_vector_field(self):
-            """Returns True if the knowledge base field is a vector field, otherwise returns False
-            """
+            """Returns True if the knowledge base field is a vector field, otherwise returns False"""
 
             return self.type in self.VECTOR_TYPES
 
@@ -3214,15 +3346,23 @@ class QuestionAnswerer:
         >>> question_answerer.get(...) # .get(...) and .build_search(...)
     """
 
-    DEPRECATION_MESSAGE = \
-        "Calling QuestionAnswerer class directly will be deprecated in future versions. " \
-        "To instantiate a QA instance, use the QuestionAnswererFactory by calling " \
-        "'qa = QuestionAnswererFactory.create_question_answerer(**kwargs)'. " \
-        "An instantiated QA can then be used as 'qa.load_kb(...)', 'qa.get(...)', etc. " \
-        "See https://www.mindmeld.com/docs/userguide/kb.html for details about the various " \
+    DEPRECATION_MESSAGE = (
+        "Calling QuestionAnswerer class directly will be deprecated in future versions. "
+        "To instantiate a QA instance, use the QuestionAnswererFactory by calling "
+        "'qa = QuestionAnswererFactory.create_question_answerer(**kwargs)'. "
+        "An instantiated QA can then be used as 'qa.load_kb(...)', 'qa.get(...)', etc. "
+        "See https://www.mindmeld.com/docs/userguide/kb.html for details about the various "
         "functionalities available with different question-answerers."
+    )
 
-    def __new__(cls, app_path=None, resource_loader=None, es_host=None, config=None, **kwargs):
+    def __new__(
+        cls,
+        app_path=None,
+        resource_loader=None,
+        es_host=None,
+        config=None,
+        **kwargs,
+    ):
         """
         This method is used to initialize a XxxQuestionAnswerer based on the model_type.
 
@@ -3237,26 +3377,30 @@ class QuestionAnswerer:
 
         warnings.warn(QuestionAnswerer.DEPRECATION_MESSAGE, DeprecationWarning)
 
-        kwargs.update({
-            "app_path": app_path,
-            "es_host": es_host,
-            "config": config,
-            "resource_loader": resource_loader,
-        })
+        kwargs.update(
+            {
+                "app_path": app_path,
+                "es_host": es_host,
+                "config": config,
+                "resource_loader": resource_loader,
+            }
+        )
         return QuestionAnswererFactory.create_question_answerer(**kwargs)
 
     @classmethod
-    def load_kb(cls,
-                app_namespace,
-                index_name,
-                data_file,
-                es_host=None,
-                es_client=None,
-                connect_timeout=2,
-                clean=False,
-                app_path=None,
-                config=None,
-                **kwargs):
+    def load_kb(
+        cls,
+        app_namespace,
+        index_name,
+        data_file,
+        es_host=None,
+        es_client=None,
+        connect_timeout=2,
+        clean=False,
+        app_path=None,
+        config=None,
+        **kwargs,
+    ):
         """
         Implemented to maintain backward compatibility. Should be removed in future versions.
 
@@ -3286,24 +3430,28 @@ class QuestionAnswerer:
         # By doing so, each QA object is meant to be used for one app_path/app_namespace and all
         # the indices in that app, while previously once could access any app's index.
 
-        msg = "Calling the 'load_kb(...)' method directly from the QuestionAnswerer object " \
-              "like 'QuestionAnswerer.load_kb(...)' will be deprecated. New usage: " \
-              "'qa = QuestionAnswererFactory.create_question_answerer(**kwargs); " \
-              "qa.load_kb(...)'. Note that this change might also " \
-              "lead to creating different QA instances for different configs. " \
-              "See https://www.mindmeld.com/docs/userguide/kb.html for more details. "
+        msg = (
+            "Calling the 'load_kb(...)' method directly from the QuestionAnswerer object "
+            "like 'QuestionAnswerer.load_kb(...)' will be deprecated. New usage: "
+            "'qa = QuestionAnswererFactory.create_question_answerer(**kwargs); "
+            "qa.load_kb(...)'. Note that this change might also "
+            "lead to creating different QA instances for different configs. "
+            "See https://www.mindmeld.com/docs/userguide/kb.html for more details. "
+        )
         warnings.warn(msg, DeprecationWarning)
 
         # add everything except 'index_name' and 'data_file' to kwargs, and create a QA instance
-        kwargs.update({
-            "app_namespace": app_namespace,
-            "es_host": es_host,
-            "es_client": es_client,
-            "connect_timeout": connect_timeout,
-            "clean": clean,
-            "config": config,
-            "app_path": app_path,
-        })
+        kwargs.update(
+            {
+                "app_namespace": app_namespace,
+                "es_host": es_host,
+                "es_client": es_client,
+                "connect_timeout": connect_timeout,
+                "clean": clean,
+                "config": config,
+                "app_path": app_path,
+            }
+        )
         question_answerer = QuestionAnswererFactory.create_question_answerer(**kwargs)
 
         # only retain 'connection_timeout', 'clean' information as everything else is already
@@ -3322,5 +3470,5 @@ QUESTION_ANSWERER_MODEL_MAPPINGS = {
     # TODO: Both QA classes assume input text is in English.
     #  Going forward, this should be configurable and multilingual support should be added!
     "native": NativeQuestionAnswerer,
-    "elasticsearch": ElasticsearchQuestionAnswerer
+    "elasticsearch": ElasticsearchQuestionAnswerer,
 }

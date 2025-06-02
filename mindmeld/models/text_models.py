@@ -51,7 +51,12 @@ class TextModel(Model):
     DECISION_TREE_TYPE = "dtree"
     RANDOM_FOREST_TYPE = "rforest"
     SVM_TYPE = "svm"
-    ALLOWED_CLASSIFIER_TYPES = [LOG_REG_TYPE, DECISION_TREE_TYPE, RANDOM_FOREST_TYPE, SVM_TYPE]
+    ALLOWED_CLASSIFIER_TYPES = [
+        LOG_REG_TYPE,
+        DECISION_TREE_TYPE,
+        RANDOM_FOREST_TYPE,
+        SVM_TYPE,
+    ]
 
     # default model scoring type
     ACCURACY_SCORING = "accuracy"
@@ -148,7 +153,7 @@ class TextModel(Model):
          handle that case.
 
         Args:
-            feat_name (str) : The feature name
+            feat_name (str):The feature name
             label_class (int): The index of the label
 
         Returns:
@@ -157,9 +162,7 @@ class TextModel(Model):
         if len(self._class_encoder.classes_) == 2 and label_class >= 1:
             return np.array([0.0])
         else:
-            return self._clf.coef_[
-                label_class, self._feat_vectorizer.vocabulary_[feat_name]
-            ]
+            return self._clf.coef_[label_class, self._feat_vectorizer.vocabulary_[feat_name]]
 
     def inspect(self, example, gold_label=None, dynamic_resource=None):
         """This class takes an example and returns a 2D list for every feature with feature
@@ -177,9 +180,7 @@ class TextModel(Model):
              probability
         """
         if not isinstance(self._clf, LogisticRegression):
-            logging.warning(
-                "Currently inspection is only available for Logistic Regression Model"
-            )
+            logging.warning("Currently inspection is only available for Logistic Regression Model")
             return []
 
         try:
@@ -191,14 +192,20 @@ class TextModel(Model):
         pred_label = self.predict([example], dynamic_resource=dynamic_resource)[0]
         pred_class = self._class_encoder.transform([pred_label])
         features = self._extract_features(
-            example, dynamic_resource=dynamic_resource,
-            text_preparation_pipeline=self.text_preparation_pipeline
+            example,
+            dynamic_resource=dynamic_resource,
+            text_preparation_pipeline=self.text_preparation_pipeline,
         )
 
         logging.info("Predicted: %s.", pred_label)
 
         if gold_class is None:
-            columns = ["Feature", "Value", "Pred_W({0})".format(pred_label), "Pred_P"]
+            columns = [
+                "Feature",
+                "Value",
+                "Pred_W({0})".format(pred_label),
+                "Pred_P",
+            ]
         else:
             columns = [
                 "Feature",
@@ -294,7 +301,6 @@ class TextModel(Model):
         return X, y, groups
 
     def _preprocess_data(self, X, y=None, fit=False):
-
         if fit:
             y = self._class_encoder.fit_transform(y)
             X = self._feat_vectorizer.fit_transform(X)
@@ -323,14 +329,10 @@ class TextModel(Model):
             (dict): revised param_grid
         """
         if "class_weight" in param_grid:
-            raw_weights = (
-                param_grid["class_weight"] if is_grid else [param_grid["class_weight"]]
-            )
+            raw_weights = param_grid["class_weight"] if is_grid else [param_grid["class_weight"]]
             weights = [
                 {
-                    k
-                    if isinstance(k, int)
-                    else self._class_encoder.transform((k,))[0]: v
+                    k if isinstance(k, int) else self._class_encoder.transform((k,))[0]: v
                     for k, v in cw_dict.items()
                 }
                 for cw_dict in raw_weights
@@ -342,17 +344,13 @@ class TextModel(Model):
             class_count = np.bincount(y)
             classes = self._class_encoder.classes_
             weights = []
-            raw_bias = (
-                param_grid["class_bias"] if is_grid else [param_grid["class_bias"]]
-            )
+            raw_bias = param_grid["class_bias"] if is_grid else [param_grid["class_bias"]]
             for class_bias in raw_bias:
                 # these weights are same as sklearn's class_weight='balanced'
                 balanced_w = [(len(y) / len(classes) / c) for c in class_count]
                 balanced_tuples = list(zip(list(range(len(classes))), balanced_w))
 
-                weights.append(
-                    {c: (1 - class_bias) + class_bias * w for c, w in balanced_tuples}
-                )
+                weights.append({c: (1 - class_bias) + class_bias * w for c, w in balanced_tuples})
             param_grid["class_weight"] = weights if is_grid else weights[0]
             del param_grid["class_bias"]
 
@@ -407,7 +405,11 @@ class TextModel(Model):
 
         evaluations = [
             EvaluatedExample(
-                e, labels[i], predictions[i][0], predictions[i][1], config.label_type
+                e,
+                labels[i],
+                predictions[i][0],
+                predictions[i][1],
+                config.label_type,
             )
             for i, e in enumerate(examples)
         ]
@@ -472,8 +474,9 @@ class TextModel(Model):
 
     def view_extracted_features(self, example, dynamic_resource=None):
         return self._extract_features(
-            example, dynamic_resource=dynamic_resource,
-            text_preparation_pipeline=self.text_preparation_pipeline
+            example,
+            dynamic_resource=dynamic_resource,
+            text_preparation_pipeline=self.text_preparation_pipeline,
         )
 
     @classmethod
@@ -498,12 +501,12 @@ class PytorchTextModel(PytorchModel):
     def _get_model_constructor(self):
         """Returns the class of the actual underlying model"""
         classifier_type = self.config.model_settings["classifier_type"]
-        embedder_type = self.config.params.get("embedder_type") \
-            if self.config.params is not None else None
+        embedder_type = (
+            self.config.params.get("embedder_type") if self.config.params is not None else None
+        )
 
         return get_sequence_classifier_cls(
-            classifier_type=classifier_type,
-            embedder_type=embedder_type
+            classifier_type=classifier_type, embedder_type=embedder_type
         )
 
     def evaluate(self, examples, labels):
@@ -521,7 +524,11 @@ class PytorchTextModel(PytorchModel):
 
         evaluations = [
             EvaluatedExample(
-                e, labels[i], predictions[i][0], predictions[i][1], self.config.label_type
+                e,
+                labels[i],
+                predictions[i][0],
+                predictions[i][1],
+                self.config.label_type,
             )
             for i, e in enumerate(examples)
         ]
@@ -530,7 +537,6 @@ class PytorchTextModel(PytorchModel):
         return model_eval
 
     def fit(self, examples, labels, params=None):
-
         if len(set(labels)) <= 1 or not examples:
             return self
 
@@ -538,10 +544,12 @@ class PytorchTextModel(PytorchModel):
             # pytorch text models are not implemented for role-classifiers, which pass-in an
             # instance of ListIterator to this fit() method as opposed to QueryIterator in case of
             # domain- and intent-classifiers
-            msg = f"{self.__class__.__name__}.fit() only accepts QueryIterator as the first " \
-                  f"argument but found type: {type(examples)}. This might happen if trying to" \
-                  f"create a deep neural net based classifier for role classification which is " \
-                  f"currently not supported."
+            msg = (
+                f"{self.__class__.__name__}.fit() only accepts QueryIterator as the first "
+                f"argument but found type: {type(examples)}. This might happen if trying to"
+                f"create a deep neural net based classifier for role classification which is "
+                f"currently not supported."
+            )
             raise NotImplementedError(msg)
 
         # Encode classes
@@ -588,7 +596,6 @@ class PytorchTextModel(PytorchModel):
         return predictions
 
     def _dump(self, path):
-
         self._clf.dump(path)
 
         # dump model metadata
@@ -596,14 +603,13 @@ class PytorchTextModel(PytorchModel):
             "label_encoder": self._label_encoder,
             "class_encoder": self._class_encoder,
             "query_text_type": self._query_text_type,
-            "model_config": self.config
+            "model_config": self.config,
         }
         os.makedirs(os.path.dirname(path), exist_ok=True)
         joblib.dump(metadata, path)
 
     @classmethod
     def load(cls, path):
-
         # load model metadata
         metadata = joblib.load(path)
 
@@ -620,10 +626,8 @@ class PytorchTextModel(PytorchModel):
 
 
 class TextModelFactory(AbstractModelFactory):
-
     @staticmethod
     def get_model_cls(config: ModelConfig):
-
         CLASSES = [TextModel, PytorchTextModel]
         classifier_type = config.model_settings["classifier_type"]
 
@@ -631,6 +635,8 @@ class TextModelFactory(AbstractModelFactory):
             if classifier_type in _class.ALLOWED_CLASSIFIER_TYPES:
                 return _class
 
-        msg = f"Invalid 'classifier_type': {classifier_type}. " \
-              f"Allowed types are: {[_class.ALLOWED_CLASSIFIER_TYPES for _class in CLASSES]}"
+        msg = (
+            f"Invalid 'classifier_type': {classifier_type}. "
+            f"Allowed types are: {[_class.ALLOWED_CLASSIFIER_TYPES for _class in CLASSES]}"
+        )
         raise ValueError(msg)

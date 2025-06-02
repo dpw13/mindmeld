@@ -95,9 +95,7 @@ class WebexBotServer:
                 return APPROVED_REQUEST_NAME, APPROVED_REQUEST_CODE, payload
 
             message = str(txt["text"]).lower()
-            payload = {
-                "message": self._post_message(room_id, self.conv.say(message)[0])
-            }
+            payload = {"message": self._post_message(room_id, self.conv.say(message)[0])}
             return APPROVED_REQUEST_NAME, APPROVED_REQUEST_CODE, payload
 
     def run(self, host="localhost", port=7150):

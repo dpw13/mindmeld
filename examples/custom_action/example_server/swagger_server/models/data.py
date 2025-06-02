@@ -15,7 +15,10 @@ class Data(Model):
     """
 
     def __init__(
-        self, request: Request = None, responder: Responder = None, action: str = None
+        self,
+        request: Request = None,
+        responder: Responder = None,
+        action: str = None,
     ):
         """Data - a model defined in Swagger
 
@@ -26,7 +29,11 @@ class Data(Model):
         :param action: The action of this Data.
         :type action: str
         """
-        self.swagger_types = {"request": Request, "responder": Responder, "action": str}
+        self.swagger_types = {
+            "request": Request,
+            "responder": Responder,
+            "action": str,
+        }
 
         self.attribute_map = {
             "request": "request",

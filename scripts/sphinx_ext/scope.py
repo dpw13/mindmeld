@@ -41,9 +41,7 @@ def builder_inited(app):
                 # File not found, try next suffix
                 continue
             if first_directive:
-                m = re.match(
-                    r"^\.\. meta::\s+:scope: ([a-zA-Z0-9_-]+)", first_directive
-                )
+                m = re.match(r"^\.\. meta::\s+:scope: ([a-zA-Z0-9_-]+)", first_directive)
                 if m and not app.tags.has(m.group(1)):
                     docs_to_remove.append(doc)
 

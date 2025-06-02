@@ -79,7 +79,10 @@ class TestBasicParser:
 class TestRoleParser:
     """A set of tests for a parser which has nested groups"""
 
-    CONFIG = {"dish|beverage": ["option|beverage", "size"], "dish": ["option", "size"]}
+    CONFIG = {
+        "dish|beverage": ["option|beverage", "size"],
+        "dish": ["option", "size"],
+    }
 
     @classmethod
     def setup_class(cls):
@@ -158,7 +161,10 @@ class TestMaxInstancesParser:
     """A set of tests for a parser which has max instance constraints on groups"""
 
     CONFIG = {
-        "dish": {"option": {}, "size": {"max_instances": 1}},  # only one size per dish
+        "dish": {
+            "option": {},
+            "size": {"max_instances": 1},
+        },  # only one size per dish
         "option": {"size": {"max_instances": 1}},  # only one size per option
     }
 
@@ -211,9 +217,7 @@ class TestParserLinkWords:
 
     def test_link_word(self):
         """Tests that parser considers link words, overriding default distance calculation."""
-        text = (
-            "A {pizza|dish} with {olives|option}, {breadsticks|dish} and a {coke|dish}"
-        )
+        text = "A {pizza|dish} with {olives|option}, {breadsticks|dish} and a {coke|dish}"
         query = markup.load_query(text)
         entities = self.parser.parse_entities(query.query, query.entities)
 
@@ -229,10 +233,7 @@ class TestParserLinkWords:
         query = markup.load_query(text)
         entities = self.parser.parse_entities(query.query, query.entities)
 
-        assert (
-            len([e for e in entities if e.parent is None and e.children is not None])
-            == 1
-        )
+        assert len([e for e in entities if e.parent is None and e.children is not None]) == 1
         assert entities[0].children is None
         assert entities[1].parent == entities[2]
         assert entities[2].children == (entities[1],)

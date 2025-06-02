@@ -13,11 +13,12 @@ import os
 import sqlite3
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
-from hashlib import sha256
 
 from mindmeld.core import ProcessedQuery
 from mindmeld.query_cache import QueryCache
-from mindmeld.text_preparation.text_preparation_pipeline import TextPreparationPipelineFactory
+from mindmeld.text_preparation.text_preparation_pipeline import (
+    TextPreparationPipelineFactory,
+)
 
 
 def test_query_cache_has_the_correct_format(kwik_e_mart_app_path):
@@ -27,7 +28,7 @@ def test_query_cache_has_the_correct_format(kwik_e_mart_app_path):
     row_id = cache.key_to_row_id(key)
     assert row_id is not None
     pq = cache.get(row_id)
-    assert type(pq) == ProcessedQuery
+    assert isinstance(pq, ProcessedQuery)
     assert pq.domain == "store_info"
     assert pq.intent == "help"
 
@@ -38,9 +39,12 @@ def compare_dbs(db1, db2):
 
 def get_query_from_disk(tmpdir, key):
     conn = sqlite3.connect(f"{tmpdir}/.generated/query_cache.db")
-    res = conn.execute("""
+    res = conn.execute(
+        """
     SELECT domain, intent, raw_query FROM queries WHERE hash_id=(?);
-    """, (key,)).fetchone()
+    """,
+        (key,),
+    ).fetchone()
     conn.close()
     return tuple(res) if res else None
 
@@ -58,13 +62,17 @@ def test_disk_query_cache(processed_queries):
             key = QueryCache.get_key(q.domain, q.intent, q.query.text)
             cache.put(key, q)
             # Verify that queries are written to disk immediately
-            assert get_query_from_disk(tmpdir, key) == (q.domain, q.intent, q.query.text)
+            assert get_query_from_disk(tmpdir, key) == (
+                q.domain,
+                q.intent,
+                q.query.text,
+            )
 
 
 def test_memory_query_cache(processed_queries):
     environ = {
         "MM_QUERY_CACHE_IN_MEMORY": "1",
-        "MM_QUERY_CACHE_WRITE_SIZE": "10"
+        "MM_QUERY_CACHE_WRITE_SIZE": "10",
     }
 
     with TemporaryDirectory() as tmpdir, patch.dict(os.environ, environ):
@@ -85,7 +93,11 @@ def test_memory_query_cache(processed_queries):
         cache.put(key, q)
         for q in processed_queries[:10]:
             key = QueryCache.get_key(q.domain, q.intent, q.query.text)
-            assert get_query_from_disk(tmpdir, key) == (q.domain, q.intent, q.query.text)
+            assert get_query_from_disk(tmpdir, key) == (
+                q.domain,
+                q.intent,
+                q.query.text,
+            )
 
         # Verify that a GC triggers a flush to disk
         for q in processed_queries[10:15]:

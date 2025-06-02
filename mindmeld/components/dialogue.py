@@ -117,24 +117,24 @@ class DialogueStateRule:
         for kwarg in kwargs:
             if kwarg not in valid_kwargs:
                 raise TypeError(
-                    (
-                        "DialogueStateRule() got an unexpected keyword argument"
-                        " '{!s}'"
-                    ).format(kwarg)
+                    ("DialogueStateRule() got an unexpected keyword argument" " '{!s}'").format(
+                        kwarg
+                    )
                 )
 
         resolved = {}
         for keys in key_kwargs:
             if len(keys) == 2:
-                single, plural = keys  # pylint: disable=unbalanced-tuple-unpacking
+                (
+                    single,
+                    plural,
+                ) = keys  # pylint: disable=unbalanced-tuple-unpacking
                 if single in kwargs and plural in kwargs:
                     msg = "Only one of {!r} and {!r} can be specified for a dialogue state rule"
                     raise ValueError(msg.format(single, plural))
                 elif single in kwargs and isinstance(kwargs[single], str):
                     resolved[plural] = {kwargs[single]}
-                elif plural in kwargs and isinstance(
-                    kwargs[plural], (list, set, tuple)
-                ):
+                elif plural in kwargs and isinstance(kwargs[plural], (list, set, tuple)):
                     resolved[plural] = set(kwargs[plural])
                 else:
                     if single in kwargs:
@@ -165,9 +165,7 @@ class DialogueStateRule:
                 "True, domain, intent, and has_entity must be omitted"
             )
 
-        if self.default and any(
-            [self.domain, self.intent, self.entity_types, self.targeted_only]
-        ):
+        if self.default and any([self.domain, self.intent, self.entity_types, self.targeted_only]):
             raise ValueError(
                 "For a dialogue state rule, if default is True, "
                 "domain, intent, has_entity, and targeted_only must be omitted"
@@ -259,9 +257,7 @@ class DialogueStateRule:
                  0: this and that are equally complex
                  1: this is more complex than that
         """
-        if not (
-            isinstance(this, DialogueStateRule) and isinstance(that, DialogueStateRule)
-        ):
+        if not (isinstance(this, DialogueStateRule) and isinstance(that, DialogueStateRule)):
             raise NotImplementedError
 
         # https://docs.python.org/3.0/whatsnew/3.0.html#ordering-comparisons
@@ -346,10 +342,7 @@ class DialogueManager:
         if handler is not None:
             old_handler = self.handler_map.get(name)
             if old_handler is not None and old_handler != handler:
-                msg = (
-                    "Handler mapping is overwriting an existing dialogue state: %s"
-                    % name
-                )
+                msg = "Handler mapping is overwriting an existing dialogue state: %s" % name
                 raise AssertionError(msg)
             self.handler_map[name] = handler
 
@@ -398,16 +391,12 @@ class DialogueManager:
                 target_dialogue_state = e.target_dialogue_state
             else:
                 self.logger.warning(
-                    "Ignoring target dialogue state '{}'".format(
-                        e.target_dialogue_state
-                    )
+                    "Ignoring target dialogue state '{}'".format(e.target_dialogue_state)
                 )
                 target_dialogue_state = None
 
         if target_dialogue_state:
-            self.logger.warning(
-                "Ignoring target dialogue state '{}'".format(target_dialogue_state)
-            )
+            self.logger.warning("Ignoring target dialogue state '{}'".format(target_dialogue_state))
         return self._attempt_handler_sync(request, responder)
 
     def _attempt_handler_sync(self, request, responder, target_dialogue_state=None):
@@ -433,9 +422,7 @@ class DialogueManager:
         responder.dialogue_state = dialogue_state
         return responder
 
-    async def _apply_handler_async(
-        self, request, responder, target_dialogue_state=None
-    ):
+    async def _apply_handler_async(self, request, responder, target_dialogue_state=None):
         """Applies the dialogue state handler for the most complex matching rule.
 
         Args:
@@ -455,21 +442,15 @@ class DialogueManager:
                 target_dialogue_state = e.target_dialogue_state
             else:
                 self.logger.warning(
-                    "Ignoring target dialogue state '{}'".format(
-                        e.target_dialogue_state
-                    )
+                    "Ignoring target dialogue state '{}'".format(e.target_dialogue_state)
                 )
                 target_dialogue_state = None
 
         if target_dialogue_state:
-            self.logger.warning(
-                "Ignoring target dialogue state '{}'".format(target_dialogue_state)
-            )
+            self.logger.warning("Ignoring target dialogue state '{}'".format(target_dialogue_state))
         return await self._attempt_handler_async(request, responder)
 
-    async def _attempt_handler_async(
-        self, request, responder, target_dialogue_state=None
-    ):
+    async def _attempt_handler_async(self, request, responder, target_dialogue_state=None):
         """Tries to apply the dialogue state handler for the most complex matching rule
 
         Args:
@@ -492,9 +473,7 @@ class DialogueManager:
             and "dialogue_state" in result_handler
         ):
             # TODO: check if this flow is executed, currently not covered in tests
-            dialogue_state = "{}.{}".format(
-                dialogue_state, result_handler["dialogue_state"]
-            )
+            dialogue_state = "{}.{}".format(dialogue_state, result_handler["dialogue_state"])
 
         responder.dialogue_state = dialogue_state
         return responder
@@ -531,11 +510,7 @@ class DialogueManager:
         return dialogue_state
 
     def _get_dialogue_handler(self, dialogue_state):
-        handler = (
-            self.handler_map[dialogue_state]
-            if dialogue_state
-            else self._default_handler
-        )
+        handler = self.handler_map[dialogue_state] if dialogue_state else self._default_handler
 
         for m in reversed(self.middlewares):
             handler = partial(m, handler=handler)
@@ -585,14 +560,10 @@ class DialogueFlow(DialogueManager):
             responder.params.target_dialogue_state = self.flow_state
             return await entrance_handler(request, responder)
 
-        self._entrance_handler = (
-            _async_set_target_state if self.async_mode else _set_target_state
-        )
+        self._entrance_handler = _async_set_target_state if self.async_mode else _set_target_state
         app.add_dialogue_rule(self.name, self._entrance_handler, **kwargs)
         handler = (
-            self._apply_flow_handler_async
-            if self.async_mode
-            else self._apply_flow_handler_sync
+            self._apply_flow_handler_async if self.async_mode else self._apply_flow_handler_sync
         )
         app.add_dialogue_rule(self.flow_state, handler, targeted_only=True)
 
@@ -666,7 +637,10 @@ class DialogueFlow(DialogueManager):
 
         handler(request, responder)
 
-        return {"dialogue_state": dialogue_state, "directives": responder.directives}
+        return {
+            "dialogue_state": dialogue_state,
+            "directives": responder.directives,
+        }
 
     async def _apply_flow_handler_async(self, request, responder):
         """Applies the dialogue state handler for the dialogue flow and sets the target dialogue
@@ -688,14 +662,13 @@ class DialogueFlow(DialogueManager):
         if asyncio.iscoroutine(res):
             await res
 
-        return {"dialogue_state": dialogue_state, "directives": responder.directives}
+        return {
+            "dialogue_state": dialogue_state,
+            "directives": responder.directives,
+        }
 
     def _get_dialogue_handler(self, dialogue_state):
-        handler = (
-            self.handler_map[dialogue_state]
-            if dialogue_state
-            else self._default_handler
-        )
+        handler = self.handler_map[dialogue_state] if dialogue_state else self._default_handler
 
         try:
             middlewares = self.middlewares
@@ -709,13 +682,15 @@ class DialogueFlow(DialogueManager):
 
 
 class Form:
-    """This class incapsulates Form data
-    """
-    def __init__(self,
-                 entities: Optional[List[FormEntity]] = None,
-                 exit_keys: Optional[List[str]] = None,
-                 exit_msg: Optional[str] = None,
-                 max_retries: Optional[str] = None):
+    """This class incapsulates Form data"""
+
+    def __init__(
+        self,
+        entities: Optional[List[FormEntity]] = None,
+        exit_keys: Optional[List[str]] = None,
+        exit_msg: Optional[str] = None,
+        max_retries: Optional[str] = None,
+    ):
         self.entities = entities
         self.exit_keys = list(map(str.lower, exit_keys or ["cancel", "restart", "exit", "reset"]))
         self.exit_msg = exit_msg or "How may I help you?"
@@ -752,22 +727,24 @@ class AutoEntityFilling:
         self._app = app
         self._app.lazy_init()
         self._handler = handler
-        self._form = Form(entities=form.get('entities'), exit_keys=form.get('exit_keys'),
-                          exit_msg=form.get('exit_msg'), max_retries=form.get('max_retries'))
+        self._form = Form(
+            entities=form.get("entities"),
+            exit_keys=form.get("exit_keys"),
+            exit_msg=form.get("exit_msg"),
+            max_retries=form.get("max_retries"),
+        )
         self._local_entity_form = None
         self._prompt_turn = None
         self._params_schema = ParamsSchema(
             context={
                 "nlp": self._app.app_manager.nlp,
-                "dialogue_handler_map": self._app.app_manager.dialogue_manager.handler_map
+                "dialogue_handler_map": self._app.app_manager.dialogue_manager.handler_map,
             }
         )
 
     def _set_next_turn(self, request, responder):
         """Set target dialogue state to the entrance handler's name"""
-        responder.params.allowed_intents = tuple(
-            ["{}.{}".format(request.domain, request.intent)]
-        )
+        responder.params.allowed_intents = tuple(["{}.{}".format(request.domain, request.intent)])
         responder.params.target_dialogue_state = self._handler.__name__
 
     def _exit_flow(self, responder):
@@ -830,24 +807,18 @@ class AutoEntityFilling:
 
                 resources = {}
                 extracted_feature = dict(
-                    query_features.extract_sys_candidates([entity_type])(
-                        query, resources
-                    )
+                    query_features.extract_sys_candidates([entity_type])(query, resources)
                 )
 
             else:
                 # gazetteer validation
 
                 try:
-                    query = self._extract_query_features(
-                        request.entities[0]["value"][0]["cname"]
-                    )
+                    query = self._extract_query_features(request.entities[0]["value"][0]["cname"])
                 except (KeyError, IndexError):
                     query = self._extract_query_features(text)
 
-                gaz = self._app.app_manager.nlp.resource_loader.get_gazetteer(
-                    entity_type
-                )
+                gaz = self._app.app_manager.nlp.resource_loader.get_gazetteer(entity_type)
 
                 # payload format for entity feature extractors:
                 # tuple(query (Query Object), list of entities, entity index)
@@ -997,8 +968,9 @@ class AutoEntityFilling:
         # If form iteration in request object, continue using that.
         # If None, set to original form.
         if request.form and request.form["entities"]:
-            self._local_entity_form = [FormEntity(**copy.deepcopy(elem))
-                                       for elem in request.form["entities"]]
+            self._local_entity_form = [
+                FormEntity(**copy.deepcopy(elem)) for elem in request.form["entities"]
+            ]
         else:
             self._local_entity_form = None
 
@@ -1026,7 +998,6 @@ class AutoEntityFilling:
 
         # Iterate through all slots, fill in empty ones
         for slot in self._local_entity_form:
-
             if not slot.value:
                 # check if user has been prompted for this entity slot
                 if self._prompt_turn:
@@ -1079,9 +1050,7 @@ class AutoEntityFilling:
             # sets a dialogue rule for the handler passed in this invoke call to iteratively call
             # the slot-filling flow till completion or exit. This rule is added temporarily for this
             # flow and reset for the handler with every new invoke call.
-            self._app.app_manager.dialogue_manager.add_dialogue_rule(
-                name, self.__call__, **kwargs
-            )
+            self._app.app_manager.dialogue_manager.add_dialogue_rule(name, self.__call__, **kwargs)
         except AssertionError:
             self._app.app_manager.dialogue_manager.handler_map[name] = self.__call__
 
@@ -1150,17 +1119,23 @@ class DialogueResponder:
         # If any of the elements in the history list is a map, then we validate the element
         # as a DialogueResponder object and serialize that to make sure the dictionary complies
         # with the attributes of a DialogueResponder object
-        if isinstance(history, (list, tuple)) and \
-                any(isinstance(item, (dict, immutables.Map)) for item in history):
+        if isinstance(history, (list, tuple)) and any(
+            isinstance(item, (dict, immutables.Map)) for item in history
+        ):
             try:
-                self._history = [dict(DialogueResponder(**DEFAULT_RESPONSE_SCHEMA.load(item)))
-                                 for item in history]
+                self._history = [
+                    dict(DialogueResponder(**DEFAULT_RESPONSE_SCHEMA.load(item)))
+                    for item in history
+                ]
             except ValidationError as err:
                 # TODO: Fix deserialization issues between workbench and mindmeld history payloads
-                logging.warning("Could not deserialize history properly due to error: %s, "
-                                "this might be due to version incompatibility. "
-                                "We set the history to what "
-                                "is passed in to provide backwards compatibility.", err.messages)
+                logging.warning(
+                    "Could not deserialize history properly due to error: %s, "
+                    "this might be due to version incompatibility. "
+                    "We set the history to what "
+                    "is passed in to provide backwards compatibility.",
+                    err.messages,
+                )
                 self._history = history
         else:
             self._history = history or []
@@ -1172,8 +1147,8 @@ class DialogueResponder:
     @request.setter
     def request(self, value):
         if isinstance(value, dict):
-            if isinstance(value['params'], dict):
-                value['params'] = Params(**value['params'])
+            if isinstance(value["params"], dict):
+                value["params"] = Params(**value["params"])
             self._request = Request(**value)
         else:
             self._request = value or Request()
@@ -1384,7 +1359,7 @@ class Conversation:
         self._params_schema = ParamsSchema(
             context={
                 "nlp": self._app_manager.nlp,
-                "dialogue_handler_map": self._app_manager.dialogue_manager.handler_map
+                "dialogue_handler_map": self._app_manager.dialogue_manager.handler_map,
             }
         )
 
@@ -1561,10 +1536,7 @@ class Conversation:
                 msg = msg.format(*texts)
             elif directive_name == DirectiveNames.LIST:
                 msg = "\n".join(
-                    [
-                        json.dumps(item, indent=4, sort_keys=True)
-                        for item in directive["payload"]
-                    ]
+                    [json.dumps(item, indent=4, sort_keys=True) for item in directive["payload"]]
                 )
             elif directive_name == DirectiveNames.LISTEN:
                 msg = "Listening..."

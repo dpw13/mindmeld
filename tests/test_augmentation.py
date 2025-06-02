@@ -23,11 +23,12 @@ NUM_PARAPHRASES = 10
 def english_paraphraser_retain_entities(kwik_e_mart_app_path, request):
     config = get_augmentation_config(app_path=kwik_e_mart_app_path)
     language = "en"
-    config['augmentor_class'] = "EnglishParaphraser"
-    config['retain_entities'] = True
+    config["augmentor_class"] = "EnglishParaphraser"
+    config["retain_entities"] = True
     query_factory = QueryFactory.create_query_factory(app_path=kwik_e_mart_app_path, duckling=True)
-    resource_loader = ResourceLoader.create_resource_loader(app_path=kwik_e_mart_app_path,
-                                                            query_factory=query_factory)
+    resource_loader = ResourceLoader.create_resource_loader(
+        app_path=kwik_e_mart_app_path, query_factory=query_factory
+    )
     request.cls.query_factory = query_factory
     request.cls.augmentor = AugmentorFactory(
         config=config,
@@ -46,14 +47,17 @@ class TestEnglishParaphraserWithEntities:
     @pytest.mark.parametrize(
         "query, entity_types",
         [
-            ("some text that contains no entities", [],),
+            (
+                "some text that contains no entities",
+                [],
+            ),
             (
                 "can you tell me if {springfield|store_name} is possibly open at this time on {friday|sys_time}",
-                ['store_name', 'sys_time'],
+                ["store_name", "sys_time"],
             ),
             (
                 "Open the {china town|store_name} at {1 pm|sys_time|opening_time}",
-                ['store_name', 'sys_time|opening_time'],
+                ["store_name", "sys_time|opening_time"],
             ),
         ],
     )
@@ -68,7 +72,7 @@ class TestEnglishParaphraserWithEntities:
 @pytest.fixture(scope="class")
 def english_paraphraser(kwik_e_mart_app_path, request):
     config = get_augmentation_config(app_path=kwik_e_mart_app_path)
-    config['retain_entities'] = False
+    config["retain_entities"] = False
     language = "en"
     resource_loader = ResourceLoader.create_resource_loader(kwik_e_mart_app_path)
     request.cls.augmentor = AugmentorFactory(
@@ -129,5 +133,5 @@ def test_spanish_paraphrases(kwik_e_mart_app_path, query):
     ).create_augmentor()
 
     paraphrases = multilingual_paraphraser.augment_queries([load_query(query)])
-    multilingual_paraphraser=None
+    multilingual_paraphraser = None
     assert "aumentar el volumen" in paraphrases

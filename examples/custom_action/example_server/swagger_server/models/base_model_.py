@@ -33,7 +33,10 @@ class Model(object):
             value = getattr(self, attr)
             if isinstance(value, list):
                 result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
+                    map(
+                        lambda x: x.to_dict() if hasattr(x, "to_dict") else x,
+                        value,
+                    )
                 )
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()

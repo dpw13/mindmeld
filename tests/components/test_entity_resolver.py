@@ -12,7 +12,10 @@ Tests for `entity_resolver` module.
 import pytest
 
 from mindmeld.components._elasticsearch_helpers import create_es_client
-from mindmeld.components.entity_resolver import EntityResolverFactory, EntityResolver
+from mindmeld.components.entity_resolver import (
+    EntityResolverFactory,
+    EntityResolver,
+)
 from mindmeld.core import Entity
 
 ENTITY_TYPE = "store_name"
@@ -29,14 +32,17 @@ def es_client():
 def resolver_exact_match(resource_loader, es_client):
     """An entity resolver for 'location' on the Kwik-E-Mart app"""
     er_config = {
-        'model_type': 'resolver',
+        "model_type": "resolver",
         "model_settings": {
             "resolver_type": "exact_match",
-        }
+        },
     }
     resolver = EntityResolverFactory.create_resolver(
-        APP_PATH, ENTITY_TYPE, resource_loader=resource_loader,
-        es_client=es_client, er_config=er_config
+        APP_PATH,
+        ENTITY_TYPE,
+        resource_loader=resource_loader,
+        es_client=es_client,
+        er_config=er_config,
     )
     resolver.fit()
     return resolver
@@ -46,14 +52,17 @@ def resolver_exact_match(resource_loader, es_client):
 def resolver_elastic_search(resource_loader, es_client):
     """An entity resolver for 'location' on the Kwik-E-Mart app"""
     er_config = {
-        'model_type': 'resolver',
+        "model_type": "resolver",
         "model_settings": {
             "resolver_type": "text_relevance",
-        }
+        },
     }
     resolver = EntityResolverFactory.create_resolver(
-        APP_PATH, ENTITY_TYPE, resource_loader=resource_loader,
-        es_client=es_client, er_config=er_config
+        APP_PATH,
+        ENTITY_TYPE,
+        resource_loader=resource_loader,
+        es_client=es_client,
+        er_config=er_config,
     )
     resolver.fit()
     return resolver
@@ -63,7 +72,7 @@ def resolver_elastic_search(resource_loader, es_client):
 def resolver_sbert(resource_loader):
     """An entity resolver for 'location' on the Kwik-E-Mart app"""
     er_config = {
-        'model_type': 'resolver',
+        "model_type": "resolver",
         "model_settings": {
             "resolver_type": "sbert_cosine_similarity",
             "pretrained_name_or_abspath": "distilbert-base-nli-stsb-mean-tokens",
@@ -73,11 +82,14 @@ def resolver_sbert(resource_loader):
             "bert_output_type": "mean",
             "augment_lower_case": False,
             "quantize_model": True,
-            "augment_average_synonyms_embeddings": True
-        }
+            "augment_average_synonyms_embeddings": True,
+        },
     }
     resolver = EntityResolverFactory.create_resolver(
-        APP_PATH, ENTITY_TYPE, resource_loader=resource_loader, er_config=er_config
+        APP_PATH,
+        ENTITY_TYPE,
+        resource_loader=resource_loader,
+        er_config=er_config,
     )
     resolver.fit()
     return resolver
@@ -87,14 +99,17 @@ def resolver_sbert(resource_loader):
 def resolver_tfidf(resource_loader, es_client):
     """An entity resolver for 'location' on the Kwik-E-Mart app"""
     er_config = {
-        'model_type': 'resolver',
+        "model_type": "resolver",
         "model_settings": {
             "resolver_type": "tfidf_cosine_similarity",
-        }
+        },
     }
     resolver = EntityResolverFactory.create_resolver(
-        APP_PATH, ENTITY_TYPE, resource_loader=resource_loader,
-        es_client=es_client, er_config=er_config
+        APP_PATH,
+        ENTITY_TYPE,
+        resource_loader=resource_loader,
+        es_client=es_client,
+        er_config=er_config,
     )
     resolver.fit()
     return resolver
@@ -114,11 +129,14 @@ def resolver_default(resource_loader):
 def resolver_deprecated_configs(resource_loader, es_client):
     """An entity resolver for 'location' on the Kwik-E-Mart app"""
     er_config = {
-        'model_type': 'text_relevance',
+        "model_type": "text_relevance",
     }
     resolver = EntityResolverFactory.create_resolver(
-        APP_PATH, ENTITY_TYPE, resource_loader=resource_loader,
-        es_client=es_client, er_config=er_config
+        APP_PATH,
+        ENTITY_TYPE,
+        resource_loader=resource_loader,
+        es_client=es_client,
+        er_config=er_config,
     )
     resolver.fit()
     return resolver
@@ -127,9 +145,7 @@ def resolver_deprecated_configs(resource_loader, es_client):
 @pytest.fixture
 def resolver_deprecated_class(resource_loader, es_client):
     """An entity resolver for 'location' on the Kwik-E-Mart app"""
-    resolver = EntityResolver(
-        APP_PATH, resource_loader, ENTITY_TYPE, es_client=es_client
-    )
+    resolver = EntityResolver(APP_PATH, resource_loader, ENTITY_TYPE, es_client=es_client)
     resolver.fit()
     return resolver
 

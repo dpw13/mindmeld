@@ -17,17 +17,17 @@ appropriate models
 """
 
 import logging
-from typing import Union, Type, Self
+from typing import Union, Type
 
 from .helpers import register_model, ModelType
-from .model import Model, ModelConfig, AbstractModel
+from .model import Model, ModelConfig, AbstractModel, AbstractModelFactory
 from .tagger_models import TaggerModelFactory
 from .text_models import TextModelFactory
 
 logger = logging.getLogger(__name__)
 
 
-class ModelFactory:
+class ModelFactory(AbstractModelFactory):
     """Auto class that identifies appropriate text/tagger model from text_models.py/tagger_models.py
     to load one based on the inputted configs or from the loaded configs file.
 
@@ -37,15 +37,12 @@ class ModelFactory:
     dictionary object.
     """
 
-    def __new__(cls, config: Union[dict, ModelConfig]) -> Self:
+    def __new__(cls, config: Union[dict, ModelConfig]) -> "ModelFactory":
         # method for backwards compatibility in ./helpers/create_model()
         return cls.create_model_from_config(config)
 
     @classmethod
-    def create_model_from_config(
-        cls,
-        model_config: Union[dict, ModelConfig]
-    ) -> Model:
+    def create_model_from_config(cls, model_config: Union[dict, ModelConfig]) -> Model:
         """
         Instantiates and returns a valid model from the specified model configs
 
@@ -62,8 +59,10 @@ class ModelFactory:
 
         is_valid_config = model_config and isinstance(model_config, (ModelConfig, dict))
         if not is_valid_config:
-            msg = f"Need a valid model config to create a text/tagger model in ModelFactory. " \
-                  f"Found model_config={model_config} of type({type(model_config)})"
+            msg = (
+                f"Need a valid model config to create a text/tagger model in ModelFactory. "
+                f"Found model_config={model_config} of type({type(model_config)})"
+            )
             raise ValueError(msg)
 
         model_config = cls._resolve_model_config(model_config)
@@ -89,8 +88,10 @@ class ModelFactory:
         """
 
         if not (path and isinstance(path, str)):
-            msg = f"Need a valid path to load a text/tagger model in ModelFactory. " \
-                  f"Found path={path} of type({type(path)})"
+            msg = (
+                f"Need a valid path to load a text/tagger model in ModelFactory. "
+                f"Found path={path} of type({type(path)})"
+            )
             raise ValueError(msg)
 
         if not path.endswith(".pkl"):
@@ -108,8 +109,10 @@ class ModelFactory:
         except FileNotFoundError:
             # sometimes a model (and its config file) might not be dumped, eg. in role classifiers
             # or even if dumped, can be of NoneType enclosed in a dictionary
-            msg = f"No model file found while trying to load model from path: {path}. It might " \
-                  f"be the case that the classifier didn't need a model due to one or no classes."
+            msg = (
+                f"No model file found while trying to load model from path: {path}. It might "
+                f"be the case that the classifier didn't need a model due to one or no classes."
+            )
             logger.warning(msg)
             return None
 
@@ -135,8 +138,10 @@ class ModelFactory:
 
         # validate configs
         if not isinstance(model_config, ModelConfig):
-            msg = f"Expected input config to be either a valid dictionary or an instance of " \
-                  f"ModelConfig class, but found of type {type(model_config)}"
+            msg = (
+                f"Expected input config to be either a valid dictionary or an instance of "
+                f"ModelConfig class, but found of type {type(model_config)}"
+            )
             raise ValueError(msg)
 
         return model_config
@@ -161,12 +166,14 @@ class ModelFactory:
         try:
             return ModelType(model_type)
         except ValueError as e:
-            msg = f"Invalid model configuration: Unknown model type {model_type}. " \
-                  f"Known types are: {[v.value for v in ModelType.__members__.values()]}"
+            msg = (
+                f"Invalid model configuration: Unknown model type {model_type}. "
+                f"Known types are: {[v.value for v in ModelType.__members__.values()]}"
+            )
             raise ValueError(msg) from e
 
     @staticmethod
-    def _get_model_factory(model_type: ModelType) -> Self:
+    def _get_model_factory(model_type: ModelType) -> Type["ModelFactory"]:
         """
         Returns a factory based on the provided model type
 

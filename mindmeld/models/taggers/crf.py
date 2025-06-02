@@ -77,7 +77,9 @@ class CRFTagger(Tagger):
             marginal_tuples.append(query_marginal_tuples)
         return marginal_tuples
 
-    def predict_proba_distribution(self, examples: Iterable[Query], config: ModelConfig, resources: Dict):
+    def predict_proba_distribution(
+        self, examples: Iterable[Query], config: ModelConfig, resources: Dict
+    ):
         """
         Args:
             examples (list of mindmeld.core.Query): a list of queries to predict on
@@ -104,13 +106,15 @@ class CRFTagger(Tagger):
             predictions.extend(preds)
         return [[tag_maps, predictions]]
 
-    def extract_features(self,
-                         examples: Iterable[Query],
-                         config: ModelConfig,
-                         resources: Dict,
-                         y: Iterable[Iterable[str]]=None,
-                         fit=False,
-                         in_memory=STORE_CRF_FEATURES_IN_MEMORY) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], None]:
+    def extract_features(
+        self,
+        examples: Iterable[Query],
+        config: ModelConfig,
+        resources: Dict,
+        y: Iterable[Iterable[str]] = None,
+        fit=False,
+        in_memory=STORE_CRF_FEATURES_IN_MEMORY,
+    ) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], None]:
         """Transforms a list of examples into a feature matrix.
 
         Args:
@@ -130,8 +134,10 @@ class CRFTagger(Tagger):
         # eventually into memory cause of the scikit-learn train_test_split function.
         # Created https://github.com/cisco/mindmeld/issues/417 for this.
         if not in_memory:
-            logger.warning("PyTorch CRF does not currently support STORE_CRF_FEATURES_IN_MEMORY. This may be fixed in "
-                           "a future release.")
+            logger.warning(
+                "PyTorch CRF does not currently support STORE_CRF_FEATURES_IN_MEMORY. This may be fixed in "
+                "a future release."
+            )
         for _, example in enumerate(examples):
             feats.append(self.extract_example_features(example, config, resources))
         X = self._preprocess_data(feats, fit)
@@ -150,9 +156,7 @@ class CRFTagger(Tagger):
         Returns:
             list[dict]: Features.
         """
-        return extract_sequence_features(
-            example, config.example_type, config.features, resources
-        )
+        return extract_sequence_features(example, config.example_type, config.features, resources)
 
     def _preprocess_data(self, X, fit=False):
         """Converts data into formats of CRF suite.

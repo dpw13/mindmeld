@@ -176,11 +176,8 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             has_custom_preprocessors (bool): Whether atleast one custom preprocessor exists.
         """
-        return (
-            self.preprocessors
-            and not any(
-                [isinstance(elem, NoOpPreprocessor) for elem in self.preprocessors]
-            )
+        return self.preprocessors and not any(
+            [isinstance(elem, NoOpPreprocessor) for elem in self.preprocessors]
         )
 
     def normalize(self, text, keep_special_chars=None):
@@ -370,19 +367,15 @@ class TextPreparationPipeline:  # pylint: disable=R0904
 
             unannotated_spans.append((prev_entity_end, entity_start))
             entity_text_start = entity_start + 1
-            unannotated_spans.append(
-                (entity_text_start, entity_text_start + len(entity_text))
-            )
+            unannotated_spans.append((entity_text_start, entity_text_start + len(entity_text)))
             prev_entity_end = entity_end
 
-        # Append a span from the end of last entity to the end of the text (if it exists) 
+        # Append a span from the end of last entity to the end of the text (if it exists)
         if prev_entity_end < len(text):
             unannotated_spans.append((prev_entity_end, len(text)))
 
         # Filter out spans that have a length of 0
-        unannotated_spans = [
-            span for span in unannotated_spans if span[1] - span[0] > 0
-        ]
+        unannotated_spans = [span for span in unannotated_spans if span[1] - span[0] > 0]
         return unannotated_spans
 
     @staticmethod
@@ -408,9 +401,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         return unannotated_to_annotated_idx_map
 
     @staticmethod
-    def convert_token_idx_unannotated_to_annotated(
-        tokens, unannotated_to_annotated_idx_map
-    ):
+    def convert_token_idx_unannotated_to_annotated(tokens, unannotated_to_annotated_idx_map):
         """In-place function that reverts the token start indices to the
         index of the character in the orginal text with annotations.
 
@@ -490,7 +481,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
 
         if prev_entity_end < len(text):
             # Adds the remainder of the text after the last end brace } "function(post_entity_text)"
-            modified_text.append(function(text[prev_entity_end : len(text)]))
+            modified_text.append(function(text[prev_entity_end:]))
 
         return "".join(modified_text)
 
@@ -515,9 +506,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
             entity_text = match.group(1)
 
             # Adds tokens from text before the current entity and after the last entity
-            tokens_before_entity = self.tokenizer.tokenize(
-                text[prev_entity_end:entity_start]
-            )
+            tokens_before_entity = self.tokenizer.tokenize(text[prev_entity_end:entity_start])
             TextPreparationPipeline.offset_token_start_values(
                 tokens=tokens_before_entity, offset=prev_entity_end
             )
@@ -537,9 +526,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
 
         if prev_entity_end < len(text):
             # Add tokens from the text after the last MindMeld entity
-            tokens_after_last_entity = self.tokenizer.tokenize(
-                text[prev_entity_end : len(text)]
-            )
+            tokens_after_last_entity = self.tokenizer.tokenize(text[prev_entity_end])
             TextPreparationPipeline.offset_token_start_values(
                 tokens=tokens_after_last_entity, offset=prev_entity_end
             )
@@ -570,9 +557,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         filtered_tokens = []
         for token in tokens:
             category_by_char = [unicodedata.category(x) for x in token["text"]]
-            all_characters_are_space = all(
-                [c == UNICODE_SPACE_CATEGORY for c in category_by_char]
-            )
+            all_characters_are_space = all([c == UNICODE_SPACE_CATEGORY for c in category_by_char])
             if not all_characters_are_space:
                 filtered_tokens.append(token)
         return filtered_tokens
@@ -695,7 +680,7 @@ class TextPreparationPipelineFactory:
             # Check if a custom TextPreparationPipeline has been created in app.py
             try:
                 app = get_app(app_path)
-                if getattr(app, 'text_preparation_pipeline', None):
+                if getattr(app, "text_preparation_pipeline", None):
                     logger.info(
                         "Using custom text_preparation_pipeline from %s/__init__.py.",
                         app_path,
@@ -731,8 +716,7 @@ class TextPreparationPipelineFactory:
 
         stemmer = (
             "NoOpStemmer"
-            if "stemmer" in text_preparation_config
-               and not text_preparation_config["stemmer"]
+            if "stemmer" in text_preparation_config and not text_preparation_config["stemmer"]
             else text_preparation_config.get("stemmer")
         )
 
@@ -787,18 +771,14 @@ class TextPreparationPipelineFactory:
 
         # Instantiate Normalizers
         instantiated_normalizers = (
-            TextPreparationPipelineFactory._construct_pipeline_components(
-                Normalizer, normalizers
-            )
+            TextPreparationPipelineFactory._construct_pipeline_components(Normalizer, normalizers)
             if normalizers
             else [NoOpNormalizer()]
         )
 
         # Instatiate Regex Norm Rules as Normalizer Classes
         if regex_norm_rules:
-            regex_normalizers = RegexNormalizerRuleFactory.get_regex_normalizers(
-                regex_norm_rules
-            )
+            regex_normalizers = RegexNormalizerRuleFactory.get_regex_normalizers(regex_norm_rules)
             # Adds the regex normalizers as the first normalizers by default
             instantiated_normalizers = regex_normalizers + instantiated_normalizers
 
@@ -813,9 +793,7 @@ class TextPreparationPipelineFactory:
 
         # Instantiate Stemmer
         instantiated_stemmer = (
-            TextPreparationPipelineFactory._construct_pipeline_component(
-                Stemmer, stemmer
-            )
+            TextPreparationPipelineFactory._construct_pipeline_component(Stemmer, stemmer)
             if stemmer
             else StemmerFactory.get_stemmer_by_language(language)
         )
@@ -830,7 +808,7 @@ class TextPreparationPipelineFactory:
 
     @staticmethod
     def create_default_text_preparation_pipeline():
-        """ Default text_preparation_pipeline used across MindMeld internally."""
+        """Default text_preparation_pipeline used across MindMeld internally."""
         return TextPreparationPipelineFactory.create_text_preparation_pipeline(
             **DEFAULT_EN_TEXT_PREPARATION_CONFIG
         )
@@ -878,15 +856,9 @@ class TextPreparationPipelineFactory:
         """
         if isinstance(component, str):
             component_factory_getter = {
-                Preprocessor.__name__: lambda: PreprocessorFactory.get_preprocessor(
-                    component
-                ),
-                Normalizer.__name__: lambda: NormalizerFactory.get_normalizer(
-                    component
-                ),
-                Tokenizer.__name__: lambda: TokenizerFactory.get_tokenizer(
-                    component, language
-                ),
+                Preprocessor.__name__: lambda: PreprocessorFactory.get_preprocessor(component),
+                Normalizer.__name__: lambda: NormalizerFactory.get_normalizer(component),
+                Tokenizer.__name__: lambda: TokenizerFactory.get_tokenizer(component, language),
                 Stemmer.__name__: lambda: StemmerFactory.get_stemmer(component),
             }
             return component_factory_getter.get(expected_component_class.__name__)()

@@ -42,9 +42,7 @@ class DomainClassifier(Classifier):
         """
         kwargs["example_type"] = QUERY_EXAMPLE_TYPE
         kwargs["label_type"] = CLASS_LABEL_TYPE
-        loaded_config = get_classifier_config(
-            self.CLF_TYPE, self._resource_loader.app_path
-        )
+        loaded_config = get_classifier_config(self.CLF_TYPE, self._resource_loader.app_path)
         return super()._get_model_config(loaded_config, **kwargs)
 
     def fit(self, *args, **kwargs):  # pylint: disable=signature-differs

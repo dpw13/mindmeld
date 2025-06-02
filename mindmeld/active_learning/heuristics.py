@@ -79,7 +79,7 @@ def _get_labels_to_indices(labels: List) -> defaultdict:
 
 
 class Heuristic(ABC):
-    """ Heuristic base class used as Active Learning query selection strategies."""
+    """Heuristic base class used as Active Learning query selection strategies."""
 
     @staticmethod
     @abstractmethod
@@ -131,7 +131,9 @@ class Heuristic(ABC):
 
         """
         all_sample_ranks = np.apply_along_axis(
-            Heuristic._convert_to_sample_ranks, axis=1, arr=ordered_sample_indices_list
+            Heuristic._convert_to_sample_ranks,
+            axis=1,
+            arr=ordered_sample_indices_list,
         )
         total_sample_ranks = all_sample_ranks.sum(axis=0)
         return list(np.argsort(total_sample_ranks))
@@ -198,9 +200,7 @@ class LeastConfidenceSampling(ABC):
         Returns:
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
-        all_ordered_sample_indices = [
-            LeastConfidenceSampling.rank_2d(c) for c in confidences_3d
-        ]
+        all_ordered_sample_indices = [LeastConfidenceSampling.rank_2d(c) for c in confidences_3d]
         return Heuristic.ordered_indices_list_to_final_rank(all_ordered_sample_indices)
 
     @staticmethod
@@ -232,14 +232,10 @@ class MarginSampling(ABC):
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
         _, element_size = np.array(confidences_2d).shape
-        descending_confidences_per_element = np.partition(
-            confidences_2d, kth=(element_size - 2)
-        )
+        descending_confidences_per_element = np.partition(confidences_2d, kth=(element_size - 2))
         highest_val_per_element = descending_confidences_per_element[:, -1]
         second_highest_val_per_element = descending_confidences_per_element[:, -2]
-        margin_per_element = np.abs(
-            highest_val_per_element - second_highest_val_per_element
-        )
+        margin_per_element = np.abs(highest_val_per_element - second_highest_val_per_element)
         ranked_indices_low_to_high_margin = np.argsort(margin_per_element)
         return list(ranked_indices_low_to_high_margin)
 
@@ -279,9 +275,7 @@ class MarginSampling(ABC):
                     new_sequences.append((new_seq, new_score))
 
             # sort all new sequences in the de-creasing order of their score
-            output_sequences = sorted(
-                new_sequences, key=lambda val: val[1], reverse=True
-            )
+            output_sequences = sorted(new_sequences, key=lambda val: val[1], reverse=True)
 
             # select top-k based on score
             output_sequences = output_sequences[:top_k]
@@ -291,10 +285,12 @@ class MarginSampling(ABC):
     @staticmethod
     def rank_entities(entity_confidences: List[List[List[float]]]) -> List[int]:
         """
-        Queries are ranked on the basis of Margin Sampling for tag sequences. This approach uses beam search to
-        obtain the top 2 queries/sequences in terms of the query confidences for entities. The margin is calculated
-        between these top two sequences.
-        (For more information about this method: https://dl.acm.org/doi/pdf/10.5555/1613715.1613855)
+        Queries are ranked on the basis of Margin Sampling for tag sequences. This approach uses
+        beam search to obtain the top 2 queries/sequences in terms of the query confidences for
+        entities. The margin is calculated between these top two sequences.
+
+        (For more information about this method:
+        https://dl.acm.org/doi/pdf/10.5555/1613715.1613855)
         """
         query_margin_list = []
 
@@ -302,9 +298,7 @@ class MarginSampling(ABC):
             top_two_sequences = MarginSampling.beam_search_decoder(sequence, top_k=2)
 
             # anti-log to get back probabilities
-            margin = math.exp(top_two_sequences[0][1]) - math.exp(
-                top_two_sequences[1][1]
-            )
+            margin = math.exp(top_two_sequences[0][1]) - math.exp(top_two_sequences[1][1])
 
             query_margin_list.append(margin)
 
@@ -323,9 +317,7 @@ class EntropySampling(ABC):
         Returns:
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
-        entropy_per_element = scipy_entropy(
-            np.array(confidences_2d), axis=1, base=ENTROPY_LOG_BASE
-        )
+        entropy_per_element = scipy_entropy(np.array(confidences_2d), axis=1, base=ENTROPY_LOG_BASE)
         high_to_low_entropy = np.argsort(entropy_per_element)[::-1]
         return list(high_to_low_entropy)
 
@@ -340,9 +332,7 @@ class EntropySampling(ABC):
         Returns:
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
-        all_ordered_sample_indices = [
-            EntropySampling.rank_2d(c) for c in confidences_3d
-        ]
+        all_ordered_sample_indices = [EntropySampling.rank_2d(c) for c in confidences_3d]
         return Heuristic.ordered_indices_list_to_final_rank(all_ordered_sample_indices)
 
     @staticmethod
@@ -356,9 +346,7 @@ class EntropySampling(ABC):
         """
         sequence_entropy_list = []
         for sequence in entity_confidences:
-            entropy_per_token = scipy_entropy(
-                np.array(sequence), axis=1, base=ENTROPY_LOG_BASE
-            )
+            entropy_per_token = scipy_entropy(np.array(sequence), axis=1, base=ENTROPY_LOG_BASE)
 
             total_entropy = sum(entropy_per_token)
             total_token_entropy = total_entropy / len(entropy_per_token)
@@ -379,9 +367,7 @@ class DisagreementSampling(ABC):
         Returns:
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
-        raise NotImplementedError(
-            "DisagreementSampling does not support 2d confidences."
-        )
+        raise NotImplementedError("DisagreementSampling does not support 2d confidences.")
 
     @staticmethod
     def rank_3d(confidences_3d: List[List[List[float]]]) -> List[int]:
@@ -414,13 +400,12 @@ class KLDivergenceSampling(ABC):
         Returns:
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
-        raise NotImplementedError(
-            "KLDivergenceSampling does not support 2d confidences."
-        )
+        raise NotImplementedError("KLDivergenceSampling does not support 2d confidences.")
 
     @staticmethod
     def rank_3d(
-        confidences_3d: List[List[List[float]]], confidence_segments: Dict = None
+        confidences_3d: List[List[List[float]]],
+        confidence_segments: Dict = None,
     ) -> List[int]:
         """Calculates the KL Divergence between the average confidence distribution across
         all models for a given class and the confidence distribution for a given element in
@@ -434,10 +419,8 @@ class KLDivergenceSampling(ABC):
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
         if confidence_segments:
-            divergences = (
-                KLDivergenceSampling.get_divergences_per_element_with_segments(
-                    confidences_3d, confidence_segments
-                )
+            divergences = KLDivergenceSampling.get_divergences_per_element_with_segments(
+                confidences_3d, confidence_segments
             )
         else:
             divergences = KLDivergenceSampling.get_divergences_per_element_no_segments(
@@ -522,8 +505,8 @@ class KLDivergenceSampling(ABC):
     def get_domain(confidence_segments: Dict, row: List[List[float]]) -> str:
         """Get the domain for a given probability row, inferred based on the non-zero values.
         Args:
-            confidence_segments (Dict[str, tuple(int, int)]): A mapping between domains (str) to the
-                corresponding indices in the probability vector. Used for intent-level KLD.
+            confidence_segments (Dict[str, tuple(int, int)]): A mapping between domains (str) to
+                the corresponding indices in the probability vector. Used for intent-level KLD.
             row (List[List[float]]): A single row representing a queries probability distrubition.
         Returns:
             domain (str): The domain that the given row belongs to.
@@ -565,8 +548,7 @@ class EnsembleSampling(ABC):
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
         all_ordered_sample_indices = [
-            heuristic.rank_2d(confidences_2d)
-            for heuristic in EnsembleSampling.get_heuristics_2d()
+            heuristic.rank_2d(confidences_2d) for heuristic in EnsembleSampling.get_heuristics_2d()
         ]
         return Heuristic.ordered_indices_list_to_final_rank(all_ordered_sample_indices)
 
@@ -581,8 +563,7 @@ class EnsembleSampling(ABC):
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
         all_ordered_sample_indices = [
-            heuristic.rank_3d(confidences_3d)
-            for heuristic in EnsembleSampling.get_heuristics_3d()
+            heuristic.rank_3d(confidences_3d) for heuristic in EnsembleSampling.get_heuristics_3d()
         ]
         return Heuristic.ordered_indices_list_to_final_rank(all_ordered_sample_indices)
 

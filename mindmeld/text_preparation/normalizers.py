@@ -124,12 +124,11 @@ class ASCIIFold(Normalizer):
         Load mapping of ascii code points to ascii characters.
         """
         logger.debug(
-            "Loading ascii folding mapping from file: %s.", ASCII_FOLDING_DICT_PATH
+            "Loading ascii folding mapping from file: %s.",
+            ASCII_FOLDING_DICT_PATH,
         )
         ascii_folding_table = {}
-        with codecs.open(
-            ASCII_FOLDING_DICT_PATH, "r", encoding="unicode_escape"
-        ) as mapping_file:
+        with codecs.open(ASCII_FOLDING_DICT_PATH, "r", encoding="unicode_escape") as mapping_file:
             for line in mapping_file:
                 codepoint, ascii_char = line.split()
                 ascii_folding_table[ord(codepoint)] = ascii_char
@@ -340,9 +339,7 @@ class NormalizerFactory:
             (Normalizer): Normalizer Class
         """
         if normalizer in DEFAULT_REGEX_NORM_RULES:
-            return RegexNormalizerRuleFactory.get_default_regex_normalizer_rule(
-                normalizer
-            )
+            return RegexNormalizerRuleFactory.get_default_regex_normalizer_rule(normalizer)
 
         normalizer_classes = {
             NoOpNormalizer.__name__: NoOpNormalizer,

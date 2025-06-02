@@ -54,25 +54,25 @@ def nfkc_normalizer():
 
 
 def test_ascii_fold_ja(ascii_fold_normalizer):
-    """ Ascii fold should not modify the Japanese sentence JA_SENTENCE_ONE"""
+    """Ascii fold should not modify the Japanese sentence JA_SENTENCE_ONE"""
     normalized_text = ascii_fold_normalizer.normalize(JA_SENTENCE_ONE)
     assert normalized_text == JA_SENTENCE_ONE
 
 
 def test_ascii_fold_de_one(ascii_fold_normalizer):
-    """ Ascii fold should normalize the German weiss character."""
+    """Ascii fold should normalize the German weiss character."""
     normalized_text = ascii_fold_normalizer.normalize(DE_SENTENCE_ONE)
     assert normalized_text == "Ein Gentleman ist vorbeigekommen, der weiss"
 
 
 def test_ascii_fold_de_two(ascii_fold_normalizer):
-    """ Ascii fold should normalize the German unlauts (double dots over vowels)."""
+    """Ascii fold should normalize the German unlauts (double dots over vowels)."""
     normalized_text = ascii_fold_normalizer.normalize(DE_SENTENCE_TWO)
     assert normalized_text == "Sie ist sehr kompetent,zuverlassig und vertrauenswurdig."
 
 
 def test_ascii_fold_es_one(ascii_fold_normalizer):
-    """ Ascii fold should normalize the accents in the Spanish sentence."""
+    """Ascii fold should normalize the accents in the Spanish sentence."""
     normalized_text = ascii_fold_normalizer.normalize(ES_SENTENCE_ONE)
     assert normalized_text == "Ha pasado un caballero, ¡quien sabe por que paso!"
 
@@ -84,12 +84,18 @@ def test_ascii_fold_es_one(ascii_fold_normalizer):
         (JA_SENTENCE_TWO, "株式会社ＫＡＤＯＫＡＷＡ Ｆｕｔｕｒｅ Ｐｕｂｌｉｓｈｉｎｇ"),
         (JA_SENTENCE_THREE, "パピプペポ"),
         (DE_SENTENCE_ONE, "Ein Gentleman ist vorbeigekommen, der weiß"),
-        (DE_SENTENCE_TWO, "Sie ist sehr kompetent,zuverlässig und vertrauenswürdig."),
-        (ES_SENTENCE_ONE, "Ha pasado un caballero, ¡quién sabe por qué pasó!"),
+        (
+            DE_SENTENCE_TWO,
+            "Sie ist sehr kompetent,zuverlässig und vertrauenswürdig.",
+        ),
+        (
+            ES_SENTENCE_ONE,
+            "Ha pasado un caballero, ¡quién sabe por qué pasó!",
+        ),
     ],
 )
 def test_nfd_normalization(nfd_normalizer, sentence, expected_normalized_text):
-    """ Testing NFD normalization."""
+    """Testing NFD normalization."""
     normalized_text = nfd_normalizer.normalize(sentence)
     assert normalized_text == expected_normalized_text
 
@@ -106,7 +112,7 @@ def test_nfd_normalization(nfd_normalizer, sentence, expected_normalized_text):
     ],
 )
 def test_nfc_normalization(nfc_normalizer, sentence, expected_normalized_text):
-    """ Testing NFC normalization."""
+    """Testing NFC normalization."""
     normalized_text = nfc_normalizer.normalize(sentence)
     assert normalized_text == expected_normalized_text
 
@@ -118,12 +124,18 @@ def test_nfc_normalization(nfc_normalizer, sentence, expected_normalized_text):
         (JA_SENTENCE_TWO, "株式会社KADOKAWA Future Publishing"),
         (JA_SENTENCE_THREE, "パピプペポ"),
         (DE_SENTENCE_ONE, DE_SENTENCE_ONE),
-        (DE_SENTENCE_TWO, "Sie ist sehr kompetent,zuverlässig und vertrauenswürdig."),
-        (ES_SENTENCE_ONE, "Ha pasado un caballero, ¡quién sabe por qué pasó!"),
+        (
+            DE_SENTENCE_TWO,
+            "Sie ist sehr kompetent,zuverlässig und vertrauenswürdig.",
+        ),
+        (
+            ES_SENTENCE_ONE,
+            "Ha pasado un caballero, ¡quién sabe por qué pasó!",
+        ),
     ],
 )
 def test_nfkd_normalization(nfkd_normalizer, sentence, expected_normalized_text):
-    """ Testing NFKD normalization."""
+    """Testing NFKD normalization."""
     normalized_text = nfkd_normalizer.normalize(sentence)
     assert normalized_text == expected_normalized_text
 
@@ -140,7 +152,7 @@ def test_nfkd_normalization(nfkd_normalizer, sentence, expected_normalized_text)
     ],
 )
 def test_nfkc_normalization(nfkc_normalizer, sentence, expected_normalized_text):
-    """ Testing NFKC normalization."""
+    """Testing NFKC normalization."""
     normalized_text = nfkc_normalizer.normalize(sentence)
     assert normalized_text == expected_normalized_text
 
@@ -150,11 +162,8 @@ def test_lowercase_normalization():
 
 
 def test_get_regex_normalizers():
-
     regex_norm_rule = {"pattern": ".*", "replacement": ""}
-    regex_normalizer = RegexNormalizerRuleFactory.get_regex_normalizers(
-        [regex_norm_rule]
-    )[0]
+    regex_normalizer = RegexNormalizerRuleFactory.get_regex_normalizers([regex_norm_rule])[0]
     assert regex_normalizer.normalize("Cisco") == ""
 
 
@@ -162,10 +171,7 @@ def test_get_regex_normalizers():
 
 
 def _check_match(text_preparation_pipeline, regex_norm_rule, input_text, expected_text):
-
-    regex_normalizer = RegexNormalizerRuleFactory.get_default_regex_normalizer_rule(
-        regex_norm_rule
-    )
+    regex_normalizer = RegexNormalizerRuleFactory.get_default_regex_normalizer_rule(regex_norm_rule)
     text_preparation_pipeline.normalizers = [regex_normalizer]
     normalized_text = text_preparation_pipeline.normalize(input_text)
     assert normalized_text == expected_text
@@ -179,9 +185,7 @@ def _check_match(text_preparation_pipeline, regex_norm_rule, input_text, expecte
         ("JAMES' CAR", "JAMES CAR"),
     ],
 )
-def test_remove_apos_at_end_of_possesive_form(
-    text_preparation_pipeline, input_text, expected_text
-):
+def test_remove_apos_at_end_of_possesive_form(text_preparation_pipeline, input_text, expected_text):
     _check_match(
         text_preparation_pipeline,
         "RemoveAposAtEndOfPossesiveForm",
@@ -196,12 +200,15 @@ def test_remove_apos_at_end_of_possesive_form(
         ("          MindMeld", "MindMeld"),
         ("      ", ""),
         ("      How are you?", "How are you?"),
-        ("       わくわくしてます!", "わくわくしてます!")
+        ("       わくわくしてます!", "わくわくしてます!"),
     ],
 )
 def test_remove_beginning_space(text_preparation_pipeline, input_text, expected_text):
     _check_match(
-        text_preparation_pipeline, "RemoveBeginningSpace", input_text, expected_text
+        text_preparation_pipeline,
+        "RemoveBeginningSpace",
+        input_text,
+        expected_text,
     )
 
 
@@ -211,24 +218,31 @@ def test_remove_beginning_space(text_preparation_pipeline, input_text, expected_
         ("MindMeld           ", "MindMeld"),
         ("      ", ""),
         ("How are you?     ", "How are you?"),
-        ("わくわくしてます!     ", "わくわくしてます!")
+        ("わくわくしてます!     ", "わくわくしてます!"),
     ],
 )
 def test_remove_trailing_space(text_preparation_pipeline, input_text, expected_text):
     _check_match(
-        text_preparation_pipeline, "RemoveTrailingSpace", input_text, expected_text
+        text_preparation_pipeline,
+        "RemoveTrailingSpace",
+        input_text,
+        expected_text,
     )
 
 
 @pytest.mark.parametrize(
     "input_text, expected_text",
-    [("How    are    you?", "How are you?"), ("I          am   fine!", "I am fine!")],
+    [
+        ("How    are    you?", "How are you?"),
+        ("I          am   fine!", "I am fine!"),
+    ],
 )
-def test_replace_spaces_with_space(
-    text_preparation_pipeline, input_text, expected_text
-):
+def test_replace_spaces_with_space(text_preparation_pipeline, input_text, expected_text):
     _check_match(
-        text_preparation_pipeline, "ReplaceSpacesWithSpace", input_text, expected_text
+        text_preparation_pipeline,
+        "ReplaceSpacesWithSpace",
+        input_text,
+        expected_text,
     )
 
 
@@ -236,9 +250,7 @@ def test_replace_spaces_with_space(
     "input_text, expected_text",
     [("How_are_you?", "How are you?"), ("I_am_fine", "I am fine")],
 )
-def test_replace_underscore_with_space(
-    text_preparation_pipeline, input_text, expected_text
-):
+def test_replace_underscore_with_space(text_preparation_pipeline, input_text, expected_text):
     _check_match(
         text_preparation_pipeline,
         "ReplaceUnderscoreWithSpace",
@@ -367,13 +379,14 @@ def test_replace_special_chars_between_letters_with_space(
         ),
         ("Test: awesome band sigur rós.", "test awesome band sigur ros"),
         ("D'Angelo's new album", "d'angelo 's new album"),
-        ("is s.o.b. ,, gonna be on at 8 p.m.?", "is s o b gonna be on at 8 p m"),
+        (
+            "is s.o.b. ,, gonna be on at 8 p.m.?",
+            "is s o b gonna be on at 8 p m",
+        ),
         ("join O'reilly's pmr", "join o'reilly 's pmr"),
     ],
 )
-def test_normalization_on_sample_sentences(
-    text_preparation_pipeline, raw_text, expected_text
-):
+def test_normalization_on_sample_sentences(text_preparation_pipeline, raw_text, expected_text):
     assert expected_text == text_preparation_pipeline.normalize(raw_text)
 
 

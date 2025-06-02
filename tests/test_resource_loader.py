@@ -22,9 +22,14 @@ def test_get_labeled_queries(resource_loader):
 
     # verify the intents are correct
     assert set(qmap["banking"].keys()) == {"transfer_money"}
-    assert set(qmap["store_info"].keys()) == {"greet", "get_store_number",
-                                              "find_nearest_store", "exit",
-                                              "get_store_hours", "help"}
+    assert set(qmap["store_info"].keys()) == {
+        "greet",
+        "get_store_number",
+        "find_nearest_store",
+        "exit",
+        "get_store_hours",
+        "help",
+    }
 
 
 def test_flatten_query_tree(resource_loader):
@@ -39,8 +44,9 @@ def test_flatten_query_tree(resource_loader):
 
     # verify that query trees built from different query_caches will raise an error
     hash_id = resource_loader.query_factory.text_preparation_pipeline.get_hashid()
-    qmap["banking"]["transfer_money"].cache = QueryCache(app_path=resource_loader.app_path,
-                                                         schema_version_hash=hash_id)
+    qmap["banking"]["transfer_money"].cache = QueryCache(
+        app_path=resource_loader.app_path, schema_version_hash=hash_id
+    )
     with pytest.raises(ValueError):
         flattened = resource_loader.flatten_query_tree(qmap)
 
@@ -60,8 +66,15 @@ def _run_tests_on_pql(queries):
     assert set(queries.domains()) == {"banking", "store_info"}
 
     # verify the intents are correct
-    assert set(queries.intents()) == {"transfer_money", "greet", "get_store_number",
-                                      "find_nearest_store", "exit", "get_store_hours", "help"}
+    assert set(queries.intents()) == {
+        "transfer_money",
+        "greet",
+        "get_store_number",
+        "find_nearest_store",
+        "exit",
+        "get_store_hours",
+        "help",
+    }
 
     def test_reordering(iterator):
         # verify that reordering works properly
@@ -90,8 +103,6 @@ def test_processed_query_list(resource_loader):
     _run_tests_on_pql(queries)
 
     # test in-memory list
-    mem_pql = ProcessedQueryList.from_in_memory_list(
-        list(queries.processed_queries())
-    )
+    mem_pql = ProcessedQueryList.from_in_memory_list(list(queries.processed_queries()))
     assert isinstance(mem_pql.cache, ProcessedQueryList.MemoryCache)
     _run_tests_on_pql(mem_pql)

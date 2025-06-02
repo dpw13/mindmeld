@@ -107,10 +107,6 @@ universal = 1
 [tool.black]
 line-length = 100
 
-[tool.flake8]
-max-line-length = 100
-ignore = "E203,E231,W503"
-
 [tool.pytest]
 filterwarnings = [
     "ignore::DeprecationWarning"

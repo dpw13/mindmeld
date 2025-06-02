@@ -27,7 +27,14 @@ from .helpers import (
     ingest_dynamic_gazetteer,
 )
 from .labels import LabelEncoder, EntityLabelEncoder
-from .model import Examples, Labels, ModelConfig, Model, PytorchModel, AbstractModelFactory
+from .model import (
+    Examples,
+    Labels,
+    ModelConfig,
+    Model,
+    PytorchModel,
+    AbstractModelFactory,
+)
 from .nn_utils import get_token_classifier_cls, TokenClassificationType
 from .taggers.taggers import Tagger
 from .taggers.crf import CRFTagger
@@ -85,7 +92,10 @@ class TaggerModel(Model):
 
     DEFAULT_FEATURES = {
         "bag-of-words-seq": {
-            "ngram_lengths_to_start_positions": {1: [-2, -1, 0, 1, 2], 2: [-2, -1, 0, 1]}
+            "ngram_lengths_to_start_positions": {
+                1: [-2, -1, 0, 1, 2],
+                2: [-2, -1, 0, 1],
+            }
         },
         "in-gaz-span-seq": {},
         "sys-candidates-seq": {"start_positions": [-1, 0, 1]},
@@ -231,9 +241,7 @@ class TaggerModel(Model):
         self.types = types
         if len(set(types)) == 0:
             self._no_entities = True
-            logger.info(
-                "There are no labels in this label set, so we don't fit the model."
-            )
+            logger.info("There are no labels in this label set, so we don't fit the model.")
             return self
         # Extract labels - label encoders are the same across all entity recognition models
         self._label_encoder: EntityLabelEncoder = get_label_encoder(self.config)
@@ -252,7 +260,9 @@ class TaggerModel(Model):
             non_supported_classes = (CRFTagger, LstmModel) if LstmModel is not None else CRFTagger
             # run cross validation to select params
             if isinstance(self._clf, non_supported_classes):
-                raise MindMeldError(f"The {type(self._clf).__name__} model does not support cross-validation")
+                raise MindMeldError(
+                    f"The {type(self._clf).__name__} model does not support cross-validation"
+                )
 
             _, best_params = self._fit_cv(X, y, groups, fixed_params=params)
             self._clf = self._fit(X, y, best_params)
@@ -271,12 +281,11 @@ class TaggerModel(Model):
             list: A list of dictionaries of extracted features and their weights
         """
         workspace_resource = ingest_dynamic_gazetteer(
-            self._resources, dynamic_resource=dynamic_resource,
-            text_preparation_pipeline=self.text_preparation_pipeline
+            self._resources,
+            dynamic_resource=dynamic_resource,
+            text_preparation_pipeline=self.text_preparation_pipeline,
         )
-        return self._clf.extract_example_features(
-            query, self.config, workspace_resource
-        )
+        return self._clf.extract_example_features(query, self.config, workspace_resource)
 
     def predict(self, examples, dynamic_resource=None):
         """
@@ -291,12 +300,11 @@ class TaggerModel(Model):
             return [()]
 
         workspace_resource = ingest_dynamic_gazetteer(
-            self._resources, dynamic_resource=dynamic_resource,
-            text_preparation_pipeline=self.text_preparation_pipeline
+            self._resources,
+            dynamic_resource=dynamic_resource,
+            text_preparation_pipeline=self.text_preparation_pipeline,
         )
-        predicted_tags = self._clf.extract_and_predict(
-            examples, self.config, workspace_resource
-        )
+        predicted_tags = self._clf.extract_and_predict(examples, self.config, workspace_resource)
         # Decode the tags to labels
         labels = [
             self._label_encoder.decode([example_predicted_tags], examples=[example])[0]
@@ -318,8 +326,9 @@ class TaggerModel(Model):
             return []
 
         workspace_resource = ingest_dynamic_gazetteer(
-            self._resources, dynamic_resource=dynamic_resource,
-            text_preparation_pipeline=self.text_preparation_pipeline
+            self._resources,
+            dynamic_resource=dynamic_resource,
+            text_preparation_pipeline=self.text_preparation_pipeline,
         )
 
         if fetch_distribution:
@@ -328,15 +337,14 @@ class TaggerModel(Model):
             )
             return tuple(zip(*predicted_tags_probas[0]))
 
-        predicted_tags_probas = self._clf.predict_proba(
-            examples, self.config, workspace_resource
-        )
+        predicted_tags_probas = self._clf.predict_proba(examples, self.config, workspace_resource)
         tags, probas = zip(*predicted_tags_probas[0])
         entity_confidence = []
         entities = self._label_encoder.decode([tags], examples=[examples[0]])[0]
         for entity in entities:
-            entity_proba = \
-                probas[entity.normalized_token_span.start: entity.normalized_token_span.end + 1]
+            entity_proba = probas[
+                entity.normalized_token_span.start : entity.normalized_token_span.end + 1
+            ]
             # We assume that the score of the least likely tag in the sequence as the confidence
             # score of the entire entity sequence
             entity_confidence.append(min(entity_proba))
@@ -356,8 +364,7 @@ class TaggerModel(Model):
         """
         if self._no_entities:
             logger.info(
-                "There are no labels in this label set, so we don't "
-                "run model evaluation."
+                "There are no labels in this label set, so we don't " "run model evaluation."
             )
             return
 
@@ -370,7 +377,13 @@ class TaggerModel(Model):
                 probas.append(self.predict_proba([example], fetch_distribution=True))
 
             evaluations = [
-                EvaluatedExample(e, labels[i], predictions[i], probas[i], self.config.label_type)
+                EvaluatedExample(
+                    e,
+                    labels[i],
+                    predictions[i],
+                    probas[i],
+                    self.config.label_type,
+                )
                 for i, e in enumerate(examples)
             ]
 
@@ -385,33 +398,34 @@ class TaggerModel(Model):
         return model_eval
 
     def _dump(self, path):
-
         # In TaggerModel, unlike TextModel, two dumps happen,
         # one, the underneath classifier and two, the tagger model's metadata
 
         metadata = {"serializable": self._clf.is_serializable}
 
         if self._clf.is_serializable:
-            metadata.update({
-                "model": self
-            })
+            metadata.update({"model": self})
         else:
             # underneath tagger dump for LSTM model, returned `model_dir` is None for MEMM & CRF
             self._clf.dump(path)
             if isinstance(self._clf, CRFTagger):
-                metadata.update({
-                    "model_config": self.config,
-                    "feature_and_label_encoder": self._clf.get_torch_encoder(),
-                    "model_type": "crf"
-                })
+                metadata.update(
+                    {
+                        "model_config": self.config,
+                        "feature_and_label_encoder": self._clf.get_torch_encoder(),
+                        "model_type": "crf",
+                    }
+                )
             elif isinstance(self._clf, LstmModel):
-                metadata.update({
-                    "current_params": self._current_params,
-                    "label_encoder": self._label_encoder,
-                    "no_entities": self._no_entities,
-                    "model_config": self.config,
-                    "model_type": "lstm"
-                })
+                metadata.update(
+                    {
+                        "current_params": self._current_params,
+                        "label_encoder": self._label_encoder,
+                        "no_entities": self._no_entities,
+                        "model_config": self.config,
+                        "model_type": "lstm",
+                    }
+                )
 
         # dump model metadata
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -436,8 +450,7 @@ class TaggerModel(Model):
         #   it means we need to create an instance and load necessary details for it to be used.
         if not is_serializable:
             model = cls(metadata["model_config"])
-            if metadata.get('model_type') == 'lstm':
-
+            if metadata.get("model_type") == "lstm":
                 # misc resources load
                 try:
                     model._current_params = metadata["current_params"]
@@ -454,10 +467,10 @@ class TaggerModel(Model):
                 model._clf.load(model_dir)
 
                 # replace model dump directory with actual model
-            elif metadata.get('model_type') == 'crf':
+            elif metadata.get("model_type") == "crf":
                 model._clf.set_params(**metadata["model_config"].params)
                 model._current_params = model._clf.get_params()
-                model._clf.set_torch_encoder(metadata['feature_and_label_encoder'])
+                model._clf.set_torch_encoder(metadata["feature_and_label_encoder"])
                 model._clf.load(path)
 
             metadata["model"] = model
@@ -478,12 +491,12 @@ class PytorchTaggerModel(PytorchModel):
     def _get_model_constructor(self):
         """Returns the class of the actual underlying model"""
         classifier_type = self.config.model_settings["classifier_type"]
-        embedder_type = self.config.params.get("embedder_type") \
-            if self.config.params is not None else None
+        embedder_type = (
+            self.config.params.get("embedder_type") if self.config.params is not None else None
+        )
 
         return get_token_classifier_cls(
-            classifier_type=classifier_type,
-            embedder_type=embedder_type
+            classifier_type=classifier_type, embedder_type=embedder_type
         )
 
     def evaluate(self, examples, labels):
@@ -499,8 +512,7 @@ class PytorchTaggerModel(PytorchModel):
         """
         if self._no_entities:
             logger.info(
-                "There are no labels in this label set, so we don't "
-                "run model evaluation."
+                "There are no labels in this label set, so we don't " "run model evaluation."
             )
             return
 
@@ -515,14 +527,11 @@ class PytorchTaggerModel(PytorchModel):
         return model_eval
 
     def fit(self, examples, labels, params=None):
-
         types = [entity.entity.type for label in labels for entity in label]
         self.types = types
         if len(set(types)) == 0:
             self._no_entities = True
-            logger.info(
-                "There are no labels in this label set, so we don't fit the model."
-            )
+            logger.info("There are no labels in this label set, so we don't fit the model.")
             return self
 
         if not examples:
@@ -536,17 +545,19 @@ class PytorchTaggerModel(PytorchModel):
         encoded_y = []
         start_idx = 0
         for seq_length in [len(_y) for _y in y]:
-            encoded_y.append(encoded_flat_y[start_idx: start_idx + seq_length])
+            encoded_y.append(encoded_flat_y[start_idx : start_idx + seq_length])
             start_idx += seq_length
         y = list(encoded_y)
 
         params = params or self.config.params
         if params and params.get("query_text_type"):
             if params.get("query_text_type") != "normalized_text":
-                msg = f"The param 'query_text_type' for {self.__class__.__name__} must be " \
-                      f"'normalized_text' but found '{params.get('query_text_type')}'. " \
-                      f"This is required as the labels are created " \
-                      f"based on the type 'normalized_text' only."
+                msg = (
+                    f"The param 'query_text_type' for {self.__class__.__name__} must be "
+                    f"'normalized_text' but found '{params.get('query_text_type')}'. "
+                    f"This is required as the labels are created "
+                    f"based on the type 'normalized_text' only."
+                )
                 logger.error(msg)
                 raise ValueError(msg)
 
@@ -573,7 +584,7 @@ class PytorchTaggerModel(PytorchModel):
         decoded_y = []
         start_idx = 0
         for seq_length in [len(_y) for _y in y]:
-            decoded_y.append(decoded_flat_y[start_idx: start_idx + seq_length])
+            decoded_y.append(decoded_flat_y[start_idx : start_idx + seq_length])
             start_idx += seq_length
         y = list(decoded_y)
 
@@ -597,8 +608,9 @@ class PytorchTaggerModel(PytorchModel):
         entity_confidence = []
         entities = self._label_encoder.decode([tags], examples=[examples[0]])[0]
         for entity in entities:
-            entity_proba = \
-                probas[entity.normalized_token_span.start: entity.normalized_token_span.end + 1]
+            entity_proba = probas[
+                entity.normalized_token_span.start : entity.normalized_token_span.end + 1
+            ]
             # We assume that the score of the least likely tag in the sequence as the confidence
             # score of the entire entity sequence
             entity_confidence.append(min(entity_proba))
@@ -606,7 +618,6 @@ class PytorchTaggerModel(PytorchModel):
         return predicted_labels_scores
 
     def _dump(self, path):
-
         self._clf.dump(path)
 
         # dump model metadata
@@ -622,7 +633,6 @@ class PytorchTaggerModel(PytorchModel):
 
     @classmethod
     def load(cls, path):
-
         # load model metadata
         metadata = joblib.load(path)
 
@@ -644,17 +654,17 @@ class PytorchTaggerModel(PytorchModel):
         for ex, label_tokens in zip(examples, labels):
             ex_tokens = ex.split(" ")
             if len(ex_tokens) != len(label_tokens):
-                msg = f"Number of tokens in a sentence ({len(ex_tokens)}) must be same as the " \
-                      f"number of tokens in the corresponding token labels " \
-                      f"({len(label_tokens)}) for sentence '{ex}' with labels '{label_tokens}'"
+                msg = (
+                    f"Number of tokens in a sentence ({len(ex_tokens)}) must be same as the "
+                    f"number of tokens in the corresponding token labels "
+                    f"({len(label_tokens)}) for sentence '{ex}' with labels '{label_tokens}'"
+                )
                 raise AssertionError(msg)
 
 
 class TaggerModelFactory(AbstractModelFactory):
-
     @staticmethod
     def get_model_cls(config: ModelConfig):
-
         CLASSES = [TaggerModel, PytorchTaggerModel]
         classifier_type = config.model_settings["classifier_type"]
 
@@ -662,6 +672,8 @@ class TaggerModelFactory(AbstractModelFactory):
             if classifier_type in _class.ALLOWED_CLASSIFIER_TYPES:
                 return _class
 
-        msg = f"Invalid 'classifier_type': {classifier_type}. " \
-              f"Allowed types are: {[_class.ALLOWED_CLASSIFIER_TYPES for _class in CLASSES]}"
+        msg = (
+            f"Invalid 'classifier_type': {classifier_type}. "
+            f"Allowed types are: {[_class.ALLOWED_CLASSIFIER_TYPES for _class in CLASSES]}"
+        )
         raise ValueError(msg)

@@ -34,7 +34,9 @@ class CustomAction:
         self._private_key = self._config.get("private_key")
         self.merge = merge
 
-    def get_json_payload(self, request: requests.Request, responder: DialogueResponder) -> Dict[str, Any]:
+    def get_json_payload(
+        self, request: requests.Request, responder: DialogueResponder
+    ) -> Dict[str, Any]:
         request_json = dict(request)
         responder_json = dict(responder)
         return {
@@ -43,7 +45,12 @@ class CustomAction:
             "action": self._name,
         }
 
-    def invoke(self, request: requests.Request, responder: DialogueResponder, async_mode=False) -> bool:
+    def invoke(
+        self,
+        request: requests.Request,
+        responder: DialogueResponder,
+        async_mode=False,
+    ) -> bool:
         """Invoke the custom action with Request and Responder and return True if the action is
         executed successfully, False otherwise. Upon successful execution, we update the Frame
         and Directives of the Responder object.
@@ -57,9 +64,7 @@ class CustomAction:
             (bool)
         """
         if not self.url:
-            raise CustomActionException(
-                "No URL is given for custom action {}.".format(self._name)
-            )
+            raise CustomActionException("No URL is given for custom action {}.".format(self._name))
 
         json_data = self.get_json_payload(request, responder)
 
@@ -71,7 +76,8 @@ class CustomAction:
                 return self._process(json_data, responder)
         except ConnectionError:
             logger.error(
-                "Connection error trying to reach custom action server %s.", self.url
+                "Connection error trying to reach custom action server %s.",
+                self.url,
             )
             return False
 
@@ -97,7 +103,9 @@ class CustomAction:
         status_code, result_json = await self.post_async(json_data)
         return self._process_post_response(status_code, result_json, responder)
 
-    def _process_post_response(self, status_code: int, result_json: Any, responder: DialogueResponder) -> bool:
+    def _process_post_response(
+        self, status_code: int, result_json: Any, responder: DialogueResponder
+    ) -> bool:
         if status_code == 200:
             for field in RESPONSE_FIELDS:
                 if field not in result_json:
@@ -135,7 +143,9 @@ class CustomAction:
     def post(self, json_data: Any) -> Tuple[int, Any]:
         if self._public_key and self._private_key:
             result = requests.post(
-                url=self.url, json=json_data, cert=(self._public_key, self._private_key)
+                url=self.url,
+                json=json_data,
+                cert=(self._public_key, self._private_key),
             )
         elif self._public_key:
             result = requests.post(url=self.url, json=json_data, cert=self._public_key)
@@ -155,9 +165,7 @@ class CustomAction:
             ssl_context.load_cert_chain(self._public_key, self._private_key)
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.url, json=json_data, ssl=ssl_context
-            ) as response:
+            async with session.post(self.url, json=json_data, ssl=ssl_context) as response:
                 if response.status == 200:
                     return 200, await response.json()
                 else:
@@ -201,11 +209,21 @@ class CustomActionSequence:
         return "action_seq=" + str(self.actions)
 
 
-def invoke_custom_action(name: str, config: Dict, request: requests.Request, responder: DialogueResponder, merge=True) -> CustomAction:
+def invoke_custom_action(
+    name: str,
+    config: Dict,
+    request: requests.Request,
+    responder: DialogueResponder,
+    merge=True,
+) -> CustomAction:
     return CustomAction(name, config, merge=merge).invoke(request, responder)
 
 
-async def invoke_custom_action_async(name: str, config: Dict, request: requests.Request, responder: DialogueResponder, merge=True) -> CustomAction:
-    return await CustomAction(name, config, merge=merge).invoke_async(
-        request, responder
-    )
+async def invoke_custom_action_async(
+    name: str,
+    config: Dict,
+    request: requests.Request,
+    responder: DialogueResponder,
+    merge=True,
+) -> CustomAction:
+    return await CustomAction(name, config, merge=merge).invoke_async(request, responder)

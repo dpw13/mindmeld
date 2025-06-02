@@ -12,13 +12,14 @@ import os
 # pylint: disable=locally-disabled,redefined-outer-name
 import pytest
 from mindmeld.components._elasticsearch_helpers import create_es_client
-from mindmeld.components.question_answerer import QuestionAnswerer, NativeQuestionAnswerer
+from mindmeld.components.question_answerer import (
+    QuestionAnswerer,
+    NativeQuestionAnswerer,
+)
 
 ENTITY_TYPE = "store_name"
 STORE_DATA_FILE_PATH = os.path.dirname(__file__) + "/../kwik_e_mart/data/stores.json"
-DISH_DATA_FILE_PATH = (
-    os.path.dirname(__file__) + "/../food_ordering/data/menu_items.json"
-)
+DISH_DATA_FILE_PATH = os.path.dirname(__file__) + "/../food_ordering/data/menu_items.json"
 
 """ fixtures for elastic search based QA """
 
@@ -132,7 +133,7 @@ def test_basic_search(answerer):
     assert len(res) > 0
 
     # check that score is included in response
-    assert res[0].get('_score') is not None
+    assert res[0].get("_score") is not None
 
 
 def test_basic_relative_search(relative_answerer):
@@ -151,9 +152,7 @@ def test_basic_relative_search(relative_answerer):
     assert len(res) > 0
 
     # multiple text queries
-    res = relative_answerer.get(
-        index="store_name", store_name="peanut", address="peanut st"
-    )
+    res = relative_answerer.get(index="store_name", store_name="peanut", address="peanut st")
     assert len(res) > 0
 
 
@@ -204,21 +203,15 @@ def test_basic_search_validation(food_ordering_answerer):
 
     # invalid sort type
     with pytest.raises(ValueError):
-        food_ordering_answerer.get(
-            index="menu_items", _sort="price", _sort_type="distance"
-        )
+        food_ordering_answerer.get(index="menu_items", _sort="price", _sort_type="distance")
 
     # invalid sort type
     with pytest.raises(ValueError):
-        food_ordering_answerer.get(
-            index="menu_items", _sort="location", _sort_type="asc"
-        )
+        food_ordering_answerer.get(index="menu_items", _sort="location", _sort_type="asc")
 
     # missing origin
     with pytest.raises(ValueError):
-        food_ordering_answerer.get(
-            index="menu_items", _sort="location", _sort_type="distance"
-        )
+        food_ordering_answerer.get(index="menu_items", _sort="location", _sort_type="distance")
 
 
 def test_unstructured_search(food_ordering_answerer):
@@ -230,14 +223,13 @@ def test_unstructured_search(food_ordering_answerer):
     assert len(res) > 0
 
     s = food_ordering_answerer.build_search(index="menu_items")
-    res = s.query(
-        query_type="text", description="maybe a roll with some salmon"
-    ).execute()
+    res = s.query(query_type="text", description="maybe a roll with some salmon").execute()
     assert len(res) > 0
 
     res = (
-        s.query(query_type="text", description="maybe a spicy roll with some salmon").filter(
-            query_type="text", name="spicy roll").execute()
+        s.query(query_type="text", description="maybe a spicy roll with some salmon")
+        .filter(query_type="text", name="spicy roll")
+        .execute()
     )
     assert len(res) > 0
 
@@ -281,7 +273,9 @@ def test_advanced_search_validation(answerer):
 @pytest.mark.es7
 def test_embedder_search_bert(food_ordering_with_bert):
     res = food_ordering_with_bert.get(
-        index="menu_items_bert", query_type="embedder", name="pasta with tomato sauce"
+        index="menu_items_bert",
+        query_type="embedder",
+        name="pasta with tomato sauce",
     )
     assert len(res) > 0
 
@@ -305,7 +299,9 @@ def test_embedder_search_bert(food_ordering_with_bert):
 @pytest.mark.xfail(strict=False)
 def test_embedder_search_glove(food_ordering_with_glove):
     res = food_ordering_with_glove.get(
-        index="menu_items_glove", query_type="embedder", name="pasta with tomato sauce"
+        index="menu_items_glove",
+        query_type="embedder",
+        name="pasta with tomato sauce",
     )
     assert len(res) > 0
 
@@ -331,15 +327,13 @@ def test_embedder_search_glove(food_ordering_with_glove):
 def answerer_nativeqa(kwik_e_mart_app_path):
     QA_CONFIG = {
         "model_type": "native",
-        "model_settings": {
-            "query_type": "keyword"
-        }
+        "model_settings": {"query_type": "keyword"},
     }
     QuestionAnswerer.load_kb(
         app_namespace="kwik_e_mart",
         index_name="store_name",
         data_file=STORE_DATA_FILE_PATH,
-        config=QA_CONFIG
+        config=QA_CONFIG,
     )
 
     qa = QuestionAnswerer(kwik_e_mart_app_path)
@@ -350,15 +344,13 @@ def answerer_nativeqa(kwik_e_mart_app_path):
 def relative_answerer_nativeqa(kwik_e_mart_app_path):
     QA_CONFIG = {
         "model_type": "native",
-        "model_settings": {
-            "query_type": "keyword"
-        }
+        "model_settings": {"query_type": "keyword"},
     }
     QuestionAnswerer.load_kb(
         app_namespace="kwik_e_mart",
         index_name="store_name",
         data_file=STORE_DATA_FILE_PATH,
-        config=QA_CONFIG
+        config=QA_CONFIG,
     )
     old_cwd = os.getcwd()
     os.chdir(kwik_e_mart_app_path)
@@ -371,15 +363,13 @@ def relative_answerer_nativeqa(kwik_e_mart_app_path):
 def food_ordering_answerer_nativeqa(food_ordering_app_path):
     QA_CONFIG = {
         "model_type": "native",
-        "model_settings": {
-            "query_type": "keyword"
-        }
+        "model_settings": {"query_type": "keyword"},
     }
     QuestionAnswerer.load_kb(
         app_namespace="food_ordering",
         index_name="menu_items",
         data_file=DISH_DATA_FILE_PATH,
-        config=QA_CONFIG
+        config=QA_CONFIG,
     )
 
     qa = QuestionAnswerer(food_ordering_app_path)
@@ -395,7 +385,7 @@ def food_ordering_with_bert_nativeqa(food_ordering_app_path):
             "query_type": "embedder",
             "embedder_type": "bert",
             "embedding_fields": {"menu_items_bert": ["name"]},
-        }
+        },
     }
     QuestionAnswerer.load_kb(
         app_namespace="food_ordering",
@@ -417,7 +407,7 @@ def food_ordering_with_glove_nativeqa(food_ordering_app_path):
             "query_type": "embedder",
             "embedder_type": "glove",
             "embedding_fields": {"menu_items_bert": ["name"]},
-        }
+        },
     }
     QuestionAnswerer.load_kb(
         app_namespace="food_ordering",
@@ -445,8 +435,7 @@ def test_basic_relative_search_nativeqa(relative_answerer_nativeqa):
     assert len(res) > 0
 
     # simple text query
-    res = relative_answerer_nativeqa.get(index="store_name",
-                                         store_name="Springfield Heights")
+    res = relative_answerer_nativeqa.get(index="store_name", store_name="Springfield Heights")
     assert len(res) > 0
 
     # multiple text queries
@@ -509,9 +498,7 @@ def test_basic_search_validation_nativeqa(food_ordering_answerer_nativeqa):
 
     # invalid sort type
     with pytest.raises(ValueError):
-        food_ordering_answerer_nativeqa.get(
-            index="menu_items", _sort="location", _sort_type="asc"
-        )
+        food_ordering_answerer_nativeqa.get(index="menu_items", _sort="location", _sort_type="asc")
 
     # missing origin
     with pytest.raises(ValueError):
@@ -529,14 +516,13 @@ def test_unstructured_search_nativeqa(food_ordering_answerer_nativeqa):
     assert len(res) > 0
 
     s = food_ordering_answerer_nativeqa.build_search(index="menu_items")
-    res = s.query(
-        query_type="text", description="maybe a roll with some salmon"
-    ).execute()
+    res = s.query(query_type="text", description="maybe a roll with some salmon").execute()
     assert len(res) > 0
 
     res = (
-        s.query(query_type="text", description="maybe a spicy roll with some salmon").filter(
-            query_type="text", name="spicy roll").execute()
+        s.query(query_type="text", description="maybe a spicy roll with some salmon")
+        .filter(query_type="text", name="spicy roll")
+        .execute()
     )
     assert len(res) > 0
 
@@ -580,7 +566,9 @@ def test_advanced_search_validation_nativeqa(answerer_nativeqa):
 @pytest.mark.es7
 def test_embedder_search_bert_nativeqa(food_ordering_with_bert_nativeqa):
     res = food_ordering_with_bert_nativeqa.get(
-        index="menu_items_bert", query_type="embedder", name="pasta with tomato sauce"
+        index="menu_items_bert",
+        query_type="embedder",
+        name="pasta with tomato sauce",
     )
     assert len(res) > 0
 
@@ -604,7 +592,9 @@ def test_embedder_search_bert_nativeqa(food_ordering_with_bert_nativeqa):
 @pytest.mark.xfail(strict=False)
 def test_embedder_search_glove_nativeqa(food_ordering_with_glove_nativeqa):
     res = food_ordering_with_glove_nativeqa.get(
-        index="menu_items_glove", query_type="embedder", name="pasta with tomato sauce"
+        index="menu_items_glove",
+        query_type="embedder",
+        name="pasta with tomato sauce",
     )
     assert len(res) > 0
 
@@ -639,12 +629,11 @@ def test_basic_search_nativeqa(answerer_nativeqa):
     assert len(res) > 0
 
     # multiple text queries
-    res = answerer_nativeqa.get(index="store_name", store_name="peanut",
-                                address="peanut st")
+    res = answerer_nativeqa.get(index="store_name", store_name="peanut", address="peanut st")
     assert len(res) > 0
 
     # check that score is included in response
-    assert res[0].get('_score') is not None
+    assert res[0].get("_score") is not None
 
 
 """ fixtures for native QA (but loads from already dumped models) """
@@ -654,9 +643,7 @@ def test_basic_search_nativeqa(answerer_nativeqa):
 def answerer_nativeqa_unloaded(kwik_e_mart_app_path):
     QA_CONFIG = {
         "model_type": "native",
-        "model_settings": {
-            "query_type": "keyword"
-        }
+        "model_settings": {"query_type": "keyword"},
     }
 
     # first load the KB
@@ -664,7 +651,7 @@ def answerer_nativeqa_unloaded(kwik_e_mart_app_path):
         app_namespace="kwik_e_mart",
         index_name="store_name",
         data_file=STORE_DATA_FILE_PATH,
-        config=QA_CONFIG
+        config=QA_CONFIG,
     )
 
     # next unload all indices and instantiate another object
@@ -682,7 +669,7 @@ def food_ordering_with_bert_nativeqa_unloaded(food_ordering_app_path):
             "query_type": "embedder",
             "embedder_type": "bert",
             "embedding_fields": {"menu_items_bert": ["name"]},
-        }
+        },
     }
 
     # first load the KB
@@ -714,17 +701,17 @@ def test_basic_search_nativeqa_unloaded(answerer_nativeqa_unloaded):
     assert len(res) > 0
 
     # simple text query
-    res = answerer_nativeqa_unloaded.get(index="store_name",
-                                         store_name="Springfield Heights")
+    res = answerer_nativeqa_unloaded.get(index="store_name", store_name="Springfield Heights")
     assert len(res) > 0
 
     # multiple text queries
-    res = answerer_nativeqa_unloaded.get(index="store_name", store_name="peanut",
-                                         address="peanut st")
+    res = answerer_nativeqa_unloaded.get(
+        index="store_name", store_name="peanut", address="peanut st"
+    )
     assert len(res) > 0
 
     # check that score is included in response
-    assert res[0].get('_score') is not None
+    assert res[0].get("_score") is not None
 
 
 def test_sort_by_distance_nativeqa_unloaded(answerer_nativeqa_unloaded):
@@ -744,9 +731,13 @@ def test_sort_by_distance_nativeqa_unloaded(answerer_nativeqa_unloaded):
 @pytest.mark.extras
 @pytest.mark.bert
 @pytest.mark.es7
-def test_embedder_search_bert_nativeqa_unloaded(food_ordering_with_bert_nativeqa_unloaded):
+def test_embedder_search_bert_nativeqa_unloaded(
+    food_ordering_with_bert_nativeqa_unloaded,
+):
     res = food_ordering_with_bert_nativeqa_unloaded.get(
-        index="menu_items_bert", query_type="embedder", name="pasta with tomato sauce"
+        index="menu_items_bert",
+        query_type="embedder",
+        name="pasta with tomato sauce",
     )
     assert len(res) > 0
 

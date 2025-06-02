@@ -45,7 +45,10 @@ EPSILON = math.pow(10, -5)
         # Test for extract_sys_candidates
         (
             "set temperature to 60",
-            ["sys_candidate|type:sys_temperature", "sys_candidate|type:sys_number"],
+            [
+                "sys_candidate|type:sys_temperature",
+                "sys_candidate|type:sys_number",
+            ],
             [2, 1],
             None,
         ),
@@ -103,7 +106,11 @@ EPSILON = math.pow(10, -5)
     ],
 )
 def test_domain_query_features(
-    home_assistant_nlp, query, feature_keys, expected_feature_values, dynamic_resource
+    home_assistant_nlp,
+    query,
+    feature_keys,
+    expected_feature_values,
+    dynamic_resource,
 ):
     """
     Test to make sure query level text model features work as expected
@@ -159,9 +166,7 @@ def test_domain_query_features(
         ("you are the best", "discrete", "pos"),
     ],
 )
-def test_sentiment_query_feature(
-    home_assistant_nlp, query, feature_type, expected_sentiment
-):
+def test_sentiment_query_feature(home_assistant_nlp, query, feature_type, expected_sentiment):
     """
     Test to make sure query level text model features work as expected
     Args:
@@ -191,8 +196,7 @@ def test_sentiment_query_feature(
         sentiment = "pos"
     elif (
         feature_type == "discrete"
-        and extracted_features["sentiment|positive"]
-        > extracted_features["sentiment|negative"]
+        and extracted_features["sentiment|positive"] > extracted_features["sentiment|negative"]
     ):
         sentiment = "pos"
     assert sentiment == expected_sentiment
@@ -296,11 +300,17 @@ def test_entity_query_features(
             "in-gaz-span-seq": {},
             "in-gaz-ngram-seq": {},
             "bag-of-words-seq": {
-                "ngram_lengths_to_start_positions": {1: [-1, 0, 1], 2: [-1, 0, 1]},
+                "ngram_lengths_to_start_positions": {
+                    1: [-1, 0, 1],
+                    2: [-1, 0, 1],
+                },
                 "thresholds": [1],
             },
             "char-ngrams-seq": {
-                "ngram_lengths_to_start_positions": {1: [-1, 0, 1], 2: [-1, 0, 1]},
+                "ngram_lengths_to_start_positions": {
+                    1: [-1, 0, 1],
+                    2: [-1, 0, 1],
+                },
                 "thresholds": [1],
             },
             "sys-candidates-seq": {"start_positions": [0]},
@@ -308,16 +318,13 @@ def test_entity_query_features(
     }
 
     entity_recognizer = (
-        home_assistant_nlp.domains["times_and_dates"]
-        .intents["change_alarm"]
-        .entity_recognizer
+        home_assistant_nlp.domains["times_and_dates"].intents["change_alarm"].entity_recognizer
     )
     entity_recognizer.fit(**entity_recognizer_config_all_features)
 
     extracted_features = entity_recognizer.view_extracted_features(query)[index]
 
     for feature_key, expected_value in zip(feature_keys, expected_feature_values):
-
         if isinstance(expected_value, float):
             assert abs(expected_value - extracted_features[feature_key]) < EPSILON
         else:
@@ -473,11 +480,17 @@ def test_entity_gaz_query_features(
             "in-gaz-span-seq": {},
             "in-gaz-ngram-seq": {},
             "bag-of-words-seq": {
-                "ngram_lengths_to_start_positions": {1: [-1, 0, 1], 2: [-1, 0, 1]},
+                "ngram_lengths_to_start_positions": {
+                    1: [-1, 0, 1],
+                    2: [-1, 0, 1],
+                },
                 "thresholds": [1],
             },
             "char-ngrams-seq": {
-                "ngram_lengths_to_start_positions": {1: [-1, 0, 1], 2: [-1, 0, 1]},
+                "ngram_lengths_to_start_positions": {
+                    1: [-1, 0, 1],
+                    2: [-1, 0, 1],
+                },
                 "thresholds": [1],
             },
             "sys-candidates-seq": {"start_positions": [0]},
@@ -485,9 +498,7 @@ def test_entity_gaz_query_features(
     }
 
     entity_recognizer = (
-        kwik_e_mart_nlp.domains["store_info"]
-        .intents["get_store_hours"]
-        .entity_recognizer
+        kwik_e_mart_nlp.domains["store_info"].intents["get_store_hours"].entity_recognizer
     )
     entity_recognizer.fit(**entity_recognizer_config_all_features)
     extracted_features = entity_recognizer.view_extracted_features(query)[index]
@@ -519,9 +530,7 @@ def test_entity_gaz_query_features(
 def test_entity_no_context_detection(
     home_assistant_nlp, domain, intent, query, expected_entity_type
 ):
-    entity_recognizer = (
-        home_assistant_nlp.domains[domain].intents[intent].entity_recognizer
-    )
+    entity_recognizer = home_assistant_nlp.domains[domain].intents[intent].entity_recognizer
     entities = entity_recognizer.predict(query)
     assert len(entities) > 0
     assert entities[0].entity.type == expected_entity_type
@@ -529,17 +538,11 @@ def test_entity_no_context_detection(
 
 def test_query_token_span_features(kwik_e_mart_nlp):
     feature_name = "sys_candidate|type:sys_amount-of-money|granularity:None|pos"
-    er = kwik_e_mart_nlp.domains['banking'].intents['transfer_money'].entity_recognizer
+    er = kwik_e_mart_nlp.domains["banking"].intents["transfer_money"].entity_recognizer
 
-    output_features = er.view_extracted_features('$2')
-    expected_features = [
-        f'{feature_name}:0|log_len',
-        f'{feature_name}:0'
-    ]
-    unexpected_features = [
-        f'{feature_name}:1|log_len',
-        f'{feature_name}:1'
-    ]
+    output_features = er.view_extracted_features("$2")
+    expected_features = [f"{feature_name}:0|log_len", f"{feature_name}:0"]
+    unexpected_features = [f"{feature_name}:1|log_len", f"{feature_name}:1"]
 
     for feat in expected_features:
         assert feat in output_features[0]
@@ -547,21 +550,37 @@ def test_query_token_span_features(kwik_e_mart_nlp):
     for feat in unexpected_features:
         assert feat not in output_features[0]
 
-    assert output_features[0][expected_features[1]] == math.log(len('$2') + 1)
-    assert math.isclose(output_features[0][expected_features[0]], math.log(1.5 + 1), rel_tol=1e-04)
+    assert output_features[0][expected_features[1]] == math.log(len("$2") + 1)
+    assert math.isclose(
+        output_features[0][expected_features[0]],
+        math.log(1.5 + 1),
+        rel_tol=1e-04,
+    )
 
-    output_features = er.view_extracted_features('$20 5')
+    output_features = er.view_extracted_features("$20 5")
 
-    assert output_features[0][f'{feature_name}:0'] == math.log(6 + 1)
-    assert math.isclose(output_features[0][f'{feature_name}:0|log_len'],
-                        math.log(3.833 + 1), rel_tol=1e-04)
-    assert output_features[0][f'{feature_name}:1'] == math.log(5 + 1)
-    assert math.isclose(output_features[0][f'{feature_name}:1|log_len'],
-                        math.log(3.8 + 1), rel_tol=1e-04)
+    assert output_features[0][f"{feature_name}:0"] == math.log(6 + 1)
+    assert math.isclose(
+        output_features[0][f"{feature_name}:0|log_len"],
+        math.log(3.833 + 1),
+        rel_tol=1e-04,
+    )
+    assert output_features[0][f"{feature_name}:1"] == math.log(5 + 1)
+    assert math.isclose(
+        output_features[0][f"{feature_name}:1|log_len"],
+        math.log(3.8 + 1),
+        rel_tol=1e-04,
+    )
 
-    assert output_features[1][f'{feature_name}:-1'] == math.log(6 + 1)
-    assert math.isclose(output_features[1][f'{feature_name}:-1|log_len'],
-                        math.log(3.833 + 1), rel_tol=1e-04)
-    assert output_features[1][f'{feature_name}:0'] == math.log(5 + 1)
-    assert math.isclose(output_features[1][f'{feature_name}:0|log_len'],
-                        math.log(3.8 + 1), rel_tol=1e-04)
+    assert output_features[1][f"{feature_name}:-1"] == math.log(6 + 1)
+    assert math.isclose(
+        output_features[1][f"{feature_name}:-1|log_len"],
+        math.log(3.833 + 1),
+        rel_tol=1e-04,
+    )
+    assert output_features[1][f"{feature_name}:0"] == math.log(5 + 1)
+    assert math.isclose(
+        output_features[1][f"{feature_name}:0|log_len"],
+        math.log(3.8 + 1),
+        rel_tol=1e-04,
+    )

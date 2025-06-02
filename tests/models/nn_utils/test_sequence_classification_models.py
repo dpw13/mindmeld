@@ -11,14 +11,17 @@ import shutil
 import pytest
 
 from mindmeld import markup
-from mindmeld.models import QUERY_EXAMPLE_TYPE, CLASS_LABEL_TYPE, ModelFactory, ModelConfig
+from mindmeld.models import (
+    QUERY_EXAMPLE_TYPE,
+    CLASS_LABEL_TYPE,
+    ModelFactory,
+    ModelConfig,
+)
 from mindmeld.models.nn_utils.helpers import get_num_weights_of_model
 from mindmeld.resource_loader import ResourceLoader, ProcessedQueryList
 
 APP_NAME = "kwik_e_mart"
-APP_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), APP_NAME
-)
+APP_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), APP_NAME)
 GENERATED_TMP_FOLDER = os.path.join(APP_PATH, ".generated/pytorch_module")
 
 
@@ -81,19 +84,40 @@ class TestSequenceClassification:
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "first"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "first",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "last"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "last",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_glove_embedder(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -103,7 +127,8 @@ class TestSequenceClassification:
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "embedder"},
             "params": {  # default embedder_output_pooling_type is "mean"
-                "embedder_type": "glove", "emb_dim": 5
+                "embedder_type": "glove",
+                "emb_dim": 5,
             },
         }
         examples = self.labeled_data.queries()
@@ -118,13 +143,25 @@ class TestSequenceClassification:
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "max"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "max",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.transformers
     def test_bpe_embedder(self, resource_loader):
@@ -135,7 +172,9 @@ class TestSequenceClassification:
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "embedder"},
             "params": {  # default embedder_output_pooling_type is "mean"
-                "emb_dim": 30, "tokenizer_type": "bpe-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "bpe-tokenizer",
+                "add_terminals": True,
             },
         }
         examples = self.labeled_data.queries()
@@ -144,32 +183,70 @@ class TestSequenceClassification:
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "first"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "first",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "last"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "last",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "max"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "max",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {
-            **config["params"], "embedder_output_pooling_type": "mean_sqrt"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "mean_sqrt",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.transformers
     def test_wordpiece_embedder(self, resource_loader):
@@ -180,7 +257,9 @@ class TestSequenceClassification:
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "embedder"},
             "params": {  # default embedder_output_pooling_type is "mean"
-                "emb_dim": 30, "tokenizer_type": "wordpiece-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "wordpiece-tokenizer",
+                "add_terminals": True,
             },
         }
         examples = self.labeled_data.queries()
@@ -189,19 +268,40 @@ class TestSequenceClassification:
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "first"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "first",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "last"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "last",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_word_cnn(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -219,7 +319,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_glove_cnn(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -237,7 +340,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.transformers
     def test_bpe_cnn(self, resource_loader):
@@ -247,7 +353,11 @@ class TestSequenceClassification:
             "example_type": QUERY_EXAMPLE_TYPE,
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "cnn"},
-            "params": {"emb_dim": 30, "tokenizer_type": "bpe-tokenizer", "add_terminals": True},
+            "params": {
+                "emb_dim": 30,
+                "tokenizer_type": "bpe-tokenizer",
+                "add_terminals": True,
+            },
         }
 
         examples = self.labeled_data.queries()
@@ -256,7 +366,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.transformers
     def test_wordpiece_cnn(self, resource_loader):
@@ -267,7 +380,9 @@ class TestSequenceClassification:
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "cnn"},
             "params": {
-                "emb_dim": 30, "tokenizer_type": "wordpiece-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "wordpiece-tokenizer",
+                "add_terminals": True,
             },
         }
 
@@ -277,7 +392,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_char_cnn(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -295,7 +413,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_word_lstm(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -313,7 +434,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_glove_lstm(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -331,7 +455,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.transformers
     def test_bpe_lstm(self, resource_loader):
@@ -342,7 +469,9 @@ class TestSequenceClassification:
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "lstm"},
             "params": {  # default lstm_output_pooling_type is "last"
-                "emb_dim": 30, "tokenizer_type": "bpe-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "bpe-tokenizer",
+                "add_terminals": True,
             },
         }
         examples = self.labeled_data.queries()
@@ -351,32 +480,61 @@ class TestSequenceClassification:
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "lstm_output_pooling_type": "first"}}
+        config = {
+            **config,
+            "params": {**config["params"], "lstm_output_pooling_type": "first"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "lstm_output_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {**config["params"], "lstm_output_pooling_type": "mean"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "lstm_output_pooling_type": "max"}}
+        config = {
+            **config,
+            "params": {**config["params"], "lstm_output_pooling_type": "max"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {
-            **config["params"], "lstm_output_pooling_type": "mean_sqrt"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "lstm_output_pooling_type": "mean_sqrt",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.transformers
     def test_wordpiece_lstm(self, resource_loader):
@@ -387,7 +545,9 @@ class TestSequenceClassification:
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "lstm"},
             "params": {
-                "emb_dim": 30, "tokenizer_type": "wordpiece-tokenizer", "add_terminals": True
+                "emb_dim": 30,
+                "tokenizer_type": "wordpiece-tokenizer",
+                "add_terminals": True,
             },
         }
 
@@ -397,7 +557,10 @@ class TestSequenceClassification:
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
 
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_char_lstm(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -414,13 +577,22 @@ class TestSequenceClassification:
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "add_terminals": "True"}}
+        config = {
+            **config,
+            "params": {**config["params"], "add_terminals": "True"},
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.xfail(strict=False)
     @pytest.mark.transformers
@@ -441,83 +613,147 @@ class TestSequenceClassification:
 
         """ test different configurations for bert-base-cased model"""
 
-        config = {**config, "params": {
-            **config["params"],
-            "pretrained_model_name_or_path": "bert-base-cased"
-        }}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "pretrained_model_name_or_path": "bert-base-cased",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "mean",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "last"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "last",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "max"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "max",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {
-            **config["params"], "embedder_output_pooling_type": "mean_sqrt"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "mean_sqrt",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
         """ test for different pretrained transformers"""
 
         config = {
             **config,
-            "params": {"pretrained_model_name_or_path": "distilbert-base-uncased", }
+            "params": {
+                "pretrained_model_name_or_path": "distilbert-base-uncased",
+            },
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
         config = {
             **config,
-            "params": {"pretrained_model_name_or_path": "roberta-base"}
+            "params": {"pretrained_model_name_or_path": "roberta-base"},
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
         config = {
             **config,
-            "params": {"pretrained_model_name_or_path": "albert-base-v2"}
+            "params": {"pretrained_model_name_or_path": "albert-base-v2"},
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
         config = {
             **config,
-            "params": {"pretrained_model_name_or_path": "sentence-transformers/all-mpnet-base-v2"}
+            "params": {"pretrained_model_name_or_path": "sentence-transformers/all-mpnet-base-v2"},
         }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
-        config = {**config, "params": {**config["params"], "embedder_output_pooling_type": "mean"}}
+        config = {
+            **config,
+            "params": {
+                **config["params"],
+                "embedder_output_pooling_type": "mean",
+            },
+        }
         model = ModelFactory.create_model_from_config(ModelConfig(**config))
         model.initialize_resources(resource_loader, examples, labels)
         model.fit(examples, labels)
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     @pytest.mark.skip(reason="dumping of torch module state dict occupies disk space")
     @pytest.mark.xfail(strict=False)
@@ -534,7 +770,7 @@ class TestSequenceClassification:
                 "embedder_type": "bert",
                 "pretrained_model_name_or_path": "distilbert-base-uncased",
                 "embedder_output_pooling_type": "mean",
-                "update_embeddings": False
+                "update_embeddings": False,
             },
         }
         examples = self.labeled_data.queries()
@@ -558,7 +794,10 @@ class TestSequenceClassification:
 
         # do predictions with loaded model
         model._clf = new_clf
-        assert model.predict([markup.load_query("hi").query])[0] in ["greet", "exit"]
+        assert model.predict([markup.load_query("hi").query])[0] in [
+            "greet",
+            "exit",
+        ]
 
     def test_bert_cnn(self, resource_loader):
         """Tests that a fit succeeds"""
@@ -567,7 +806,10 @@ class TestSequenceClassification:
             "example_type": QUERY_EXAMPLE_TYPE,
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "cnn"},
-            "params": {"embedder_type": "bert", "pretrained_model_name_or_path": "bert-base-cased"},
+            "params": {
+                "embedder_type": "bert",
+                "pretrained_model_name_or_path": "bert-base-cased",
+            },
         }
         examples = self.labeled_data.queries()
         labels = self.labeled_data.intents()
@@ -585,7 +827,10 @@ class TestSequenceClassification:
             "example_type": QUERY_EXAMPLE_TYPE,
             "label_type": CLASS_LABEL_TYPE,
             "model_settings": {"classifier_type": "lstm"},
-            "params": {"embedder_type": "bert", "pretrained_model_name_or_path": "bert-base-cased"},
+            "params": {
+                "embedder_type": "bert",
+                "pretrained_model_name_or_path": "bert-base-cased",
+            },
         }
         examples = self.labeled_data.queries()
         labels = self.labeled_data.intents()

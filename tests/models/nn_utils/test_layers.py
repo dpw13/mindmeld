@@ -13,7 +13,7 @@ from mindmeld.models.nn_utils.layers import (
     CnnLayer,
     LstmLayer,
     PoolingLayer,
-    SplittingAndPoolingLayer
+    SplittingAndPoolingLayer,
 )
 
 
@@ -37,7 +37,8 @@ def test_embedding_layer():
         inputs = pad_sequence(
             [torch.tensor(seq) for seq in seq_ids],
             padding_value=kwargs["padding_idx"],
-            batch_first=True)
+            batch_first=True,
+        )
         outputs = emb_layer(inputs)
         assert outputs.shape == (2, 6, 10)
         assert outputs[0][1][0].item() == 0.0
@@ -52,7 +53,8 @@ def test_embedding_layer():
         inputs = pad_sequence(
             [torch.tensor(seq) for seq in seq_ids],
             padding_value=kwargs["padding_idx"],
-            batch_first=True)
+            batch_first=True,
+        )
         outputs = emb_layer(inputs)
         assert outputs[0][0][-1] == embedding_weights[1][-1]
 
@@ -102,7 +104,11 @@ def test_lstm_layer():
         inputs = torch.randn((batch_size, max_seq_len, kwargs["emb_dim"]))
         outputs = lstm_layer(inputs, input_lengths)
         assert len(outputs.shape) == 3
-        assert outputs.shape == (batch_size, max_seq_len, 2 * kwargs["hidden_dim"])
+        assert outputs.shape == (
+            batch_size,
+            max_seq_len,
+            2 * kwargs["hidden_dim"],
+        )
 
         if min(input_lengths) != max(input_lengths):  # not all same lengths
             batch_dim_pointer1 = np.argmin(input_lengths)
@@ -110,9 +116,11 @@ def test_lstm_layer():
             assert all(outputs[batch_dim_pointer1][-1] == torch.zeros((2 * kwargs["hidden_dim"],)))
             assert any(outputs[batch_dim_pointer2][-1] != torch.zeros((2 * kwargs["hidden_dim"],)))
 
-    kwargs.update({
-        "bidirectional": False,
-    })
+    kwargs.update(
+        {
+            "bidirectional": False,
+        }
+    )
 
     lstm_layer = LstmLayer(**kwargs)
     lstm_layer.eval()
@@ -151,7 +159,14 @@ def test_pooling_layer():
         outputs = pooling_layer(inputs, input_lengths)
         assert len(outputs.shape) == 2
         assert outputs.shape == (batch_size, emb_dim)
-        assert all(outputs.reshape(-1, ) == inputs[:, 0, :].reshape(-1, ))
+        assert all(
+            outputs.reshape(
+                -1,
+            )
+            == inputs[:, 0, :].reshape(
+                -1,
+            )
+        )
 
     kwargs = {
         "pooling_type": "last",
@@ -186,7 +201,7 @@ def test_pooling_layer():
         assert len(outputs.shape) == 2
         assert outputs.shape == (batch_size, emb_dim)
         for i, _output in enumerate(outputs):
-            expected_output, _ = torch.max(inputs[i, :input_lengths[i]], dim=0)
+            expected_output, _ = torch.max(inputs[i, : input_lengths[i]], dim=0)
             assert all(expected_output == _output)
 
     kwargs = {
@@ -203,7 +218,7 @@ def test_pooling_layer():
         assert len(outputs.shape) == 2
         assert outputs.shape == (batch_size, emb_dim)
         for i, _output in enumerate(outputs):
-            expected_output = torch.mean(inputs[i, :input_lengths[i]], dim=0)
+            expected_output = torch.mean(inputs[i, : input_lengths[i]], dim=0)
             assert (expected_output - _output).pow(2).sum(-1).sqrt() < 1e-6
 
 
@@ -251,7 +266,9 @@ def test_splitting_and_pooling_layer():
 
         # check if splitting is done correctly
         for i, _span_lengths in enumerate(span_lengths):
-            select_indices = [0, ] + [_x.item() for _x in np.cumsum(_span_lengths.numpy())[:-1]]
+            select_indices = [
+                0,
+            ] + [_x.item() for _x in np.cumsum(_span_lengths.numpy())[:-1]]
             for j, select_index in enumerate(select_indices):
                 assert all(inputs[i][select_index] == outputs[i][j])
 

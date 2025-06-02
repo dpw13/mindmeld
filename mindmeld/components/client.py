@@ -145,10 +145,7 @@ class ConversationClient:
                 msg = msg.format(*texts)
             elif directive_name == DirectiveNames.LIST:
                 msg = "\n".join(
-                    [
-                        json.dumps(item, indent=4, sort_keys=True)
-                        for item in directive["payload"]
-                    ]
+                    [json.dumps(item, indent=4, sort_keys=True) for item in directive["payload"]]
                 )
             elif directive_name == DirectiveNames.LISTEN:
                 msg = "Listening..."

@@ -18,13 +18,13 @@ project structure.
 import logging
 import os
 import sys
-from email.utils import parsedate
 
 import py
 
 logger = logging.getLogger(__name__)
 
 CONFIG_FILE_NAME = "mindmeld.cfg"
+
 
 def configure_logs(**kwargs):
     """Helper method for easily configuring logs from the python shell.
@@ -57,9 +57,7 @@ def load_configuration():
         # resolve path if necessary
         if config["app_path"] and not os.path.isabs(config["app_path"]):
             config_dir = os.path.dirname(config_file)
-            config["app_path"] = os.path.abspath(
-                os.path.join(config_dir, config["app_path"])
-            )
+            config["app_path"] = os.path.abspath(os.path.join(config_dir, config["app_path"]))
         return config
     else:
         logger.debug("No config file was found.")
@@ -99,11 +97,11 @@ def get_pattern(rule):
 def read_path_queries(filepath):
     """Reads queries from given file path.
 
-        Args:
-            filepath (str): File path to read from.
+    Args:
+        filepath (str): File path to read from.
 
-        Returns:
-            queries (list): List of queries.
+    Returns:
+        queries (list): List of queries.
     """
     with open(filepath, "r") as f:
         queries = f.readlines()

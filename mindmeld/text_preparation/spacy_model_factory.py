@@ -45,9 +45,7 @@ class SpacyModelFactory:
         """
         SpacyModelFactory.validate_spacy_language(language)
         SpacyModelFactory.validate_spacy_model_size(spacy_model_size)
-        spacy_model_name = SpacyModelFactory._get_spacy_model_name(
-            language, spacy_model_size
-        )
+        spacy_model_name = SpacyModelFactory._get_spacy_model_name(language, spacy_model_size)
         return SpacyModelFactory._load_model(spacy_model_name, disable)
 
     @staticmethod
@@ -90,9 +88,7 @@ class SpacyModelFactory:
         try:
             return spacy.load(spacy_model_name, disable=disable)
         except OSError:
-            logger.warning(
-                "%s not found on disk. Downloading the model.", spacy_model_name
-            )
+            logger.warning("%s not found on disk. Downloading the model.", spacy_model_name)
             SpacyModelFactory._download_spacy_model(spacy_model_name)
             language_module = SpacyModelFactory._import_spacy_model(spacy_model_name)
             return language_module.load(disable=disable)
@@ -143,6 +139,4 @@ class SpacyModelFactory:
         try:
             return importlib.import_module(spacy_model_name)
         except ModuleNotFoundError as error:
-            raise ValueError(
-                "Unknown Spacy model name: {!r}.".format(spacy_model_name)
-            ) from error
+            raise ValueError("Unknown Spacy model name: {!r}.".format(spacy_model_name)) from error

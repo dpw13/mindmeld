@@ -108,9 +108,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         self.padding_length = parameters.get("padding_length", 20)
         self.display_epoch = parameters.get("display_epoch", 20)
 
-        self.token_embedding_dimension = parameters.get(
-            "token_embedding_dimension", 300
-        )
+        self.token_embedding_dimension = parameters.get("token_embedding_dimension", 300)
         self.token_pretrained_embedding_filepath = parameters.get(
             "token_pretrained_embedding_filepath"
         )
@@ -124,9 +122,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         self.use_char_embeddings = parameters.get("use_character_embeddings", False)
         self.char_window_sizes = parameters.get("char_window_sizes", [5])
         self.max_char_per_word = parameters.get("maximum_characters_per_word", 20)
-        self.character_embedding_dimension = parameters.get(
-            "character_embedding_dimension", 10
-        )
+        self.character_embedding_dimension = parameters.get("character_embedding_dimension", 10)
         self.word_level_character_embedding_size = parameters.get(
             "word_level_character_embedding_size", 40
         )
@@ -139,9 +135,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         Constructs the variables and operations in the TensorFlow session graph
         """
         with self.graph.as_default():
-            self.dense_keep_prob_tf = tf.placeholder(
-                tf.float32, name="dense_keep_prob_tf"
-            )
+            self.dense_keep_prob_tf = tf.placeholder(tf.float32, name="dense_keep_prob_tf")
             self.lstm_input_keep_prob_tf = tf.placeholder(
                 tf.float32, name="lstm_input_keep_prob_tf"
             )
@@ -199,7 +193,14 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
 
             self.saver = tf.train.Saver()
 
-    def extract_features(self, examples: Iterable[Query], config: ModelConfig, resources, y=None, fit=True) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], None]:
+    def extract_features(
+        self,
+        examples: Iterable[Query],
+        config: ModelConfig,
+        resources,
+        y=None,
+        fit=True,
+    ) -> Tuple[Iterable[Iterable[Dict]], Iterable[Iterable[str]], None]:
         """Transforms a list of examples into features that are then used by the
         deep learning model.
 
@@ -226,7 +227,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
             start_index = 0
             for label_sequence in padded_y:
                 encoded_labels.append(
-                    encoded_labels_flat[start_index: start_index + len(label_sequence)]
+                    encoded_labels_flat[start_index : start_index + len(label_sequence)]
                 )
                 start_index += len(label_sequence)
 
@@ -280,7 +281,12 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
             )
 
     def construct_feed_dictionary(
-        self, batch_examples, batch_char, batch_gaz, batch_seq_len, batch_labels=None
+        self,
+        batch_examples,
+        batch_char,
+        batch_gaz,
+        batch_seq_len,
+        batch_labels=None,
     ):
         """Constructs the feed dictionary that is used to feed data into the tensors
 
@@ -337,9 +343,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
 
             for window_size in self.char_window_sizes:
                 word_level_char_embeddings_list.append(
-                    self.apply_convolution(
-                        self.char_input_tf, batch_size_dim, window_size
-                    )
+                    self.apply_convolution(self.char_input_tf, batch_size_dim, window_size)
                 )
 
             word_level_char_embedding = tf.concat(word_level_char_embeddings_list, 2)
@@ -351,9 +355,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         else:
             combined_embedding_tf = self.query_input_tf
 
-        combined_embedding_tf = tf.concat(
-            [combined_embedding_tf, dense_gaz_embedding_tf], axis=2
-        )
+        combined_embedding_tf = tf.concat([combined_embedding_tf, dense_gaz_embedding_tf], axis=2)
 
         return combined_embedding_tf
 
@@ -398,7 +400,9 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
 
         # Strides is None because we want to advance one character at a time and one word at a time
         conv_output = tf.nn.convolution(
-            convolution_reshaped_char_embedding, char_convolution_filter, padding="SAME"
+            convolution_reshaped_char_embedding,
+            char_convolution_filter,
+            padding="SAME",
         )
 
         # Max pool over each word, captured by the size of the filter corresponding to an entire
@@ -421,7 +425,11 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         max_pool = tf.transpose(max_pool, [0, 1, 4, 2, 3])
         max_pool = tf.reshape(
             max_pool,
-            [batch_size, self.padding_length, self.word_level_character_embedding_size],
+            [
+                batch_size,
+                self.padding_length,
+                self.word_level_character_embedding_size,
+            ],
         )
 
         char_convolution_bias = tf.Variable(
@@ -441,7 +449,11 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         char_convolution_bias = tf.tile(char_convolution_bias, [batch_size, 1])
         char_convolution_bias = tf.reshape(
             char_convolution_bias,
-            [batch_size, self.padding_length, self.word_level_character_embedding_size],
+            [
+                batch_size,
+                self.padding_length,
+                self.word_level_character_embedding_size,
+            ],
         )
 
         word_level_char_embedding = tf.nn.relu(max_pool + char_convolution_bias)
@@ -456,7 +468,9 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         if self.use_crf_layer:
             flattened_labels = tf.cast(tf.argmax(self.label_tf, axis=2), tf.int32)
             log_likelihood, _ = tf.contrib.crf.crf_log_likelihood(
-                self.lstm_output_tf, flattened_labels, self.batch_sequence_lengths_tf
+                self.lstm_output_tf,
+                flattened_labels,
+                self.batch_sequence_lengths_tf,
             )
             cost_tf = tf.reduce_mean(-log_likelihood, name="cost_tf")
         else:
@@ -471,14 +485,16 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
             )
 
             softmax_loss_tf = tf.nn.softmax_cross_entropy_with_logits(
-                logits=masked_logits, labels=masked_labels, name="softmax_loss_tf"
+                logits=masked_logits,
+                labels=masked_labels,
+                name="softmax_loss_tf",
             )
 
             cost_tf = tf.reduce_mean(softmax_loss_tf, name="cost_tf")
 
-        optimizer_tf = tf.train.AdamOptimizer(
-            learning_rate=float(self.learning_rate)
-        ).minimize(cost_tf)
+        optimizer_tf = tf.train.AdamOptimizer(learning_rate=float(self.learning_rate)).minimize(
+            cost_tf
+        )
 
         return optimizer_tf, cost_tf
 
@@ -626,17 +642,13 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         initializer = tf.contrib.layers.xavier_initializer(seed=RANDOM_SEED)
 
         # Forward LSTM construction
-        lstm_cell_forward_tf = self._construct_regularized_lstm_cell(
-            n_hidden, initializer
-        )
+        lstm_cell_forward_tf = self._construct_regularized_lstm_cell(n_hidden, initializer)
         initial_state_forward_tf = self._construct_lstm_state(
             initializer, n_hidden, batch_size_dim, "lstm_cell_forward_tf"
         )
 
         # Backward LSTM construction
-        lstm_cell_backward_tf = self._construct_regularized_lstm_cell(
-            n_hidden, initializer
-        )
+        lstm_cell_backward_tf = self._construct_regularized_lstm_cell(n_hidden, initializer)
         initial_state_backward_tf = self._construct_lstm_state(
             initializer, n_hidden, batch_size_dim, "lstm_cell_backward_tf"
         )
@@ -664,7 +676,8 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         )
         output_weights_tf = tf.tile(output_weights_tf, [batch_size_dim, 1])
         output_weights_tf = tf.reshape(
-            output_weights_tf, [batch_size_dim, 2 * n_hidden, self.output_dimension]
+            output_weights_tf,
+            [batch_size_dim, 2 * n_hidden, self.output_dimension],
         )
 
         zero_initializer = tf.constant_initializer(ZERO_INITIALIZER_VALUE)
@@ -727,9 +740,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
 
         x_feats_array = np.asarray(x_feats_array)
         gaz_feats_array = np.asarray(gaz_feats_array)
-        char_feats_array = (
-            np.asarray(char_feats_array) if self.use_char_embeddings else []
-        )
+        char_feats_array = np.asarray(char_feats_array) if self.use_char_embeddings else []
 
         return x_feats_array, gaz_feats_array, char_feats_array
 
@@ -786,9 +797,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
                     # Due to this, we did not implement functionality to
                     # extract the positional information due to the noise
                     # associated with it.
-                    combined_gaz_features.add(
-                        regex_match.group(REGEX_TYPE_POSITIONAL_INDEX)
-                    )
+                    combined_gaz_features.add(regex_match.group(REGEX_TYPE_POSITIONAL_INDEX))
 
             if len(combined_gaz_features) != 0:
                 total_encoding = np.zeros(self.gaz_dimension, dtype=np.int)
@@ -796,14 +805,10 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
                     total_encoding = np.add(total_encoding, encoding)
                 extracted_gaz_tokens[index] = total_encoding.tolist()
 
-        padded_query = self.query_encoder.encode_sequence_of_tokens(
-            example.normalized_tokens
-        )
+        padded_query = self.query_encoder.encode_sequence_of_tokens(example.normalized_tokens)
 
         if self.use_char_embeddings:
-            padded_char = self.char_encoder.encode_sequence_of_tokens(
-                example.normalized_tokens
-            )
+            padded_char = self.char_encoder.encode_sequence_of_tokens(example.normalized_tokens)
         else:
             padded_char = None
 
@@ -824,7 +829,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
         self.session.run([self.global_init, self.local_init])
 
         for epochs in range(int(self.number_of_epochs)):
-            logger.info("Training epoch : %s", epochs)
+            logger.info("Training epoch:%s", epochs)
 
             indices = list(range(len(X)))
             np.random.shuffle(indices)
@@ -857,7 +862,9 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
                     )
 
                     score = self._calculate_score(
-                        output, batch_info["batch_labels"], batch_info["batch_seq_len"]
+                        output,
+                        batch_info["batch_labels"],
+                        batch_info["batch_seq_len"],
                     )
                     accuracy = score / (len(batch_info["batch_examples"]) * 1.0)
 
@@ -901,9 +908,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
             ),
         )
 
-        output = np.reshape(
-            output, [-1, int(self.padding_length), self.output_dimension]
-        )
+        output = np.reshape(output, [-1, int(self.padding_length), self.output_dimension])
         output = np.argmax(output, 2)
 
         decoded_queries = []
@@ -939,19 +944,18 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
             ),
         )
 
-        output = np.reshape(
-            output, [-1, int(self.padding_length), self.output_dimension]
-        )
+        output = np.reshape(output, [-1, int(self.padding_length), self.output_dimension])
         class_output = np.argmax(output, 2)
 
         decoded_queries = []
         for idx, encoded_predict in enumerate(class_output):
             decoded_query = []
-            for token_idx, tag in enumerate(
-                encoded_predict[: self.sequence_lengths[idx]]
-            ):
+            for token_idx, tag in enumerate(encoded_predict[: self.sequence_lengths[idx]]):
                 decoded_query.append(
-                    [self.label_encoder.classes_[tag], output[idx][token_idx][tag]]
+                    [
+                        self.label_encoder.classes_[tag],
+                        output[idx][token_idx][tag],
+                    ]
                 )
             decoded_queries.append(decoded_query)
 
@@ -1036,9 +1040,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
             saver.restore(self.session, os.path.join(path, "lstm_model"))
 
             # Restore tensorflow graph variables
-            self.dense_keep_prob_tf = self.session.graph.get_tensor_by_name(
-                "dense_keep_prob_tf:0"
-            )
+            self.dense_keep_prob_tf = self.session.graph.get_tensor_by_name("dense_keep_prob_tf:0")
 
             self.lstm_input_keep_prob_tf = self.session.graph.get_tensor_by_name(
                 "lstm_input_keep_prob_tf:0"
@@ -1048,9 +1050,7 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
                 "lstm_output_keep_prob_tf:0"
             )
 
-            self.query_input_tf = self.session.graph.get_tensor_by_name(
-                "query_input_tf:0"
-            )
+            self.query_input_tf = self.session.graph.get_tensor_by_name("query_input_tf:0")
 
             self.gaz_input_tf = self.session.graph.get_tensor_by_name("gaz_input_tf:0")
 
@@ -1064,18 +1064,14 @@ class LstmModel(Tagger):  # pylint: disable=too-many-instance-attributes
                 "batch_sequence_mask_tf:0"
             )
 
-            self.lstm_output_tf = self.session.graph.get_tensor_by_name(
-                "output_tensor:0"
-            )
+            self.lstm_output_tf = self.session.graph.get_tensor_by_name("output_tensor:0")
 
             self.lstm_output_softmax_tf = self.session.graph.get_tensor_by_name(
                 "output_softmax_tensor:0"
             )
 
             if self.use_char_embeddings:
-                self.char_input_tf = self.session.graph.get_tensor_by_name(
-                    "char_input_tf:0"
-                )
+                self.char_input_tf = self.session.graph.get_tensor_by_name("char_input_tf:0")
 
         # Load feature extraction variables
         variables_to_load = joblib.load(os.path.join(path, ".feature_extraction_vars"))

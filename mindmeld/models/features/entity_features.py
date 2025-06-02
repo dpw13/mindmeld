@@ -12,7 +12,12 @@
 # limitations under the License.
 
 """This module contains feature extractors for entities"""
-from ..helpers import GAZETTEER_RSC, get_ngram, register_entity_feature, requires
+from ..helpers import (
+    GAZETTEER_RSC,
+    get_ngram,
+    register_entity_feature,
+    requires,
+)
 from ...core import QueryEntity, Query, NestedEntity
 
 
@@ -37,7 +42,8 @@ def extract_in_gaz_features(**kwargs):
             else:
                 raise TypeError(
                     f"{current_entity} is of unknown type, expected Query, "
-                    f"NestedEntity or QueryEntity type")
+                    f"NestedEntity or QueryEntity type"
+                )
 
             if normalized_tokens in gaz["pop_dict"]:
                 feat_name = "in_gaz|type:{}".format(gaz_name)
@@ -70,12 +76,8 @@ def extract_bag_of_words_before_features(ngram_lengths_to_start_positions, **kwa
 
         for length, starts in ngram_lengths_to_start_positions.items():
             for start in starts:
-                feat_name = "bag_of_words|ngram_before|length:{}|pos:{}".format(
-                    length, start
-                )
-                features[feat_name] = get_ngram(
-                    tokens, current_entity_token_start + start, length
-                )
+                feat_name = "bag_of_words|ngram_before|length:{}|pos:{}".format(length, start)
+                features[feat_name] = get_ngram(tokens, current_entity_token_start + start, length)
 
         return features
 
@@ -104,12 +106,8 @@ def extract_bag_of_words_after_features(ngram_lengths_to_start_positions, **kwar
 
         for length, starts in ngram_lengths_to_start_positions.items():
             for start in starts:
-                feat_name = "bag_of_words|ngram_after|length:{}|pos:{}".format(
-                    length, start
-                )
-                features[feat_name] = get_ngram(
-                    tokens, current_entity_token_end + start, length
-                )
+                feat_name = "bag_of_words|ngram_after|length:{}|pos:{}".format(length, start)
+                features[feat_name] = get_ngram(tokens, current_entity_token_end + start, length)
 
         return features
 

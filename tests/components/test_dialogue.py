@@ -35,14 +35,18 @@ def dm():
     dm = DialogueManager()
     dm.add_dialogue_rule("domain", lambda x, y: None, domain="domain")
     dm.add_dialogue_rule("intent", lambda x, y: None, intent="intent")
+    dm.add_dialogue_rule("domain_intent", lambda x, y: None, domain="domain", intent="intent")
     dm.add_dialogue_rule(
-        "domain_intent", lambda x, y: None, domain="domain", intent="intent"
+        "intent_entity_1",
+        lambda x, y: None,
+        intent="intent",
+        has_entity="entity_1",
     )
     dm.add_dialogue_rule(
-        "intent_entity_1", lambda x, y: None, intent="intent", has_entity="entity_1"
-    )
-    dm.add_dialogue_rule(
-        "intent_entity_2", lambda x, y: None, intent="intent", has_entity="entity_2"
+        "intent_entity_2",
+        lambda x, y: None,
+        intent="intent",
+        has_entity="entity_2",
     )
     dm.add_dialogue_rule(
         "intent_entities",
@@ -52,9 +56,7 @@ def dm():
     )
 
     dm.add_dialogue_rule("targeted_only", lambda x, y: None, targeted_only=True)
-    dm.add_dialogue_rule(
-        "dummy_ruleless", lambda x, y: None
-    )  # Defined to test default use
+    dm.add_dialogue_rule("dummy_ruleless", lambda x, y: None)  # Defined to test default use
     dm.add_dialogue_rule("default", lambda x, y: None, default=True)
 
     return dm
@@ -83,12 +85,12 @@ def test_dialogue_state_rule_not_equal():
 def test_dialogue_state_rule_unexpected_keyword():
     with pytest.raises(TypeError) as ex:
         DialogueStateRule(
-            dialogue_state="some-state", domain="some-domain", new_key="some-key"
+            dialogue_state="some-state",
+            domain="some-domain",
+            new_key="some-key",
         )
 
-    assert "DialogueStateRule() got an unexpected keyword argument 'new_key'" in str(
-        ex.value
-    )
+    assert "DialogueStateRule() got an unexpected keyword argument 'new_key'" in str(ex.value)
 
 
 def test_dialogue_state_rule_targeted_only():
@@ -98,7 +100,9 @@ def test_dialogue_state_rule_targeted_only():
 
     with pytest.raises(ValueError) as ex:
         DialogueStateRule(
-            dialogue_state="some-state", domain="some-domain", targeted_only=True
+            dialogue_state="some-state",
+            domain="some-domain",
+            targeted_only=True,
         )
 
     msg = (
@@ -116,9 +120,7 @@ def test_dialogue_state_rule_exception():
     rule1 = DialogueStateRule(dialogue_state="some-state", has_entity="entity_1")
     assert rule1.entity_types == frozenset(("entity_1",))
 
-    rule2 = DialogueStateRule(
-        dialogue_state="some-state", has_entities=["entity_2", "entity_3"]
-    )
+    rule2 = DialogueStateRule(dialogue_state="some-state", has_entities=["entity_2", "entity_3"])
     assert rule2.entity_types == frozenset(
         (
             "entity_2",
@@ -162,9 +164,7 @@ class TestDialogueManager:
 
     def test_default_kwarg_exclusion(self, dm):
         with pytest.raises(ValueError):
-            dm.add_dialogue_rule(
-                "default3", lambda x, y: None, intent="intent", default=True
-            )
+            dm.add_dialogue_rule("default3", lambda x, y: None, intent="intent", default=True)
 
     def test_domain(self, dm):
         """Correct dialogue state is found for a domain"""
@@ -196,9 +196,7 @@ class TestDialogueManager:
 
     def test_intent_entity_tiebreak(self, dm):
         """Correctly break ties between rules of equal complexity"""
-        request = create_request(
-            "domain", "intent", [{"type": "entity_1"}, {"type": "entity_2"}]
-        )
+        request = create_request("domain", "intent", [{"type": "entity_1"}, {"type": "entity_2"}])
         response = create_responder(request)
         result = dm.apply_handler(request, response)
         assert result.dialogue_state == "intent_entity_1"
@@ -218,24 +216,23 @@ class TestDialogueManager:
         """Correctly sets the dialogue state based on the target_dialogue_state"""
         request = create_request("domain", "intent")
         response = create_responder(request)
-        result = dm.apply_handler(
-            request, response, target_dialogue_state="intent_entity_2"
-        )
+        result = dm.apply_handler(request, response, target_dialogue_state="intent_entity_2")
         assert result.dialogue_state == "intent_entity_2"
 
     def test_target_dialogue_state_management_targeted_only(self, dm):
         """Correctly sets the dialogue state based on the target_dialogue_state"""
         request = create_request("domain", "intent")
         response = create_responder(request)
-        result = dm.apply_handler(
-            request, response, target_dialogue_state="targeted_only"
-        )
+        result = dm.apply_handler(request, response, target_dialogue_state="targeted_only")
         assert result.dialogue_state == "targeted_only"
 
     def test_targeted_only_kwarg_exclusion(self, dm):
         with pytest.raises(ValueError):
             dm.add_dialogue_rule(
-                "targeted_only2", lambda x, y: None, intent="intent", targeted_only=True
+                "targeted_only2",
+                lambda x, y: None,
+                intent="intent",
+                targeted_only=True,
             )
 
     def test_middleware_single(self, dm):
@@ -316,26 +313,35 @@ def test_convo_params_are_cleared(kwik_e_mart_nlp, kwik_e_mart_app_path):
     ],
 )
 def test_convo_language_and_locales(
-    mocker, kwik_e_mart_nlp, kwik_e_mart_app_path, language, locale, expected_ser_call
+    mocker,
+    kwik_e_mart_nlp,
+    kwik_e_mart_app_path,
+    language,
+    locale,
+    expected_ser_call,
 ):
     """Tests that the params are cleared in one trip from app to mm."""
     convo = Conversation(nlp=kwik_e_mart_nlp, app_path=kwik_e_mart_app_path)
     convo.params = Params(language=language, locale=locale)
-    mock1 = mocker.patch.object(
-        DucklingRecognizer, "get_response", return_value=({}, 400)
-    )
+    mock1 = mocker.patch.object(DucklingRecognizer, "get_response", return_value=({}, 400))
     try:
         convo.say("set alarm for 4pm tomorrow")
         mock1.call_args_list[0][0][0].pop("text")
         assert mock1.call_args_list[0][0][0] == expected_ser_call
     except ValidationError as error:
         if isinstance(error.messages, dict):
-            if language == 'INVALID_LANG_CODE':
-                assert 'Invalid language param: invalid_lang_code is not a valid ' \
-                       'ISO 639-1 or ISO 639-2 language code.' in str(error.messages)
-            elif locale == 'INVALID_LOCALE_CODE':
-                assert 'Invalid locale param: invalid_locale_code is not a valid ' \
-                       'ISO 639-1 or ISO 639-2 language code.' in str(error.messages)
+            if language == "INVALID_LANG_CODE":
+                assert (
+                    "Invalid language param: invalid_lang_code is not a valid "
+                    "ISO 639-1 or ISO 639-2 language code." in str(error.messages)
+                )
+            elif locale == "INVALID_LOCALE_CODE":
+                assert (
+                    "Invalid locale param: invalid_locale_code is not a valid "
+                    "ISO 639-1 or ISO 639-2 language code." in str(error.messages)
+                )
         else:
-            assert error.messages[0] == "Invalid locale_code param: %s is " \
-                                        "not a valid locale." % locale
+            assert (
+                error.messages[0] == "Invalid locale_code param: %s is "
+                "not a valid locale." % locale
+            )

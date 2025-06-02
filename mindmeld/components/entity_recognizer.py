@@ -25,8 +25,14 @@ from .classifier import Classifier, ClassifierConfig, ClassifierLoadError
 from ..constants import DEFAULT_TRAIN_SET_REGEX
 from ..core import Entity, Query
 from ..models.model import Model
-from ..models import ENTITIES_LABEL_TYPE, QUERY_EXAMPLE_TYPE, ModelConfig, create_model, load_model
-from ..resource_loader import ProcessedQuery, ProcessedQueryList, ResourceLoader
+from ..models import (
+    ENTITIES_LABEL_TYPE,
+    QUERY_EXAMPLE_TYPE,
+    ModelConfig,
+    create_model,
+    load_model,
+)
+from ..resource_loader import ProcessedQueryList, ResourceLoader
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +82,9 @@ class EntityRecognizer(Classifier):
         )
         return super()._get_model_config(loaded_config, **kwargs)
 
-    def get_entity_types(self, queries: ProcessedQueryList=None, label_set=None, **kwargs) -> Iterable[str]:
-
+    def get_entity_types(
+        self, queries: ProcessedQueryList = None, label_set=None, **kwargs
+    ) -> Iterable[str]:
         if not label_set:
             label_set = self._get_model_config(**kwargs).train_label_set
             label_set = label_set if label_set else DEFAULT_TRAIN_SET_REGEX
@@ -95,14 +102,13 @@ class EntityRecognizer(Classifier):
 
         return entity_types
 
-    def fit(self,
-            queries=None,
-            label_set=None,
-            incremental_timestamp=None,
-            load_cached=True,
-            **kwargs):
+    def fit(
+        self, queries=None, label_set=None, incremental_timestamp=None, load_cached=True, **kwargs
+    ):
         logger.info(
-            "Fitting entity recognizer: domain=%r, intent=%r", self.domain, self.intent
+            "Fitting entity recognizer: domain=%r, intent=%r",
+            self.domain,
+            self.intent,
         )
         # create model with given params
         self._model_config = self._get_model_config(**kwargs)
@@ -158,7 +164,9 @@ class EntityRecognizer(Classifier):
                 models are stored.
         """
         logger.info(
-            "Saving entity classifier: domain=%r, intent=%r", self.domain, self.intent
+            "Saving entity classifier: domain=%r, intent=%r",
+            self.domain,
+            self.intent,
         )
         super().dump(model_path, incremental_model_path)
 
@@ -168,15 +176,19 @@ class EntityRecognizer(Classifier):
             "model_config": self._model_config,
         }
         if self._model:
-            er_data.update({
-                "w_ngram_freq": self._model.get_resource("w_ngram_freq"),
-                "c_ngram_freq": self._model.get_resource("c_ngram_freq"),
-            })
+            er_data.update(
+                {
+                    "w_ngram_freq": self._model.get_resource("w_ngram_freq"),
+                    "c_ngram_freq": self._model.get_resource("c_ngram_freq"),
+                }
+            )
         pickle.dump(er_data, open(self._get_classifier_resources_save_path(path), "wb"))
 
     def unload(self):
         logger.info(
-            "Unloading entity recognizer: domain=%r, intent=%r", self.domain, self.intent
+            "Unloading entity recognizer: domain=%r, intent=%r",
+            self.domain,
+            self.intent,
         )
         self.entity_types = None
         self._model_config = None
@@ -190,7 +202,9 @@ class EntityRecognizer(Classifier):
             model_path (str): The location on disk where the model is stored.
         """
         logger.info(
-            "Loading entity recognizer: domain=%r, intent=%r", self.domain, self.intent
+            "Loading entity recognizer: domain=%r, intent=%r",
+            self.domain,
+            self.intent,
         )
 
         # underlying model specific load
@@ -199,7 +213,7 @@ class EntityRecognizer(Classifier):
         # classifier specific load
         try:
             er_data = pickle.load(open(self._get_classifier_resources_save_path(model_path), "rb"))
-        except FileNotFoundError:  # backwards compatability for previous version's saved models
+        except (FileNotFoundError):  # backwards compatability for previous version's saved models
             er_data = joblib.load(model_path)
         self.entity_types = er_data["entity_types"]
         self._model_config: ModelConfig = er_data["model_config"]
@@ -221,9 +235,7 @@ class EntityRecognizer(Classifier):
 
             gazetteers = self._resource_loader.get_gazetteers()
             text_preparation_pipeline = self._resource_loader.get_text_preparation_pipeline()
-            sys_types = set(
-                (t for t in self.entity_types if Entity.is_system_entity(t))
-            )
+            sys_types = set((t for t in self.entity_types if Entity.is_system_entity(t)))
 
             w_ngram_freq = er_data.get("w_ngram_freq")
             c_ngram_freq = er_data.get("c_ngram_freq")
@@ -268,7 +280,11 @@ class EntityRecognizer(Classifier):
         return tuple(sorted(prediction, key=lambda e: e.span.start))
 
     def predict_proba(
-        self, query: Query | str, time_zone: str=None, timestamp: int=None, dynamic_resource=None
+        self,
+        query: Query | str,
+        time_zone: str = None,
+        timestamp: int = None,
+        dynamic_resource=None,
     ):
         """Runs prediction on a given query and generates multiple entity tagging hypotheses with
         their associated probabilities using the trained entity recognition model
@@ -299,18 +315,15 @@ class EntityRecognizer(Classifier):
 
     def _get_queries_from_label_set(self, label_set=DEFAULT_TRAIN_SET_REGEX):
         return self._resource_loader.get_flattened_label_set(
-            domain=self.domain,
-            intent=self.intent,
-            label_set=label_set
+            domain=self.domain, intent=self.intent, label_set=label_set
         )
 
     def _get_examples_and_labels(self, queries: ProcessedQueryList):
         return (queries.queries(), queries.entities())
 
     def _get_examples_and_labels_hash(self, queries: ProcessedQueryList):
-        hashable_queries = (
-            [self.domain + "###" + self.intent + "###entity###"]
-            + sorted(list(queries.raw_queries()))
+        hashable_queries = [self.domain + "###" + self.intent + "###entity###"] + sorted(
+            list(queries.raw_queries())
         )
         return self._resource_loader.hash_list(hashable_queries)
 

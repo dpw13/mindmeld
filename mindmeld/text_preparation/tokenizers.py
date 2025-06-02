@@ -142,7 +142,6 @@ class LetterTokenizer(Tokenizer):
         token_num_by_char = []
         token_num = 0
         for index, category in enumerate(category_by_char):
-
             if category == UNICODE_SPACE_CATEGORY:
                 token_num_by_char.append(None)
                 continue
@@ -150,9 +149,7 @@ class LetterTokenizer(Tokenizer):
             prev_category = category_by_char[index - 1] if index > 0 else None
 
             # General Category is represented by the first letter of a Unicode category.
-            same_general_category = (
-                category[0] == (prev_category[0] if prev_category else None)
-            )
+            same_general_category = category[0] == (prev_category[0] if prev_category else None)
 
             if UNICODE_NON_LATIN_CATEGORY in (category, prev_category) or not same_general_category:
                 token_num += 1
@@ -161,7 +158,9 @@ class LetterTokenizer(Tokenizer):
         return token_num_by_char
 
     @staticmethod
-    def create_tokens(text: str, token_num_by_char: Iterable[str]) -> Iterable[Dict[str, int | str]]:
+    def create_tokens(
+        text: str, token_num_by_char: Iterable[str]
+    ) -> Iterable[Dict[str, int | str]]:
         """
         Generate token dictionaries from the original text and the token numbers by character.
         Args:
@@ -185,9 +184,7 @@ class LetterTokenizer(Tokenizer):
             token_text += text[index]
             is_last_char = index == len(token_num_by_char) - 1
             # Close off entity if char is the last or if next char is a different token number
-            if is_last_char or (
-                not is_last_char and token_num != token_num_by_char[index + 1]
-            ):
+            if is_last_char or (not is_last_char and token_num != token_num_by_char[index + 1]):
                 tokens.append({"start": start, "text": token_text})
                 token_text = ""
         return tokens
@@ -241,7 +238,17 @@ class SpacyTokenizer(Tokenizer):
             spacy_model_size (str, optional): Size of the Spacy model to use. ("sm", "md", or "lg")
         """
         self.spacy_model = SpacyModelFactory.get_spacy_language_model(
-            language, spacy_model_size, disable=["tagger", "parser", "ner", "attribute_ruler", "lemmatizer", "tok2vec", "morphologizer"]
+            language,
+            spacy_model_size,
+            disable=[
+                "tagger",
+                "parser",
+                "ner",
+                "attribute_ruler",
+                "lemmatizer",
+                "tok2vec",
+                "morphologizer",
+            ],
         )
         assert len(self.spacy_model.pipeline) == 0
 
@@ -268,9 +275,7 @@ class TokenizerFactory:
     """Tokenizer Factory Class"""
 
     @staticmethod
-    def get_tokenizer(
-        tokenizer: str, language=ENGLISH_LANGUAGE_CODE, spacy_model_size="sm"
-    ):
+    def get_tokenizer(tokenizer: str, language=ENGLISH_LANGUAGE_CODE, spacy_model_size="sm"):
         """A static method to get a tokenizer
 
         Args:

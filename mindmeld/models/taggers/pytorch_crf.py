@@ -92,10 +92,14 @@ def diag_concat_coo_tensors(tensors):
     if len(values) == len(tensors):
         value = torch.cat(values, dim=0)
 
-    return torch.sparse_coo_tensor(indices=torch.stack([row, col]), values=value, size=sparse_sizes).coalesce()
+    return torch.sparse_coo_tensor(
+        indices=torch.stack([row, col]), values=value, size=sparse_sizes
+    ).coalesce()
 
 
-def stratify_input(X: List[Iterable[Dict]], y: List[Iterable[str]]) -> Tuple[Iterable, Iterable, Iterable[Tuple]]:
+def stratify_input(
+    X: List[Iterable[Dict]], y: List[Iterable[str]]
+) -> Tuple[Iterable, Iterable, Iterable[Tuple]]:
     """Gets the input and labels ready for stratification into train and dev data. Stratification is done
     based on the presence of unique labels for each sequence. It also duplicates the unique samples across input and labels
     to ensure that it doesn't fail with scikit-learn's train_test_split.
@@ -137,7 +141,11 @@ def collate_tensors_and_masks(sequence):
     """
     if len(sequence[0]) == 3:
         sparse_mats, masks, labels = zip(*sequence)
-        return diag_concat_coo_tensors(sparse_mats), torch.stack(masks), torch.stack(labels)
+        return (
+            diag_concat_coo_tensors(sparse_mats),
+            torch.stack(masks),
+            torch.stack(labels),
+        )
     if len(sequence[0]) == 2:
         sparse_mats, masks = zip(*sequence)
         return diag_concat_coo_tensors(sparse_mats), torch.stack(masks)
@@ -147,7 +155,6 @@ class Encoder:
     """Encoder class that is responsible for the feature extraction and label encoding for the PyTorch model."""
 
     def __init__(self, feature_extractor="hash", num_feats=50000):
-
         if feature_extractor == "dict":
             self.feat_extractor = DictVectorizer(dtype=np.float32)
         else:
@@ -206,12 +213,17 @@ class Encoder:
             if labels is not None:
                 flattened_labels = list(chain.from_iterable(labels))
                 self.label_encoder.fit(flattened_labels)
-                self.classes, self.num_classes = self.label_encoder.classes_, len(self.label_encoder.classes_)
+                (
+                    self.classes,
+                    self.num_classes,
+                ) = self.label_encoder.classes_, len(self.label_encoder.classes_)
 
         # number of tokens in each example
         seq_lens = [len(x) for x in feat_dicts]
 
-        encoded_tensor_inputs = self.get_padded_transformed_tensors(feat_dicts, seq_lens, is_label=False)
+        encoded_tensor_inputs = self.get_padded_transformed_tensors(
+            feat_dicts, seq_lens, is_label=False
+        )
         encoded_tensor_labels = self.get_padded_transformed_tensors(labels, seq_lens, is_label=True)
 
         return encoded_tensor_inputs, seq_lens, encoded_tensor_labels
@@ -231,7 +243,9 @@ class Encoder:
         sparse_feat = self.feat_extractor.transform(padded_x).tocoo()
         sparse_feat_tensor = torch.sparse_coo_tensor(
             indices=torch.as_tensor(np.stack([sparse_feat.row, sparse_feat.col])),
-            values=torch.as_tensor(sparse_feat.data), size=sparse_feat.shape)
+            values=torch.as_tensor(sparse_feat.data),
+            size=sparse_feat.shape,
+        )
         return sparse_feat_tensor
 
     def encode_padded_label(self, current_seq_len, max_seq_len, y):
@@ -246,8 +260,11 @@ class Encoder:
             label_tensor (torch.Tensor): PyTorch tensor representation of padded label sequence
         """
         transformed_label = self.label_encoder.transform(y)
-        transformed_label = np.pad(transformed_label, pad_width=(0, max_seq_len - current_seq_len),
-                                   constant_values=(self.num_classes - 1))
+        transformed_label = np.pad(
+            transformed_label,
+            pad_width=(0, max_seq_len - current_seq_len),
+            constant_values=(self.num_classes - 1),
+        )
         label_tensor = torch.as_tensor(transformed_label, dtype=torch.long)
         return label_tensor
 
@@ -319,19 +336,18 @@ class CRFModel(nn.Module):
             raise MindMeldError("CRF weights not saved. Please re-train model from scratch.")
 
     def validate_params(self, kwargs):
-        """Validate the argument values saved into the CRF model. """
+        """Validate the argument values saved into the CRF model."""
         for key in kwargs:
-            msg = (
-                "Unexpected param `{param}`, dropping it from model config.".format(
-                    param=key
-                )
-            )
+            msg = "Unexpected param `{param}`, dropping it from model config.".format(param=key)
             logger.warning(msg)
         if self.optimizer not in ["sgd", "adam", "lbfgs"]:
             raise MindMeldError(
-                f"Optimizer type {self.optimizer_type} not supported. Supported options are ['sgd', 'adam', 'lbfgs']")
+                f"Optimizer type {self.optimizer_type} not supported. Supported options are ['sgd', 'adam', 'lbfgs']"
+            )
         if self.feat_type not in ["hash", "dict"]:
-            raise MindMeldError(f"Feature type {self.feat_type} not supported. Supported options are ['hash', 'dict']")
+            raise MindMeldError(
+                f"Feature type {self.feat_type} not supported. Supported options are ['hash', 'dict']"
+            )
         if not 0 < self.dev_split_ratio < 1:
             raise MindMeldError("Train-dev split should be a value between 0 and 1.")
         if not 0 <= self.drop_input < 1:
@@ -349,10 +365,14 @@ class CRFModel(nn.Module):
             num_features (int): Number of features to use in a FeatureHasher feature extractor.
             num_classes (int): Number of classes in the tagging model.
         """
-        self.W = nn.Parameter(torch.nn.init.xavier_normal_(torch.empty(size=(num_features, num_classes))),
-                              requires_grad=True)
-        self.b = nn.Parameter(torch.nn.init.constant_(torch.empty(size=(num_classes,)), val=0.01),
-                              requires_grad=True)
+        self.W = nn.Parameter(
+            torch.nn.init.xavier_normal_(torch.empty(size=(num_features, num_classes))),
+            requires_grad=True,
+        )
+        self.b = nn.Parameter(
+            torch.nn.init.constant_(torch.empty(size=(num_classes,)), val=0.01),
+            requires_grad=True,
+        )
         self.crf_layer = CRF(num_classes, batch_first=True)
         self.num_classes = num_classes
 
@@ -363,20 +383,20 @@ class CRFModel(nn.Module):
         Args:
             inputs (torch.Tensor): Batch of input tensors to pass through the model.
             targets (torch.Tensor or None): Batch of label tensors.
-            mask (torch.Tensor) : Batch of mask tensors to account for padded inputs.
+            mask (torch.Tensor):Batch of mask tensors to account for padded inputs.
             drop_input (float): Percentage of features to drop from the input.
         Returns:
             loss (torch.Tensor or list): Loss from training or predictions for input sequence.
         """
         if drop_input:
-            dp_mask = (torch.FloatTensor(inputs.values().size()).uniform_() > drop_input)
+            dp_mask = torch.FloatTensor(inputs.values().size()).uniform_() > drop_input
             inputs.values()[:] = inputs.values() * dp_mask
         dense_w = torch.tile(self.W, dims=(mask.shape[0], 1))
         out_1 = torch.addmm(self.b, inputs, dense_w)
         crf_input = out_1.reshape((mask.shape[0], -1, self.num_classes))
         if targets is None:
             return self.crf_layer.decode(crf_input, mask=mask)
-        loss = - self.crf_layer(crf_input, targets, mask=mask, reduction='mean')
+        loss = -self.crf_layer(crf_input, targets, mask=mask, reduction="mean")
         return loss
 
     def compute_regularized_loss(self, l1):
@@ -432,15 +452,17 @@ class CRFModel(nn.Module):
             # Broadcast log_prob over all possible next tags
             broadcast_log_prob = log_prob[-1].unsqueeze(2)  # (batch_size, num_tags, 1)
             # Sum current log probability, transition, and emission scores
-            score = broadcast_log_prob + broadcast_transitions + emissions_broadcast[
-                i]  # (batch_size, num_tags, num_tags)
+            score = (
+                broadcast_log_prob + broadcast_transitions + emissions_broadcast[i]
+            )  # (batch_size, num_tags, num_tags)
             # Sum over all possible current tags, but we're in log prob space, so a sum
             # becomes a log-sum-exp
             score = torch.logsumexp(score, dim=1)
             # Set log_prob to the score if this timestep is valid (mask == 1), otherwise
             # copy the prior value
-            log_prob.append(score * mask[i].unsqueeze(1) +
-                            log_prob[-1] * (1. - mask[i]).unsqueeze(1))
+            log_prob.append(
+                score * mask[i].unsqueeze(1) + log_prob[-1] * (1.0 - mask[i]).unsqueeze(1)
+            )
 
         if run_backwards:
             log_prob.reverse()
@@ -470,9 +492,22 @@ class CRFModel(nn.Module):
         return torch.exp(prob).transpose(0, 1)
 
     # pylint: disable=too-many-arguments
-    def set_params(self, feat_type="hash", feat_num=50000, stratify_train_val_split=True, drop_input=0.2, batch_size=8,
-                   number_of_epochs=100, patience=3, dev_split_ratio=0.2, optimizer="sgd", l1_weight=0, l2_weight=0,
-                   random_state=None, **kwargs):
+    def set_params(
+        self,
+        feat_type="hash",
+        feat_num=50000,
+        stratify_train_val_split=True,
+        drop_input=0.2,
+        batch_size=8,
+        number_of_epochs=100,
+        patience=3,
+        dev_split_ratio=0.2,
+        optimizer="sgd",
+        l1_weight=0,
+        l2_weight=0,
+        random_state=None,
+        **kwargs,
+    ):
         """Set the parameters for the PyTorch CRF model and also validates the parameters.
 
         Args:
@@ -509,7 +544,8 @@ class CRFModel(nn.Module):
         logger.debug("Random state for torch-crf is %s", self.random_state)
         if self.feat_type == "dict":
             logger.warning(
-                "WARNING: Number of features is compatible with only `hash` feature type. This value is ignored with `dict` setting")
+                "WARNING: Number of features is compatible with only `hash` feature type. This value is ignored with `dict` setting"
+            )
 
     def get_params(self):
         """
@@ -527,7 +563,7 @@ class CRFModel(nn.Module):
             "optimizer": self.optimizer,
             "l1_weight": self.l1_weight,
             "l2_weight": self.l2_weight,
-            "random_state": self.random_state
+            "random_state": self.random_state,
         }
 
     def get_dataloader(self, X, y, is_train):
@@ -544,10 +580,18 @@ class CRFModel(nn.Module):
         """
         if self.optimizer == "lbfgs" and is_train:
             self.batch_size = len(X)
-        tensor_inputs, input_seq_lens, tensor_labels = self._encoder.get_tensor_data(X, y, fit=is_train)
+        (
+            tensor_inputs,
+            input_seq_lens,
+            tensor_labels,
+        ) = self._encoder.get_tensor_data(X, y, fit=is_train)
         tensor_dataset = TaggerDataset(tensor_inputs, input_seq_lens, tensor_labels)
-        torch_dataloader = DataLoader(tensor_dataset, batch_size=self.batch_size if is_train else TEST_BATCH_SIZE,
-                                      shuffle=is_train, collate_fn=collate_tensors_and_masks)
+        torch_dataloader = DataLoader(
+            tensor_dataset,
+            batch_size=self.batch_size if is_train else TEST_BATCH_SIZE,
+            shuffle=is_train,
+            collate_fn=collate_tensors_and_masks,
+        )
         return torch_dataloader
 
     def fit(self, X: Iterable[Iterable[Dict]], y: Iterable[Iterable[str]]):
@@ -571,10 +615,15 @@ class CRFModel(nn.Module):
         # the array appears to have non-homogenous size.
         stratify_tuples = np.asarray(stratify_tuples, dtype=tuple)
         # Just for testing
-        #check_array(stratify_tuples, input_name="y", ensure_2d=False, dtype=tuple)
+        # check_array(stratify_tuples, input_name="y", ensure_2d=False, dtype=tuple)
         # TODO: Rewrite our own train_test_split function to handle FileBackedList and avoid duplicating unique labels
-        train_X, dev_X, train_y, dev_y = train_test_split(X, y, test_size=self.dev_split_ratio,
-                                                          stratify=stratify_tuples, random_state=self.random_state)
+        train_X, dev_X, train_y, dev_y = train_test_split(
+            X,
+            y,
+            test_size=self.dev_split_ratio,
+            stratify=stratify_tuples,
+            random_state=self.random_state,
+        )
 
         train_dataloader = self.get_dataloader(train_X, train_y, is_train=True)
         dev_dataloader = self.get_dataloader(dev_X, dev_y, is_train=False)
@@ -586,18 +635,31 @@ class CRFModel(nn.Module):
         self.build_params(*self._encoder.get_feats_and_classes())
 
         if self.optimizer == "sgd":
-            self.optim = optim.SGD(self.parameters(), lr=0.01, momentum=0.9, nesterov=True,
-                                   weight_decay=self.l2_weight)
+            self.optim = optim.SGD(
+                self.parameters(),
+                lr=0.01,
+                momentum=0.9,
+                nesterov=True,
+                weight_decay=self.l2_weight,
+            )
         if self.optimizer == "adam":
             self.optim = optim.Adam(self.parameters(), lr=0.001, weight_decay=self.l2_weight)
 
         if self.optimizer == "lbfgs":
-            self.optim = optim.LBFGS(self.parameters(), lr=1, max_iter=100, history_size=6,
-                                     line_search_fn="strong_wolfe")
+            self.optim = optim.LBFGS(
+                self.parameters(),
+                lr=1,
+                max_iter=100,
+                history_size=6,
+                line_search_fn="strong_wolfe",
+            )
 
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optim, mode='max',
-                                                              patience=max(self.patience - 2, 1),
-                                                              factor=0.5)
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            self.optim,
+            mode="max",
+            patience=max(self.patience - 2, 1),
+            factor=0.5,
+        )
         with NamedTemporaryFile(suffix=".pt", prefix="best_crf_wts") as tmp_file:
             self.training_loop(train_dataloader, dev_dataloader, tmp_file.name)
             self.load_state_dict(torch.load(tmp_file.name))
@@ -638,6 +700,7 @@ class CRFModel(nn.Module):
         self.train()
         train_loss = 0
         for batch_idx, (inputs, mask, labels) in enumerate(train_dataloader):
+
             def closure():
                 nonlocal train_loss
                 self.optim.zero_grad()
@@ -657,8 +720,11 @@ class CRFModel(nn.Module):
                 closure()
                 self.optim.step()
             if batch_idx % 20 == 0:
-                logger.debug("Batch: %s Mean Loss: %s", batch_idx,
-                             (train_loss / (batch_idx + 1)))
+                logger.debug(
+                    "Batch: %s Mean Loss: %s",
+                    batch_idx,
+                    (train_loss / (batch_idx + 1)),
+                )
 
     def run_predictions(self, dataloader, calc_f1=False):
         """Get predictions for the data by running a inference pass of the model.
@@ -682,7 +748,7 @@ class CRFModel(nn.Module):
                 preds = self.forward(inputs, None, mask)
                 predictions.extend([x for lst in preds for x in lst] if calc_f1 else preds)
         if calc_f1:
-            dev_score = f1_score(targets, predictions, average='weighted')
+            dev_score = f1_score(targets, predictions, average="weighted")
             return dev_score
         else:
             return predictions
@@ -707,7 +773,7 @@ class CRFModel(nn.Module):
                 # for each token for each sequence.
                 for seq, mask_seq in zip(probs, mask):
                     one_seq_list = []
-                    for (token_probs, valid_token) in zip(seq, mask_seq):
+                    for token_probs, valid_token in zip(seq, mask_seq):
                         if valid_token:
                             one_seq_list.append(dict(zip(self._encoder.classes, token_probs)))
                     marginals_dict.append(one_seq_list)

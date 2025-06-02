@@ -30,10 +30,12 @@ from .components._config import ENGLISH_LANGUAGE_CODE
 from .models.helpers import register_augmentor, AUGMENTATION_MAP
 from .markup import load_query, dump_query
 from .core import Entity, Span, QueryEntity, ProcessedQuery, _get_overlap
-from .path import EMBEDDINGS_FOLDER_PATH, \
-    PARAPHRASER_FILE_PATH, \
-    PARAPHRASER_MODEL_PATH, \
-    HUGGINGFACE_PARAPHRASER_MODEL_PATH
+from .path import (
+    EMBEDDINGS_FOLDER_PATH,
+    PARAPHRASER_FILE_PATH,
+    PARAPHRASER_MODEL_PATH,
+    HUGGINGFACE_PARAPHRASER_MODEL_PATH,
+)
 from .models.containers import TqdmUpTo
 
 logger = logging.getLogger(__name__)
@@ -41,10 +43,11 @@ logger = logging.getLogger(__name__)
 # pylint: disable=R0201
 
 SUPPORTED_LANGUAGE_CODES = ["en", "es", "fr", "it", "pt", "ro"]
-EOS_TOKEN = '</s>'
+EOS_TOKEN = "</s>"
 DEFAULT_NUM_PARAPHRASES = 10
-PARAPHRASER_RETAIN_ENTITIES_URL = 'https://mindmeld-binaries.s3.amazonaws.com/paraphraser' \
-                                  '/paraphrase_retain_entities.zip'
+PARAPHRASER_RETAIN_ENTITIES_URL = (
+    "https://mindmeld-binaries.s3.amazonaws.com/paraphraser" "/paraphrase_retain_entities.zip"
+)
 
 
 class UnsupportedLanguageError(Exception):
@@ -59,6 +62,7 @@ class AugmentorFactory:
         language (str): Language for data augmentation.
         resource_loader (object): Resource Loader object for the application.
     """
+
     def __init__(self, config, language, resource_loader):
         self.config = config
         self.language = language
@@ -74,9 +78,7 @@ class AugmentorFactory:
             ValueError: When model configuration is invalid or required key is missing
         """
         if "augmentor_class" not in self.config:
-            raise KeyError(
-                "Missing required argument in AUGMENTATION_CONFIG: 'augmentor_class'"
-            )
+            raise KeyError("Missing required argument in AUGMENTATION_CONFIG: 'augmentor_class'")
 
         # Validate configuration input
         batch_size = self.config.get("batch_size", 8)
@@ -175,11 +177,11 @@ class Augmentor(ABC):
     def _prepare_inputs(self, queries):
         """Prepare data to be fed to the models as input
 
-            Args:
-                queries (list(str)): List of queries to be paraphrased
+        Args:
+            queries (list(str)): List of queries to be paraphrased
 
-            Returns:
-                formatted queries (list(str))
+        Returns:
+            formatted queries (list(str))
 
         """
         raise NotImplementedError("Subclasses must implement this method")
@@ -205,8 +207,7 @@ class Augmentor(ABC):
         queries = read_path_queries(path)
         processed_queries = []
         for query in queries:
-            processed_query = load_query(query,
-                                         query_factory=self._resource_loader.query_factory)
+            processed_query = load_query(query, query_factory=self._resource_loader.query_factory)
             processed_queries.append(processed_query)
         return processed_queries
 
@@ -244,7 +245,15 @@ class Augmentor(ABC):
 class EnglishParaphraser(Augmentor):
     """Paraphraser class for generating English paraphrases."""
 
-    def __init__(self, batch_size, language, retain_entities, paths, path_suffix, resource_loader):
+    def __init__(
+        self,
+        batch_size,
+        language,
+        retain_entities,
+        paths,
+        path_suffix,
+        resource_loader,
+    ):
         """Initializes an English paraphraser.
 
         Args:
@@ -278,12 +287,11 @@ class EnglishParaphraser(Augmentor):
             model_name = PARAPHRASER_MODEL_PATH
         else:
             model_name = HUGGINGFACE_PARAPHRASER_MODEL_PATH
-        self.torch_device = (
-            "cuda" if _get_module_or_attr("torch.cuda", "is_available")() else "cpu"
-        )
+        self.torch_device = "cuda" if _get_module_or_attr("torch.cuda", "is_available")() else "cpu"
         self.tokenizer = PegasusTokenizer.from_pretrained(model_name)
-        self.model = PegasusForConditionalGeneration.from_pretrained(
-            model_name).to(self.torch_device)
+        self.model = PegasusForConditionalGeneration.from_pretrained(model_name).to(
+            self.torch_device
+        )
         self.model.eval()
 
         # Update default params with user model config
@@ -303,22 +311,27 @@ class EnglishParaphraser(Augmentor):
         }
 
     def _download_model(self):
-        logger.info("Downloading paraphrase model from %s", PARAPHRASER_RETAIN_ENTITIES_URL)
+        logger.info(
+            "Downloading paraphrase model from %s",
+            PARAPHRASER_RETAIN_ENTITIES_URL,
+        )
 
         # Make the folder that will contain the model folder
         if not os.path.exists(EMBEDDINGS_FOLDER_PATH):
             os.makedirs(EMBEDDINGS_FOLDER_PATH)
 
-        with TqdmUpTo(unit="B", unit_scale=True, miniters=1, desc='') as t:
+        with TqdmUpTo(unit="B", unit_scale=True, miniters=1, desc="") as t:
             try:
-                urlretrieve(PARAPHRASER_RETAIN_ENTITIES_URL,
-                            PARAPHRASER_FILE_PATH,
-                            reporthook=t.update_to)
+                urlretrieve(
+                    PARAPHRASER_RETAIN_ENTITIES_URL,
+                    PARAPHRASER_FILE_PATH,
+                    reporthook=t.update_to,
+                )
             except ConnectionError as e:
                 logger.error("Model download failed with error: %s", e)
                 return
         try:
-            with zipfile.ZipFile(PARAPHRASER_FILE_PATH, 'r') as zip_ref:
+            with zipfile.ZipFile(PARAPHRASER_FILE_PATH, "r") as zip_ref:
                 zip_ref.extractall(EMBEDDINGS_FOLDER_PATH)
             os.remove(PARAPHRASER_FILE_PATH)
         except zipfile.BadZipfile:
@@ -346,7 +359,7 @@ class EnglishParaphraser(Augmentor):
                 text = [processed_query_text.lower(), EOS_TOKEN]
                 for entity in processed_query.entities:
                     text.append(entity.text.lower())
-                model_inputs.append(' '.join(text))
+                model_inputs.append(" ".join(text))
             else:
                 model_inputs.append(processed_query_text)
         return model_inputs
@@ -354,13 +367,13 @@ class EnglishParaphraser(Augmentor):
     def _replace_with_random_gaz_entity(self, paraphrase_text, entity_matches):
         """Replaces values of annotated entities with randomly sampled ones from gazetteers
 
-            Args:
-                paraphrase_text (str): The paraphrased unannotated text
-                entity_matches (List((Entity,Span))): List of (Entity, Span) values
-                                                      found in the paraphrase_text
+        Args:
+            paraphrase_text (str): The paraphrased unannotated text
+            entity_matches (List((Entity,Span))): List of (Entity, Span) values
+                                                  found in the paraphrase_text
 
-            Return:
-                processed paraphrases (ProcessedQuery): ProcessedQuery of the paraphrase_text
+        Return:
+            processed paraphrases (ProcessedQuery): ProcessedQuery of the paraphrase_text
         """
         new_paraphrase_text = []
         # Start replacing entities in ascending order of span starts
@@ -368,27 +381,35 @@ class EnglishParaphraser(Augmentor):
         running_start = 0
         previous_end = 0
         replaced_spans_entities = []
-        for (entity, span) in entity_matches:
+        for entity, span in entity_matches:
             # Calculate new start based on previously replaced entity length
             # For the first entity in the query, previous_end will be 0
-            running_start += (span.start - previous_end)
+            running_start += span.start - previous_end
             # Append text seen between entities
-            new_paraphrase_text.append(paraphrase_text[previous_end:span.start])
+            new_paraphrase_text.append(paraphrase_text[previous_end : span.start])
             gaz = None
             # If not a system entity and gazetteer is available, load it
             if not Entity.is_system_entity(entity.type):
-                gaz = self._resource_loader.get_gazetteer(entity.type)['entities']
+                gaz = self._resource_loader.get_gazetteer(entity.type)["entities"]
             if gaz:
                 # Create new Entity and Span based on random gaz entry for entity type
                 random_gaz_entity_text = random.sample(gaz, 1)[0]
-                new_span = Span(start=running_start, end=running_start + len(random_gaz_entity_text) - 1)
-                new_entity = Entity(text=random_gaz_entity_text,
-                                    entity_type=entity.type,
-                                    role=entity.role,
-                                    value=None)
+                new_span = Span(
+                    start=running_start,
+                    end=running_start + len(random_gaz_entity_text) - 1,
+                )
+                new_entity = Entity(
+                    text=random_gaz_entity_text,
+                    entity_type=entity.type,
+                    role=entity.role,
+                    value=None,
+                )
             else:
                 new_entity = entity
-                new_span = Span(start=running_start, end=running_start + len(entity.text) - 1)
+                new_span = Span(
+                    start=running_start,
+                    end=running_start + len(entity.text) - 1,
+                )
             running_start += len(new_entity.text)
             replaced_spans_entities.append([new_entity, new_span])
             new_paraphrase_text.append(new_entity.text)
@@ -397,30 +418,39 @@ class EnglishParaphraser(Augmentor):
         new_paraphrase_text.append(paraphrase_text[previous_end:])
 
         processed_query = self._resource_loader.query_factory.create_query(
-            ''.join(new_paraphrase_text))
-        final_entities = [QueryEntity.from_query(query=processed_query, span=span, entity=entity)
-                          for (entity, span) in replaced_spans_entities]
+            "".join(new_paraphrase_text)
+        )
+        final_entities = [
+            QueryEntity.from_query(query=processed_query, span=span, entity=entity)
+            for (entity, span) in replaced_spans_entities
+        ]
         return ProcessedQuery(query=processed_query, entities=tuple(final_entities))
 
     def _annotate_entities(self, paraphrases, processed_queries):
-        """Annotates entities in the generated paraphrases with the entities in the original query
+        """Annotates entities in the generated paraphrases with the entities in the original
+        query
 
-            Args:
-                paraphrases (list(str)): List of unannotated paraphrases of queries
-                processed_queries (list(ProcessedQuery)): List of their corresponding original ProcessedQuery
+        Args:
+            paraphrases (list(str)): List of unannotated paraphrases of queries
+            processed_queries (list(ProcessedQuery)): List of their corresponding original
+                ProcessedQuery
 
-            Return:
-                paraphrases (list(str)): List of paraphrased queries.
+        Return:
+            paraphrases (list(str)): List of paraphrased queries.
         """
         valid_paraphrases = []
         for i, processed_query in enumerate(processed_queries):
             # sort entities so we annotate the longest one first
-            entities = sorted(list(processed_query.entities),
-                              key=lambda x: len(x.text),
-                              reverse=True)
+            entities = sorted(
+                list(processed_query.entities),
+                key=lambda x: len(x.text),
+                reverse=True,
+            )
             # fetch paraphrases for the query from the batch
-            queries = paraphrases[(i * DEFAULT_NUM_PARAPHRASES):
-                                  (i * DEFAULT_NUM_PARAPHRASES) + DEFAULT_NUM_PARAPHRASES]
+            queries = paraphrases[
+                (i * DEFAULT_NUM_PARAPHRASES) : (i * DEFAULT_NUM_PARAPHRASES)
+                + DEFAULT_NUM_PARAPHRASES
+            ]
             for query in queries:
                 if not query:
                     continue
@@ -428,10 +458,13 @@ class EnglishParaphraser(Augmentor):
                 for entity in entities:
                     found_matches = re.finditer(entity.text.lower(), query)
                     for match in found_matches:
-                        matched_span = Span(start=match.start(0), end=match.end(0)-1)
-                        matched_entity = Entity(text=match.group(0),
-                                                entity_type=entity.entity.type,
-                                                role=entity.entity.role, value=None)
+                        matched_span = Span(start=match.start(0), end=match.end(0) - 1)
+                        matched_entity = Entity(
+                            text=match.group(0),
+                            entity_type=entity.entity.type,
+                            role=entity.entity.role,
+                            value=None,
+                        )
                         # check if found entity has no overlaps with previously matched entities
                         no_overlaps = [not _get_overlap(m[1], matched_span) for m in all_matches]
                         if all(no_overlaps):
@@ -449,10 +482,11 @@ class EnglishParaphraser(Augmentor):
         # This function removes punctuations since these generative models
         # have a tendency to repeat them.
         # Since most classifiers use normalized text, this should not be an issue.
-        without_puncts = [s.lower().translate(str.maketrans(string.punctuation,
-                                                            " " * len(string.punctuation)))
-                          for s in queries]
-        queries = [' '.join(s.split()) for s in without_puncts if s]
+        without_puncts = [
+            s.lower().translate(str.maketrans(string.punctuation, " " * len(string.punctuation)))
+            for s in queries
+        ]
+        queries = [" ".join(s.split()) for s in without_puncts if s]
         return queries
 
     def _generate_paraphrases(self, processed_queries):
@@ -467,7 +501,7 @@ class EnglishParaphraser(Augmentor):
         all_generated_queries = []
 
         for pos in range(0, len(processed_queries), self.batch_size):
-            processed_input_queries = processed_queries[pos:pos + self.batch_size]
+            processed_input_queries = processed_queries[pos : pos + self.batch_size]
             tokenizer_input = self._prepare_inputs(processed_input_queries)
             batch = self.tokenizer.prepare_seq2seq_batch(
                 tokenizer_input,
@@ -502,7 +536,15 @@ class MultiLingualParaphraser(Augmentor):
     (currently supports: French, Italian, Portuguese, Romanian and Spanish).
     """
 
-    def __init__(self, batch_size, language, retain_entities, paths, path_suffix, resource_loader):
+    def __init__(
+        self,
+        batch_size,
+        language,
+        retain_entities,
+        paths,
+        path_suffix,
+        resource_loader,
+    ):
         """Initializes a multi-lingual paraphraser.
 
         Args:
@@ -524,9 +566,7 @@ class MultiLingualParaphraser(Augmentor):
             resource_loader=resource_loader,
         )
 
-        self.torch_device = (
-            "cuda" if _get_module_or_attr("torch.cuda", "is_available")() else "cpu"
-        )
+        self.torch_device = "cuda" if _get_module_or_attr("torch.cuda", "is_available")() else "cpu"
         self.retain_entities = retain_entities
 
         MarianTokenizer = _get_module_or_attr("transformers", "MarianTokenizer")
@@ -540,9 +580,7 @@ class MultiLingualParaphraser(Augmentor):
 
         target_model_name = "Helsinki-NLP/opus-mt-en-ROMANCE"
         self.target_tokenizer = MarianTokenizer.from_pretrained(target_model_name)
-        self.target_model = MarianMTModel.from_pretrained(target_model_name).to(
-            self.torch_device
-        )
+        self.target_model = MarianMTModel.from_pretrained(target_model_name).to(self.torch_device)
         self.target_model.eval()
 
         # Update default params with user model config
@@ -582,24 +620,23 @@ class MultiLingualParaphraser(Augmentor):
                 encoded[key] = encoded[key].to(self.torch_device)
             with _get_module_or_attr("torch", "no_grad")():
                 translated = model.generate(**encoded, **kwargs)
-            translated_queries = tokenizer.batch_decode(
-                translated, skip_special_tokens=True
-            )
+            translated_queries = tokenizer.batch_decode(translated, skip_special_tokens=True)
             all_translated_queries.extend(translated_queries)
         return all_translated_queries
 
     def _prepare_inputs(self, processed_queries):
         """Removes any markdown formatting in the query
 
-            Args:
-                queries (list(str)): List of queries to be paraphrased
+        Args:
+            queries (list(str)): List of queries to be paraphrased
 
-            Returns:
-                unannotated queries (list(str))
+        Returns:
+            unannotated queries (list(str))
 
         """
-        unannotated_queries = [processed_query.query.text.strip()
-                               for processed_query in processed_queries]
+        unannotated_queries = [
+            processed_query.query.text.strip() for processed_query in processed_queries
+        ]
         return unannotated_queries
 
     def augment_queries(self, processed_queries):
@@ -622,11 +659,7 @@ class MultiLingualParaphraser(Augmentor):
             **self.default_reverse_params,
         )
         augmented_queries = list(
-            set(
-                p.lower()
-                for p in reverse_translated_queries
-                if self._validate_generated_query(p)
-            )
+            set(p.lower() for p in reverse_translated_queries if self._validate_generated_query(p))
         )
 
         return augmented_queries

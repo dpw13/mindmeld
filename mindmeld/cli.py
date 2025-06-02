@@ -50,7 +50,11 @@ from .components._config import (
 )
 from .constants import BINARIES_URL, DUCKLING_VERSION, UNANNOTATE_ALL_RULE
 from .converter import DialogflowConverter, RasaConverter
-from .exceptions import ElasticsearchKnowledgeBaseConnectionError, KnowledgeBaseError, MindMeldError
+from .exceptions import (
+    ElasticsearchKnowledgeBaseConnectionError,
+    KnowledgeBaseError,
+    MindMeldError,
+)
 from .models.helpers import create_annotator
 from .path import (
     MODEL_CACHE_PATH,
@@ -63,7 +67,10 @@ from .resource_loader import ResourceLoader
 logger = logging.getLogger(__name__)
 click.disable_unicode_literals_warning = True
 
-CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"], "auto_envvar_prefix": "MM"}
+CONTEXT_SETTINGS = {
+    "help_option_names": ["-h", "--help"],
+    "auto_envvar_prefix": "MM",
+}
 
 # deprecation warning for python 3.5
 if sys.version_info < (3, 6):
@@ -128,9 +135,7 @@ def _dvc_add_helper(filepath):
     Returns:
         (tuple) True if no errors, False + error string otherwise
     """
-    p = subprocess.Popen(
-        ["dvc", "add", filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    p = subprocess.Popen(["dvc", "add", filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # Get DVC error message from standard error
     _, error = p.communicate()
     error_string = error.decode("utf-8")
@@ -172,24 +177,19 @@ def _bash_helper(command_list):
     "--init",
     is_flag=True,
     required=False,
-    help="Instantiate DVC within a repository"
+    help="Instantiate DVC within a repository",
 )
 @click.option(
     "--setup_dagshub",
     is_flag=True,
     required=False,
-    help="Setup a central model registry with DAGsHub"
+    help="Setup a central model registry with DAGsHub",
 )
-@click.option(
-    "--save",
-    is_flag=True,
-    required=False,
-    help="Save built models using dvc"
-)
+@click.option("--save", is_flag=True, required=False, help="Save built models using dvc")
 @click.option(
     "--checkout",
     required=False,
-    help="Checkout repo and models corresponding to git hash"
+    help="Checkout repo and models corresponding to git hash",
 )
 @click.option(
     "--help",
@@ -210,9 +210,7 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
 
     # Ensure that DVC is installed
     if not which("dvc"):
-        logger.error(
-            "DVC is not installed. You can install DVC by running 'pip install dvc'."
-        )
+        logger.error("DVC is not installed. You can install DVC by running 'pip install dvc'.")
         return
 
     if init:
@@ -238,7 +236,8 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
             return
 
         logger.info(
-            "Instantiated DVC repo and set up local remote in %s", local_remote_path
+            "Instantiated DVC repo and set up local remote in %s",
+            local_remote_path,
         )
         logger.info(
             "The newly generated dvc config file (.dvc/config) has been added to git staging"
@@ -246,36 +245,45 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
     elif setup_dagshub:
         click.clear()
         click.secho(
-            'You will now set up a central model registry for you MindMeld project on DAGsHub.com',
-            fg='blue',
-            bg='white'
+            "You will now set up a central model registry for you MindMeld project on DAGsHub.com",
+            fg="blue",
+            bg="white",
         )
         click.echo(
-            '===================================================================================='
+            "===================================================================================="
         )
         click.echo(
-            '* If you don\'t have a DAGsHub account, sign up here <{0}>\n'
-            '* After signing up, create a DAGsHub project by:\n'
-            '    - Connecting an existing GitHub repository <{1}>, or\n'
-            '    - Create a new one from scratch <{2}>\n'.format(
-                click.style('https://dagshub.com/user/sign_up', fg='cyan'),
-                click.style('https://dagshub.com/repo/connect', fg='cyan'),
-                click.style('https://dagshub.com/repo/create', fg='cyan')
+            "* If you don't have a DAGsHub account, sign up here <{0}>\n"
+            "* After signing up, create a DAGsHub project by:\n"
+            "    - Connecting an existing GitHub repository <{1}>, or\n"
+            "    - Create a new one from scratch <{2}>\n".format(
+                click.style("https://dagshub.com/user/sign_up", fg="cyan"),
+                click.style("https://dagshub.com/repo/connect", fg="cyan"),
+                click.style("https://dagshub.com/repo/create", fg="cyan"),
             )
         )
-        dagshub_remote_path = click.prompt('Please enter your DAGsHub project URL '
-                                           '(e.g. https://dagshub.com/username/projectname)')
-        dagshub_user = click.prompt('Please enter your DAGsHub username')
+        dagshub_remote_path = click.prompt(
+            "Please enter your DAGsHub project URL "
+            "(e.g. https://dagshub.com/username/projectname)"
+        )
+        dagshub_user = click.prompt("Please enter your DAGsHub username")
         dagshub_password = click.prompt(
-            'Please enter your DAGsHub password or access token \n'
-            '(if you\'re not sure where to find it, go to <{0}>)'.format(
-                click.style('https://dagshub.com/user/settings/tokens', fg='cyan')
+            "Please enter your DAGsHub password or access token \n"
+            "(if you're not sure where to find it, go to <{0}>)".format(
+                click.style("https://dagshub.com/user/settings/tokens", fg="cyan")
             )
         )
 
         # Modify remote URL to be the DAGsHub project
         success, error_string = _bash_helper(
-            ["dvc", "remote", "modify", "myremote", "url", dagshub_remote_path + '.dvc']
+            [
+                "dvc",
+                "remote",
+                "modify",
+                "myremote",
+                "url",
+                dagshub_remote_path + ".dvc",
+            ]
         )
         if not success:
             logger.error("Error during DAGsHub remote set up: %s", error_string)
@@ -290,14 +298,30 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
             return
 
         success, error_string = _bash_helper(
-            ["dvc", "remote", "modify", "myremote", "--local", "user", dagshub_user]
+            [
+                "dvc",
+                "remote",
+                "modify",
+                "myremote",
+                "--local",
+                "user",
+                dagshub_user,
+            ]
         )
         if not success:
             logger.error("Error during DAGsHub credential set up: %s", error_string)
             return
 
         success, error_string = _bash_helper(
-            ["dvc", "remote", "modify", "myremote", "--local", "password", dagshub_password]
+            [
+                "dvc",
+                "remote",
+                "modify",
+                "myremote",
+                "--local",
+                "password",
+                dagshub_password,
+            ]
         )
         if not success:
             logger.error("Error during DAGsHub credential set up: %s", error_string)
@@ -309,12 +333,8 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
             logger.error("Error while adding dvc config file: %s", error_string)
             return
 
-        logger.info(
-            "Set up DAGsHub central model repository in %s", dagshub_remote_path
-        )
-        logger.info(
-            "The updated dvc config file (.dvc/config) has been added to git staging"
-        )
+        logger.info("Set up DAGsHub central model repository in %s", dagshub_remote_path)
+        logger.info("The updated dvc config file (.dvc/config) has been added to git staging")
         logger.info(
             "We recommend setting up your Git remote and pushing your code to it using "
             "`git push` so that you can view your project in the DAGsHub UI."
@@ -333,9 +353,7 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
             logger.error("Error during dvc push: %s", error_string)
             return
 
-        success, error_string = _bash_helper(
-            ["git", "add", "{}/.generated.dvc".format(app_path)]
-        )
+        success, error_string = _bash_helper(["git", "add", "{}/.generated.dvc".format(app_path)])
         if not success:
             logger.error("Error adding model dvc file: %s", error_string)
             return
@@ -356,9 +374,7 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
             logger.error("Error during dvc checkout: %s", error_string)
             return
 
-        logger.info(
-            "Successfully checked out models corresponding to hash %s", checkout
-        )
+        logger.info("Successfully checked out models corresponding to hash %s", checkout)
     elif destroy:
         logger.info(
             "This command must be run in the directory containing the .dvc/ folder. "
@@ -379,7 +395,9 @@ def dvc(ctx, init, setup_dagshub, save, checkout, help_, destroy):
 @click.pass_context
 @click.option("-P", "--port", type=int, default=7150)
 @click.option(
-    "--no-debug", is_flag=True, help="starts the service with debug mode turned off"
+    "--no-debug",
+    is_flag=True,
+    help="starts the service with debug mode turned off",
 )
 @click.option(
     "-r",
@@ -391,9 +409,7 @@ def run_server(ctx, port, no_debug, reloader):
     """Starts the MindMeld service."""
     app = ctx.obj.get("app")
     if app is None:
-        raise ValueError(
-            "No app was given. Run 'python app.py run' from your app folder."
-        )
+        raise ValueError("No app was given. Run 'python app.py run' from your app folder.")
 
     # make sure num parser is running
     ctx.invoke(num_parser, start=True)
@@ -429,8 +445,7 @@ def converse(ctx, context, verbose):
             context = json.loads(context)
         if app is None:
             raise ValueError(
-                "No app was given. Run 'python app.py converse' from your app"
-                " folder."
+                "No app was given. Run 'python app.py converse' from your app" " folder."
             )
 
         # make sure num parser is running
@@ -480,9 +495,7 @@ def build(ctx, incremental):
     try:
         app = ctx.obj.get("app")
         if app is None:
-            raise ValueError(
-                "No app was given. Run 'python app.py build' from your app folder."
-            )
+            raise ValueError("No app was given. Run 'python app.py build' from your app folder.")
 
         # make sure num parser is running
         ctx.invoke(num_parser, start=True)
@@ -512,9 +525,7 @@ def evaluate(ctx, verbose):
     try:
         app = ctx.obj.get("app")
         if app is None:
-            raise ValueError(
-                "No app was given. Run 'python app.py evaluate' from your app folder."
-            )
+            raise ValueError("No app was given. Run 'python app.py evaluate' from your app folder.")
 
         # make sure num parser is running
         ctx.invoke(num_parser, start=True)
@@ -525,8 +536,7 @@ def evaluate(ctx, verbose):
             nlp.load()
         except MindMeldError:
             logger.error(
-                "You must build the app before running evaluate. "
-                "Try 'python app.py build'."
+                "You must build the app before running evaluate. " "Try 'python app.py build'."
             )
             ctx.exit(1)
         nlp.evaluate(verbose)
@@ -552,20 +562,20 @@ def evaluate(ctx, verbose):
     is_flag=True,
     help="Show confidence scores for each prediction",
 )
+@click.option("-D", "--no_domain", is_flag=True, help="Suppress predicted domain column")
+@click.option("-I", "--no_intent", is_flag=True, help="Suppress predicted intent column")
 @click.option(
-    "-D", "--no_domain", is_flag=True, help="Suppress predicted domain column"
+    "-E",
+    "--no_entity",
+    is_flag=True,
+    help="Suppress predicted entity annotations",
 )
+@click.option("-R", "--no_role", is_flag=True, help="Suppress predicted role annotations")
 @click.option(
-    "-I", "--no_intent", is_flag=True, help="Suppress predicted intent column"
-)
-@click.option(
-    "-E", "--no_entity", is_flag=True, help="Suppress predicted entity annotations"
-)
-@click.option(
-    "-R", "--no_role", is_flag=True, help="Suppress predicted role annotations"
-)
-@click.option(
-    "-G", "--no_group", is_flag=True, help="Suppress predicted group annotations"
+    "-G",
+    "--no_group",
+    is_flag=True,
+    help="Suppress predicted group annotations",
 )
 @click.argument("input_file", envvar="INPUT", metavar="INPUT", required=True)
 def predict(
@@ -582,9 +592,7 @@ def predict(
     """Runs predictions on a given query file"""
     app = ctx.obj.get("app")
     if app is None:
-        raise ValueError(
-            "No app was given. Run 'python app.py predict' from your app folder."
-        )
+        raise ValueError("No app was given. Run 'python app.py predict' from your app folder.")
 
     ctx.invoke(num_parser, start=True)
 
@@ -593,10 +601,7 @@ def predict(
     try:
         nlp.load()
     except MindMeldError:
-        logger.error(
-            "You must build the app before running predict. "
-            "Try 'python app.py build'."
-        )
+        logger.error("You must build the app before running predict. " "Try 'python app.py build'.")
         ctx.exit(1)
 
     markup.bootstrap_query_file(
@@ -615,10 +620,18 @@ def predict(
 @_app_cli.command("clean", context_settings=CONTEXT_SETTINGS)
 @click.pass_context
 @click.option(
-    "-q", "--query-cache", is_flag=True, required=False, help="Clean only query cache"
+    "-q",
+    "--query-cache",
+    is_flag=True,
+    required=False,
+    help="Clean only query cache",
 )
 @click.option(
-    "-m", "--model-cache", is_flag=True, required=False, help="Clean only model cache"
+    "-m",
+    "--model-cache",
+    is_flag=True,
+    required=False,
+    help="Clean only model cache",
 )
 @click.option(
     "-d",
@@ -631,9 +644,7 @@ def clean(ctx, query_cache, model_cache, days):
     """Deletes all built data, undoing `build`."""
     app = ctx.obj.get("app")
     if app is None:
-        raise ValueError(
-            "No app was given. Run 'python app.py clean' from your app folder."
-        )
+        raise ValueError("No app was given. Run 'python app.py clean' from your app folder.")
     if query_cache:
         try:
             main_cache_location = QUERY_CACHE_DB_PATH.format(app_path=app.app_path)
@@ -658,15 +669,14 @@ def clean(ctx, query_cache, model_cache, days):
 
                 if not os.path.isdir(full_path):
                     logger.warning(
-                        "Expected timestamped folder. Ignoring the file %s.", full_path
+                        "Expected timestamped folder. Ignoring the file %s.",
+                        full_path,
                     )
                     continue
 
                 try:
                     current_ts = datetime.datetime.fromtimestamp(time.time())
-                    folder_ts = datetime.datetime.strptime(
-                        ts_folder, markup.TIME_FORMAT
-                    )
+                    folder_ts = datetime.datetime.strptime(ts_folder, markup.TIME_FORMAT)
                     diff_days = current_ts - folder_ts
                     if diff_days.days > days:
                         shutil.rmtree(full_path)
@@ -726,16 +736,17 @@ def load_index(ctx, es_host, app_namespace, index_name, data_file, app_path):
             es_host,
             app_path=app_path,
         )
-    except (ElasticsearchKnowledgeBaseConnectionError, KnowledgeBaseError) as ex:
+    except (
+        ElasticsearchKnowledgeBaseConnectionError,
+        KnowledgeBaseError,
+    ) as ex:
         logger.error(ex.message)
         ctx.exit(1)
 
 
 def _find_duckling_os_executable():
     """Returns the correct duckling path for this OS."""
-    os_platform_name = "-".join(
-        distro.linux_distribution(full_distribution_name=False)
-    ).lower()
+    os_platform_name = "-".join(distro.linux_distribution(full_distribution_name=False)).lower()
     for os_key in path.DUCKLING_OS_MAPPINGS:
         if os_key in os_platform_name:
             return path.DUCKLING_OS_MAPPINGS[os_key]
@@ -761,8 +772,7 @@ def num_parser(ctx, start, port):
 
         if not exec_path:
             logger.warning(
-                "OS is incompatible with duckling executable. "
-                "Use docker to install duckling."
+                "OS is incompatible with duckling executable. " "Use docker to install duckling."
             )
             return
 
@@ -782,7 +792,9 @@ def num_parser(ctx, start, port):
             ]
             url = "/".join(url_components)
             logger.info(
-                "Could not find %s binary file, downloading from %s", exec_path, url
+                "Could not find %s binary file, downloading from %s",
+                exec_path,
+                url,
             )
             r = requests.get(url, stream=True)
 
@@ -804,7 +816,10 @@ def num_parser(ctx, start, port):
             hash_digest = hashlib.sha256(open(exec_path, "rb").read()).hexdigest()
             if hash_digest != path.DUCKLING_PATH_TO_SHA_MAPPINGS[exec_path]:
                 os.remove(exec_path)
-                logger.error("Binary file downloaded from %s does not match expected version", url)
+                logger.error(
+                    "Binary file downloaded from %s does not match expected version",
+                    url,
+                )
                 ctx.exit(1)
 
         # make the file executable
@@ -812,15 +827,14 @@ def num_parser(ctx, start, port):
         os.chmod(exec_path, st.st_mode | stat.S_IEXEC)
 
         # run duckling
-        duckling_service = subprocess.Popen(
-            [exec_path, "--port", port], stderr=subprocess.STDOUT
-        )
+        duckling_service = subprocess.Popen([exec_path, "--port", port], stderr=subprocess.STDOUT)
 
         # duckling takes some time to start so sleep for a bit
         for _ in range(50):
             if duckling_service.pid:
                 logger.info(
-                    "Starting numerical parsing service, PID %s", duckling_service.pid
+                    "Starting numerical parsing service, PID %s",
+                    duckling_service.pid,
                 )
                 return
             time.sleep(0.1)
@@ -844,7 +858,10 @@ def _get_duckling_pid():
     help="The application's path.",
 )
 @click.option(
-    "--overwrite", is_flag=True, default=False, help="Overwrite existing annotations."
+    "--overwrite",
+    is_flag=True,
+    default=False,
+    help="Overwrite existing annotations.",
 )
 def annotate(app_path, overwrite):
     """Runs the annotation command of the Auto Annotator."""
@@ -870,16 +887,14 @@ def annotate(app_path, overwrite):
 def unannotate(app_path, unannotate_all):
     """Runs the unannotation command of the Auto Annotator."""
     register_all_annotators()
-    config = _get_auto_annotator_config(
-        app_path=app_path, unannotate_all=unannotate_all
-    )
+    config = _get_auto_annotator_config(app_path=app_path, unannotate_all=unannotate_all)
     annotator = create_annotator(config)
     annotator.unannotate()
     logger.info("Annotation Removal Complete.")
 
 
 def _get_auto_annotator_config(app_path, overwrite=False, unannotate_all=False):
-    """ Gets the Annotator config from config.py. Overwrites params as needed."""
+    """Gets the Annotator config from config.py. Overwrites params as needed."""
     config = get_auto_annotator_config(app_path=app_path)
     config["app_path"] = app_path
     config["language"], config["locale"] = get_language_config(app_path)
@@ -920,9 +935,7 @@ def augment(app_path, language):
 @shared_cli.command("active_learning", context_settings=CONTEXT_SETTINGS)
 # Params Used for Both Select and Train
 @click.option("--app-path", type=str, help="Path to the MindMeld application")
-@click.option(
-    "--batch_size", type=int, help="Number of queries to select each iteration."
-)
+@click.option("--batch_size", type=int, help="Number of queries to select each iteration.")
 @click.option(
     "--tuning_level",
     type=str,
@@ -969,9 +982,7 @@ def augment(app_path, language):
     type=str,
     help="Path to the log folder to select queries from.",
 )
-@click.option(
-    "--log_usage_pct", type=float, help="Percent of logs to use for selection."
-)
+@click.option("--log_usage_pct", type=float, help="Percent of logs to use for selection.")
 @click.option(
     "--labeled_logs_pattern",
     type=str,
@@ -1061,7 +1072,10 @@ def setup_blueprint(ctx, es_host, skip_kb, blueprint_name, app_path):
     except ValueError as ex:
         logger.error(ex)
         ctx.exit(1)
-    except (ElasticsearchKnowledgeBaseConnectionError, KnowledgeBaseError) as ex:
+    except (
+        ElasticsearchKnowledgeBaseConnectionError,
+        KnowledgeBaseError,
+    ) as ex:
         logger.error(ex.message)
         ctx.exit(1)
 
@@ -1085,7 +1099,10 @@ def convert(ctx, df, rs, project_path, mindmeld_path=None):
     try:
         project_path = os.path.abspath(project_path)
         mindmeld_path = os.path.abspath(mindmeld_path or "converted_app")
-        converter_cls = {"Rasa": RasaConverter, "Dialogflow": DialogflowConverter}
+        converter_cls = {
+            "Rasa": RasaConverter,
+            "Dialogflow": DialogflowConverter,
+        }
         converter_cls = converter_cls[framework]
         converter = converter_cls(project_path, mindmeld_path)
         converter.convert_project()
@@ -1094,7 +1111,9 @@ def convert(ctx, df, rs, project_path, mindmeld_path=None):
             " MindMeld project at {mindmeld_path}."
         )
         msg = msg.format(
-            framework=framework, project_path=project_path, mindmeld_path=mindmeld_path
+            framework=framework,
+            project_path=project_path,
+            mindmeld_path=mindmeld_path,
         )
         logger.info(msg)
     except IOError as e:
@@ -1125,7 +1144,9 @@ def cli(ctx):
     es_logger = logging.getLogger("elasticsearch")
     es_logger.setLevel(logging.ERROR)
     warnings.filterwarnings(
-        "module", category=DeprecationWarning, module="sklearn.preprocessing.label"
+        "module",
+        category=DeprecationWarning,
+        module="sklearn.preprocessing.label",
     )
     if ctx.obj is None:
         ctx.obj = {}
@@ -1149,7 +1170,9 @@ def app_cli(ctx):
     es_logger = logging.getLogger("elasticsearch")
     es_logger.setLevel(logging.ERROR)
     warnings.filterwarnings(
-        "module", category=DeprecationWarning, module="sklearn.preprocessing.label"
+        "module",
+        category=DeprecationWarning,
+        module="sklearn.preprocessing.label",
     )
 
     if ctx.obj is None:
