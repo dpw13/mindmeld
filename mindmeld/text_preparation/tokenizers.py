@@ -16,6 +16,7 @@
 from abc import ABC, abstractmethod
 import logging
 import unicodedata
+from typing import Dict, Iterable
 
 from .spacy_model_factory import SpacyModelFactory
 from ..components._config import ENGLISH_LANGUAGE_CODE
@@ -64,7 +65,7 @@ class NoOpTokenizer(Tokenizer):
         """Initialize the NoOpTokenizer."""
         pass
 
-    def tokenize(self, text):
+    def tokenize(self, text: str) -> Iterable[str]:
         """Returns the original text as a list.
         Args:
             text (str): Input text.
@@ -81,7 +82,7 @@ class CharacterTokenizer(Tokenizer):
         """Initializes the CharacterTokenizer."""
         pass
 
-    def tokenize(self, text):
+    def tokenize(self, text: str) -> Iterable[Dict[str, int | str]]:
         """
         Split characters into separate tokens while skipping spaces.
         Args:
@@ -109,7 +110,7 @@ class LetterTokenizer(Tokenizer):
         """Initializes the LetterTokenizer."""
         pass
 
-    def tokenize(self, text):
+    def tokenize(self, text: str) -> Iterable[Dict[str, int | str]]:
         """
         Identify tokens in text and create normalized tokens that contain the text and start index.
         Args:
@@ -125,7 +126,7 @@ class LetterTokenizer(Tokenizer):
         return LetterTokenizer.create_tokens(text, token_num_by_char)
 
     @staticmethod
-    def get_token_num_by_char(text):
+    def get_token_num_by_char(text: str) -> Iterable[str | None]:
         """Determine the token number for each character.
 
         More details about unicode categories can be found here:
@@ -160,7 +161,7 @@ class LetterTokenizer(Tokenizer):
         return token_num_by_char
 
     @staticmethod
-    def create_tokens(text, token_num_by_char):
+    def create_tokens(text: str, token_num_by_char: Iterable[str]) -> Iterable[Dict[str, int | str]]:
         """
         Generate token dictionaries from the original text and the token numbers by character.
         Args:
@@ -199,7 +200,7 @@ class WhiteSpaceTokenizer(Tokenizer):
         """Initializes the WhiteSpaceTokenizer."""
         pass
 
-    def tokenize(self, text):
+    def tokenize(self, text: str) -> Iterable[Dict[str, int | str]]:
         """
         Identify tokens in text and token dictionaries that contain the text and start index.
         Args:
@@ -240,11 +241,11 @@ class SpacyTokenizer(Tokenizer):
             spacy_model_size (str, optional): Size of the Spacy model to use. ("sm", "md", or "lg")
         """
         self.spacy_model = SpacyModelFactory.get_spacy_language_model(
-            language, spacy_model_size, disable=["tagger", "parser", "ner", "attribute_ruler", "lemmatizer"]
+            language, spacy_model_size, disable=["tagger", "parser", "ner", "attribute_ruler", "lemmatizer", "tok2vec", "morphologizer"]
         )
         assert len(self.spacy_model.pipeline) == 0
 
-    def tokenize(self, text: str):
+    def tokenize(self, text: str) -> Iterable[Dict[str, int | str]]:
         """
         Args:
             text (str): Input text.
