@@ -14,8 +14,7 @@ requirements = [
     "Click~=7.1",
     "click-log==0.1.8",
     "distro~=1.3",
-    # elasticsearch-py 7.14 breaks backwards compatibility with servers prior to 7.11
-    "elasticsearch>=5.0,<7.14",
+    "elasticsearch~=7.14",
     "Flask>=1.1.3,<2",
     "Flask-Cors~=3.0",
     "future~=0.17",
@@ -48,11 +47,11 @@ requirements = [
 setup_requirements = ["pytest-runner~=2.11", "setuptools>=36"]
 
 test_requirements = [
-    "flake8<3.7",
-    "pylint<3.1",
-    "pytest>=5.4,<7.0",
-    "pytest-cov<2.5",
-    "pytest-asyncio<0.9",
+    "flake8<4.0",
+    "pylint~3.1",
+    "pytest>=7.0",
+    "pytest-cov>=2.0",
+    "pytest-asyncio<1.0",
     "black>=19.10b0 ; python_version >= '3.6'",
 ]
 
@@ -91,15 +90,13 @@ setup(
     extras_require={
         "bot": ["ciscosparkapi", "twilio"],
         "tensorflow": [
-            'tensorflow~=1.2; python_version < "3.7"',
             'tensorflow>=1.13.1,<2.0; python_version >= "3.7"',
         ],
         "bert": [  # sentence-transformers
             'torch~=1.10.0; python_version>="3.6"',
             'transformers~=4.15.0; python_version>="3.6"',
             'sentence-transformers~=0.3; python_version>="3.6"',
-            # elasticsearch-py 7.14 breaks backwards compatibility with servers prior to 7.11
-            'elasticsearch>=7.0,<7.14',
+            'elasticsearch~=7.14',
         ],
         "examples": [
             'connexion>=2.7.0; python_version>="3.6"',
@@ -114,7 +111,7 @@ setup(
         ],
         "elasticsearch": [
             # elasticsearch-py 7.14 breaks backwards compatibility with servers prior to 7.11
-            "elasticsearch>=5.0,<7.14",
+            "elasticsearch~=7.14",
         ],
         "active_learning": [
             "matplotlib~=3.3.1",
