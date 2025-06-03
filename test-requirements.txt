@@ -1,5 +1,5 @@
 coverage
-flake8<4.0
+flake8~=6.0
 pylint~=3.3
 pytest~=8.4
 pytest-cov~=6.1
@@ -8,4 +8,4 @@ pytest-mock~=3.14
 pytest-asyncio~=1.0
 pyyaml>=5.1.1
 mock~=5.2
-black>=19.10b0,<24.0 ; python_version >= '3.6'
+black>=19.10b0,<22.0 ; python_version >= '3.6'
