@@ -23,8 +23,7 @@ from typing import Any, Callable, Dict, Iterable
 from ..constants import DEFAULT_TEST_SET_REGEX, DEFAULT_TRAIN_SET_REGEX
 from ..core import Query
 from ..exceptions import ClassifierLoadError
-from ..models.model import Model
-from ..models import ModelConfig, create_model, load_model
+from ..models import Model, ModelConfig, create_model, load_model
 from ..resource_loader import ProcessedQuery, ProcessedQueryList, ResourceLoader
 
 logger = logging.getLogger(__name__)

@@ -33,7 +33,6 @@ from .model import (
     ModelConfig,
     Model,
     PytorchModel,
-    AbstractModelFactory,
 )
 from .nn_utils import get_token_classifier_cls, TokenClassificationType
 from .taggers.taggers import Tagger
@@ -660,20 +659,3 @@ class PytorchTaggerModel(PytorchModel):
                     f"({len(label_tokens)}) for sentence '{ex}' with labels '{label_tokens}'"
                 )
                 raise AssertionError(msg)
-
-
-class TaggerModelFactory(AbstractModelFactory):
-    @staticmethod
-    def get_model_cls(config: ModelConfig):
-        CLASSES = [TaggerModel, PytorchTaggerModel]
-        classifier_type = config.model_settings["classifier_type"]
-
-        for _class in CLASSES:
-            if classifier_type in _class.ALLOWED_CLASSIFIER_TYPES:
-                return _class
-
-        msg = (
-            f"Invalid 'classifier_type': {classifier_type}. "
-            f"Allowed types are: {[_class.ALLOWED_CLASSIFIER_TYPES for _class in CLASSES]}"
-        )
-        raise ValueError(msg)

@@ -16,15 +16,55 @@ This module contains the ModelFactory class that can resolve model class names a
 appropriate models
 """
 
+import enum
 import logging
-from typing import Union, Type
+from typing import Dict, Union, Type
 
-from .helpers import register_model, ModelType
 from .model import Model, ModelConfig, AbstractModel, AbstractModelFactory
-from .tagger_models import TaggerModelFactory
+from .tagger_model_factory import TaggerModelFactory
 from .text_models import TextModelFactory
 
 logger = logging.getLogger(__name__)
+
+
+MODEL_MAP: Dict[str, Type["ModelFactory"]] = {}
+
+
+class ModelType(enum.Enum):
+    TEXT_MODEL = "text"
+    TAGGER_MODEL = "tagger"
+
+
+def create_model(config: dict | ModelConfig) -> Model:
+    """Creates a model instance using the provided configuration
+
+    Args:
+        config (ModelConfig): A model configuration
+
+    Returns:
+        Model: a configured model
+
+    Raises:
+        ValueError: When model configuration is invalid
+    """
+    return ModelFactory.create_model_from_config(config)
+
+
+def load_model(path: str) -> Model:
+    """Loads a model from a specified path
+
+    Args:
+        path (str): A path where the model configuration is pickled along with other metadata
+
+    Returns:
+        dict: metadata loaded from the path, which contains the configured model in 'model' key
+            and the model configs in 'model_config' key along with other keys
+
+    Raises:
+        ValueError: When model configuration is invalid
+    """
+    # TODO: deprecate MODEL_MAP and use ModelFactory instead (be aware of cyclic imports)
+    return ModelFactory.create_model_from_path(path)
 
 
 class ModelFactory(AbstractModelFactory):
@@ -192,8 +232,8 @@ class ModelFactory(AbstractModelFactory):
     @staticmethod
     def register_models() -> None:
         for model_type in [v.value for v in ModelType.__members__.values()]:
-            register_model(model_type, ModelFactory)
-        register_model("auto", ModelFactory)
+            MODEL_MAP[model_type] = ModelFactory
+        MODEL_MAP[model_type] = ModelFactory
 
 
 ModelFactory.register_models()

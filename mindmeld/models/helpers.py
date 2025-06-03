@@ -14,7 +14,6 @@ from __future__ import annotations
 
 """This module contains some helper functions for the models package"""
 
-import enum
 import json
 import logging
 import os
@@ -36,7 +35,6 @@ from ..text_preparation.text_preparation_pipeline import (
 logger = logging.getLogger(__name__)
 
 FEATURE_MAP: Dict[str, Dict[str, Callable]] = {}
-MODEL_MAP: Dict[str, Type[ModelFactory]] = {}
 LABEL_MAP: Dict[str, Type[LabelEncoder]] = {}
 EMBEDDER_MAP: Dict[str, Type[Embedder]] = {}
 ANNOTATOR_MAP: Dict[str, Type[Annotator]] = {}
@@ -74,48 +72,6 @@ DEFAULT_SYS_ENTITIES = [
     "sys_duration",
     "sys_phone-number",
 ]
-
-
-class ModelType(enum.Enum):
-    TEXT_MODEL = "text"
-    TAGGER_MODEL = "tagger"
-
-
-def create_model(config: dict | ModelConfig) -> Model:
-    """Creates a model instance using the provided configuration
-
-    Args:
-        config (ModelConfig): A model configuration
-
-    Returns:
-        Model: a configured model
-
-    Raises:
-        ValueError: When model configuration is invalid
-    """
-    try:
-        # TODO: deprecate MODEL_MAP and use ModelFactory instead (be aware of cyclic imports)
-        return MODEL_MAP["auto"].create_model_from_config(config)
-    except KeyError as e:
-        msg = "Invalid model configuration: Unknown model type {!r}"
-        raise ValueError(msg.format(config.model_type)) from e
-
-
-def load_model(path: str) -> Model:
-    """Loads a model from a specified path
-
-    Args:
-        path (str): A path where the model configuration is pickled along with other metadata
-
-    Returns:
-        dict: metadata loaded from the path, which contains the configured model in 'model' key
-            and the model configs in 'model_config' key along with other keys
-
-    Raises:
-        ValueError: When model configuration is invalid
-    """
-    # TODO: deprecate MODEL_MAP and use ModelFactory instead (be aware of cyclic imports)
-    return MODEL_MAP["auto"].create_model_from_path(path)
 
 
 def create_annotator(config: Dict) -> Annotator:
@@ -197,17 +153,6 @@ def create_embedder_model(app_path: str, config: Dict[str, Any]) -> "Embedder":
     except KeyError as e:
         msg = "Invalid model configuration: Unknown embedder type {!r}"
         raise ValueError(msg.format(embedder_type)) from e
-
-
-def register_model(model_type: str, model_class: Type[ModelFactory]) -> None:
-    """Registers a model for use with `create_model()`
-
-    Args:
-        model_type (str): The model type as specified in model configs
-        model_class (class): The model to register
-    """
-    # TODO: deprecate MODEL_MAP var in in lieu of ModelFactory
-    MODEL_MAP[model_type] = model_class
 
 
 def register_query_feature(feature_name: str) -> Callable:

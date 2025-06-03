@@ -21,18 +21,25 @@ from .helpers import (
     ENTITIES_LABEL_TYPE,
     ENTITY_EXAMPLE_TYPE,
     QUERY_EXAMPLE_TYPE,
-    create_model,
-    load_model,
     create_embedder_model,
     register_embedder,
 )
-from .model import ModelConfig
-from .model_factory import ModelFactory
+from .model import (
+    Model,
+    ModelConfig,
+)
+from .model_factory import (
+    create_model,
+    load_model,
+    AbstractModelFactory,
+    ModelFactory,
+)
 
 __all__ = [
     "model_factory",
     "embedder_models",
     "labels",
+    "AbstractModelFactory",
     "ModelFactory",
     "Embedder",
     "query_features",
@@ -45,5 +52,6 @@ __all__ = [
     "load_model",
     "create_embedder_model",
     "register_embedder",
+    "Model",
     "ModelConfig",
 ]

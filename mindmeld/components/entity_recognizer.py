@@ -24,10 +24,10 @@ from ._config import get_classifier_config
 from .classifier import Classifier, ClassifierConfig, ClassifierLoadError
 from ..constants import DEFAULT_TRAIN_SET_REGEX
 from ..core import Entity, Query
-from ..models.model import Model
 from ..models import (
     ENTITIES_LABEL_TYPE,
     QUERY_EXAMPLE_TYPE,
+    Model,
     ModelConfig,
     create_model,
     load_model,

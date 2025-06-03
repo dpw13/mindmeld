@@ -22,7 +22,7 @@ from typing import Any, Dict, Iterable, Tuple
 
 from .taggers import Tagger, extract_sequence_features
 from .pytorch_crf import CRFModel
-from ...models.model import ModelConfig
+from ..model import ModelConfig
 from ...core import Query
 from ...strtobool import strtobool
 
