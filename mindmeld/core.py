@@ -27,7 +27,7 @@ TEXT_FORMS = [TEXT_FORM_RAW, TEXT_FORM_PROCESSED, TEXT_FORM_NORMALIZED]
 logger = logging.getLogger(__name__)
 
 # The date keys are extracted from here
-# https://github.com/wit-ai/duckling_old/blob/a4bc34e3e945d403a9417df50c1fb2172d56de3e/src/duckling/time/obj.clj#L21 # noqa E722
+# https://github.com/wit-ai/duckling_old/blob/a4bc34e3e945d403a9417df50c1fb2172d56de3e/src/duckling/time/obj.clj#L21 # pylint: disable=line-too-long
 TIME_GRAIN_TO_ORDER = {
     "year": 8,
     "quarter": 7,
@@ -156,8 +156,7 @@ class Span:
         return selected_spans
 
     def __iter__(self):
-        for index in range(self.start, self.end + 1):
-            yield index
+        yield from range(self.start, self.end + 1)
 
     def __len__(self):
         return self.end - self.start + 1
@@ -442,9 +441,10 @@ class Query:
             raise ValueError("Invalid index {}".format(index)) from e
 
     def get_token_ngram_raw_ngram_span(self, tokens, start_token_index, end_token_index):
-        token_ngram = tuple(
-            [token["entity"] for token in tokens[start_token_index : end_token_index + 1]]
-        )
+        token_ngram_list = [
+            token["entity"] for token in tokens[start_token_index : end_token_index + 1]
+        ]
+        token_ngram = tuple(token_ngram_list)
         last_raw_start = tokens[end_token_index]["raw_start"]
         last_raw_entity = tokens[end_token_index]["entity"]
         first_raw_start = tokens[start_token_index]["raw_start"]
@@ -1142,7 +1142,7 @@ def resolve_entity_conflicts(query_entities):
             other = filtered[j]
             if _is_superset(target, other) and not _is_same_span(target, other):
                 logger.debug(
-                    "Removing {{%s|%s}} entity in query %d since it is a " "subset of another.",
+                    "Removing {{%s|%s}} entity in query %d since it is a subset of another.",
                     other.text,
                     other.entity.type,
                     i,
@@ -1152,7 +1152,7 @@ def resolve_entity_conflicts(query_entities):
 
             if _is_subset(target, other) and not _is_same_span(target, other):
                 logger.debug(
-                    "Removing {{%s|%s}} entity in query %d since it is a " "subset of another.",
+                    "Removing {{%s|%s}} entity in query %d since it is a subset of another.",
                     target.text,
                     target.entity.type,
                     i,
@@ -1164,7 +1164,7 @@ def resolve_entity_conflicts(query_entities):
             if _is_same_span(target, other) or _is_overlapping(target, other):
                 if target.entity.confidence >= other.entity.confidence:
                     logger.debug(
-                        "Removing {{%s|%s}} entity in query %d since it overlaps " "with another.",
+                        "Removing {{%s|%s}} entity in query %d since it overlaps with another.",
                         other.text,
                         other.entity.type,
                         i,
@@ -1174,7 +1174,7 @@ def resolve_entity_conflicts(query_entities):
 
                 if target.entity.confidence < other.entity.confidence:
                     logger.debug(
-                        "Removing {{%s|%s}} entity in query %d since it overlaps " "with another.",
+                        "Removing {{%s|%s}} entity in query %d since it overlaps with another.",
                         target.text,
                         target.entity.type,
                         i,

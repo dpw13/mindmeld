@@ -38,13 +38,13 @@ class MindMeldRequest(Request):  # pylint: disable=too-many-ancestors
     custom handling of certain exceptions.
     """
 
-    def on_json_loading_failed(self, exc):
+    def on_json_loading_failed(self, e):
         """Called if decoding of the JSON data failed.
 
         The return value of this method is used by get_json() when an error
         occurred. The default implementation just raises a BadRequest exception.
         """
-        del exc
+        del e
         raise BadMindMeldRequestError("Malformed request body: {0:s}".format(sys.exc_info()[1]))
 
 
@@ -76,7 +76,7 @@ class MindMeldServer:
         elif os.environ.get("MM_APP_VERSION_FILE"):
             version_file = os.environ.get("MM_APP_VERSION_FILE")
             try:
-                with open(version_file, "r") as file:
+                with open(version_file, "r", encoding="utf-8") as file:
                     self._app_version = file.readline().strip()
             except (OSError, IOError):
                 # failed to set version

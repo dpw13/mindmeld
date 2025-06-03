@@ -127,8 +127,8 @@ class SystemEntityRecognizer(ABC):
         if is_duckling_configured(app_path):
             url = get_system_entity_url_config(app_path=app_path)
             return DucklingRecognizer.get_instance(url)
-        else:
-            return NoOpSystemEntityRecognizer.get_instance()
+
+        return NoOpSystemEntityRecognizer.get_instance()
 
     @abstractmethod
     def parse(self, sentence, **kwargs):
@@ -144,7 +144,6 @@ class SystemEntityRecognizer(ABC):
                 dict, corresponding to a single prediction.
                 - response_code (int): http status code.
         """
-        pass
 
     @abstractmethod
     def resolve_system_entity(self, query, entity_type, span):
@@ -161,7 +160,6 @@ class SystemEntityRecognizer(ABC):
         Raises:
             SystemEntityResolutionError
         """
-        pass
 
     @abstractmethod
     def get_candidates(self, query, entity_types=None, **kwargs):
@@ -174,7 +172,6 @@ class SystemEntityRecognizer(ABC):
         Returns:
             list of QueryEntity: The system entities found in the query
         """
-        pass
 
     @abstractmethod
     def get_candidates_for_text(self, text, entity_types=None, **kwargs):
@@ -187,7 +184,6 @@ class SystemEntityRecognizer(ABC):
         Returns:
             list of dict: The system entities found in the text
         """
-        pass
 
 
 class NoOpSystemEntityRecognizer(SystemEntityRecognizer):
@@ -279,8 +275,8 @@ class DucklingRecognizer(SystemEntityRecognizer):
             if response.status_code == requests.codes["ok"]:
                 response_json = response.json()
                 return response_json, response.status_code
-            else:
-                raise SystemEntityError("System entity status code is not 200.")
+
+            raise SystemEntityError("System entity status code is not 200.")
 
         except requests.ConnectionError:
             msg = (
@@ -302,6 +298,7 @@ class DucklingRecognizer(SystemEntityRecognizer):
         locale: str = None,
         time_zone: str = None,
         timestamp: int = None,
+        **kwargs,
     ) -> Tuple[Any, int]:
         """Calls System Entity Recognizer service API to extract numerical entities from a sentence.
 
@@ -470,8 +467,8 @@ class DucklingRecognizer(SystemEntityRecognizer):
                 # If the candidate matches the entire entity, return it
                 if candidate.span == span:
                     return candidate
-                else:
-                    duckling_text_val_to_candidate.setdefault(candidate.text, []).append(candidate)
+
+                duckling_text_val_to_candidate.setdefault(candidate.text, []).append(candidate)
 
         # Sort duckling matching candidates by the length of the value
         best_duckling_candidate_names = list(duckling_text_val_to_candidate.keys())
@@ -484,8 +481,8 @@ class DucklingRecognizer(SystemEntityRecognizer):
             for candidate in duckling_text_val_to_candidate[longest_matched_duckling_candidate]:
                 if candidate.span.start == span.start or candidate.span.end == span.end:
                     return candidate
-                else:
-                    default_duckling_candidate = candidate
+
+                default_duckling_candidate = candidate
 
             return default_duckling_candidate
 
@@ -596,15 +593,15 @@ class DucklingRecognizer(SystemEntityRecognizer):
                     item["entity_type"] = entity.type
                     items.append(item)
             return items
-        else:
-            logger.debug(
-                "System Entity Recognizer service did not process query: %s with dims: %s "
-                "correctly and returned response: %s",
-                text,
-                str(dims),
-                str(response),
-            )
-            return []
+
+        logger.debug(
+            "System Entity Recognizer service did not process query: %s with dims: %s "
+            "correctly and returned response: %s",
+            text,
+            str(dims),
+            str(response),
+        )
+        return []
 
 
 def _construct_interval_helper(interval_item):
@@ -695,8 +692,8 @@ def duckling_item_to_query_entity(query, item, offset=0):
         end = int(item["end"]) - 1 + offset
         entity = duckling_item_to_entity(item)
         return QueryEntity.from_query(query, Span(start, end), entity=entity)
-    else:
-        return
+
+    return None
 
 
 def dimensions_from_entity_types(entity_types):

@@ -175,7 +175,7 @@ def bootstrap_query_file(input_file, output_file, nlp, **kwargs):
         kwargs (dict): A dictionary of additional args
     """
     show_confidence = kwargs.get("confidence")
-    with open(output_file, "w") if output_file else sys.stdout as csv_file:
+    with open(output_file, "w", encoding="utf-8") if output_file else sys.stdout as csv_file:
         field_names = ["query"]
         if not kwargs.get("no_domain"):
             field_names.append("domain")
@@ -472,8 +472,8 @@ def _tokenize_markup(markup):
 
         token += char
 
-    for key in open_annotations:
-        if open_annotations[key]:
+    for key, val in open_annotations.items():
+        if val:
             raise MarkupError("Mismatched start for {}: {}".format(key, markup))
 
     if token:
@@ -517,8 +517,7 @@ def dump_queries(queries, markup_format=MINDMELD_FORMAT, **kwargs):
         str or tuple: A marked up representation of the query
     """
     if markup_format == BRAT_FORMAT:
-        for result in _dump_brat_queries(queries, **kwargs):
-            yield result
+        yield from _dump_brat_queries(queries, **kwargs)
         return
 
     for query in queries:

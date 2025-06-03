@@ -15,8 +15,9 @@
 import importlib
 import logging
 import subprocess
-import spacy
 from typing import Any, Iterable
+
+import spacy
 
 from ..constants import (
     SPACY_WEB_TRAINED_LANGUAGES,

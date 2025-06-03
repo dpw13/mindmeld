@@ -165,10 +165,9 @@ def safe_path(func):
                     res,
                 )
             )
-        elif isinstance(res, str):
+        if isinstance(res, str):
             return os.path.relpath(res).replace(":", "_")
-        else:
-            return res
+        return res
 
     return _wrapper
 
@@ -260,8 +259,8 @@ def get_labeled_query_tree(app_path, patterns=None):
                     mod_time = os.path.getmtime(abs_filepath)
                     tree[domain][intent][abs_filepath] = mod_time
 
-    for pattern in found_pattern:
-        if not found_pattern[pattern]:
+    for pattern, found in found_pattern.items():
+        if not found:
             logger.error(
                 "Couldn't find %s pattern files in %s directory",
                 patterns,
@@ -588,8 +587,8 @@ def get_embedder_cache_file_path(app_path, embedder_type, model_name=None):
             embedder_type=embedder_type,
             model_name=model_name,
         )
-    else:
-        return GEN_EMBEDDER_MODEL_PATH.format(app_path=app_path, model_id=embedder_type)
+
+    return GEN_EMBEDDER_MODEL_PATH.format(app_path=app_path, model_id=embedder_type)
 
 
 @safe_path

@@ -219,7 +219,7 @@ class Annotator(ABC):
                         processed_query=processed_query,
                         remove_entities=entity_types,
                     )
-            with open(path, "w") as outfile:
+            with open(path, "w", encoding="utf-8") as outfile:
                 outfile.write("".join(list(dump_queries(processed_queries))))
                 outfile.close()
 
@@ -235,7 +235,7 @@ class Annotator(ABC):
         Returns:
             processed_queries (list): List of processed queries from file.
         """
-        with open(file_path) as infile:
+        with open(file_path, "r", encoding="utf-8") as infile:
             queries = infile.readlines()
         processed_queries = []
         domain, intent = file_path.split(os.sep)[-3:-1]
@@ -339,7 +339,6 @@ class Annotator(ABC):
         target_entities.extend(additional_entities)
         return target_entities
 
-    # pylint: disable=R0201
     def _unannotate_query(self, processed_query: ProcessedQuery, remove_entities: Iterable) -> None:
         """Removes specified entities in a processed query. If all entities are being
         removed, this function will not remove entities that the annotator does not support
@@ -394,9 +393,9 @@ def create_annotator(config: Dict) -> Annotator:
         raise KeyError("Missing required argument in AUTO_ANNOTATOR_CONFIG: 'annotator_class'")
     if config["annotator_class"] in ANNOTATOR_MAP:
         return ANNOTATOR_MAP[config.pop("annotator_class")](**config)
-    else:
-        msg = "Invalid model configuration: Unknown model type {!r}"
-        raise KeyError(msg.format(config["annotator_class"]))
+
+    msg = "Invalid model configuration: Unknown model type {!r}"
+    raise KeyError(msg.format(config["annotator_class"]))
 
 
 def register_annotator(annotator_class_name: str, annotator_class: Type[Annotator]) -> None:

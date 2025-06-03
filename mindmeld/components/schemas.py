@@ -404,10 +404,10 @@ class ParamsSchema(Schema):
             target_dialogue_state, self.context.get("dialogue_handler_map")
         )
 
-    def serialize_dynamic_resource(self, params):  # pylint: disable=no-self-use
+    def serialize_dynamic_resource(self, params):
         return dict(params.dynamic_resource)
 
-    def deserialize_dynamic_resource(self, value):  # pylint: disable=no-self-use
+    def deserialize_dynamic_resource(self, value):
         return immutables.Map(value)
 
     class Meta:
@@ -424,11 +424,11 @@ class FormEntitySchema(Schema):
     hints = fields.List(fields.String(), allow_none=True)
     custom_eval = fields.String(allow_none=True)
 
-    def serialize_value(self, form):  # pylint: disable=no-self-use
+    def serialize_value(self, form):
         if form.value:
             return form.value or dict(form.value)
 
-    def deserialize_value(self, value):  # pylint: disable=no-self-use
+    def deserialize_value(self, value):
         return value or immutables.Map(value)
 
 
@@ -462,37 +462,37 @@ class RequestSchema(Schema):
     form = fields.Method("serialize_form", deserialize="deserialize_map")
     request_id = fields.String()
 
-    def deserialize_list_of_maps(self, value):  # pylint: disable=no-self-use
+    def deserialize_list_of_maps(self, value):
         return deserialize_to_list_immutable_maps(value)
 
-    def deserialize_list_of_list_of_immutable_maps(self, values):  # pylint: disable=no-self-use
+    def deserialize_list_of_list_of_immutable_maps(self, values):
         return deserialize_to_lists_of_list_of_immutable_maps(values)
 
-    def serialize_history(self, request):  # pylint: disable=no-self-use
+    def serialize_history(self, request):
         return serialize_to_list_of_dicts(request.history)
 
-    def serialize_entities(self, request):  # pylint: disable=no-self-use
+    def serialize_entities(self, request):
         return serialize_to_list_of_dicts(request.entities)
 
-    def serialize_nbest_transcripts_entities(self, request):  # pylint: disable=no-self-use
+    def serialize_nbest_transcripts_entities(self, request):
         return serialize_to_lists_of_list_of_dicts(request.nbest_transcripts_entities)
 
-    def serialize_nbest_aligned_entities(self, request):  # pylint: disable=no-self-use
+    def serialize_nbest_aligned_entities(self, request):
         return serialize_to_lists_of_list_of_dicts(request.nbest_aligned_entities)
 
-    def serialize_confidences(self, request):  # pylint: disable=no-self-use
+    def serialize_confidences(self, request):
         return dict(request.confidences)
 
-    def serialize_context(self, request):  # pylint: disable=no-self-use
+    def serialize_context(self, request):
         return dict(request.context)
 
-    def serialize_frame(self, request):  # pylint: disable=no-self-use
+    def serialize_frame(self, request):
         return dict(request.frame)
 
-    def serialize_form(self, request):  # pylint: disable=no-self-use
+    def serialize_form(self, request):
         return dict(request.form)
 
-    def deserialize_map(self, value):  # pylint: disable=no-self-use
+    def deserialize_map(self, value):
         return immutables.Map(value)
 
 

@@ -19,10 +19,12 @@ import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 from sklearn.metrics import precision_recall_fscore_support as score
 
-from .helpers import (
+from .labels import (
     ENTITIES_LABEL_TYPE,
-    entity_seqs_equal,
     get_label_encoder,
+)
+from .helpers import (
+    entity_seqs_equal,
 )
 from .taggers.taggers import (
     BoundaryCounts,

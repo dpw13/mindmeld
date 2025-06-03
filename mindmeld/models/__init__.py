@@ -16,13 +16,17 @@
 from . import model_factory, embedder_models, labels
 from .embedder_models import Embedder
 from .features import entity_features, query_features
-from .helpers import (
+from .labels import (
     CLASS_LABEL_TYPE,
     ENTITIES_LABEL_TYPE,
-    ENTITY_EXAMPLE_TYPE,
-    QUERY_EXAMPLE_TYPE,
+)
+from .embedder_base import (
     create_embedder_model,
     register_embedder,
+)
+from .helpers import (
+    ENTITY_EXAMPLE_TYPE,
+    QUERY_EXAMPLE_TYPE,
 )
 from .model import (
     Model,

@@ -17,6 +17,8 @@ import codecs
 import logging
 import re
 import unicodedata
+from typing import Dict, Iterable
+
 from ..constants import CURRENCY_SYMBOLS
 from ..path import ASCII_FOLDING_DICT_PATH
 
@@ -236,14 +238,14 @@ class Lowercase(Normalizer):
 
 
 class RegexNormalizerRule(Normalizer):
-    def __init__(self, pattern: str, replacement: str):
+    def __init__(self, pattern: str, replacement: str | None):
         """Creates a RegexNormalizerRule instance."""
         self.pattern = pattern
         self.replacement = replacement
         self._expr = re.compile(self.pattern)
 
-    def normalize(self, s):
-        return self._expr.sub(self.replacement, s)
+    def normalize(self, text: str):
+        return self._expr.sub(self.replacement, text)
 
     def tojson(self):
         return {self.__class__.__name__ + "##" + self.pattern + "##" + self.replacement: None}
@@ -254,7 +256,7 @@ class RegexNormalizerRuleFactory:
     EXCEPTION_CHARS = r"\@\[\]'"
 
     @staticmethod
-    def get_default_regex_normalizer_rule(regex_normalizer: str):
+    def get_default_regex_normalizer_rule(regex_normalizer: str) -> RegexNormalizerRule:
         """Creates a RegexNormalizerRule object based on the given rule and the current
         EXCEPTION_CHARS.
 
@@ -271,8 +273,12 @@ class RegexNormalizerRuleFactory:
             )
             return RegexNormalizerRule(**regex_rule_dict)
 
+        raise ValueError(f"No default normalizer for '{regex_normalizer}'")
+
     @staticmethod
-    def get_regex_normalizers(regex_norm_rules):
+    def get_regex_normalizers(
+        regex_norm_rules: Iterable[Dict[str, str]]
+    ) -> Iterable[RegexNormalizerRule]:
         """A static method to get a RegexNormalizerRule from regex_norm_rules.
 
         Args:

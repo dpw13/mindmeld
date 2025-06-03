@@ -18,6 +18,7 @@ project structure.
 import logging
 import os
 import sys
+from typing import Dict, Iterable, Pattern
 
 import py
 
@@ -39,7 +40,7 @@ def configure_logs(**kwargs):
     package_logger.setLevel(level)
 
 
-def load_configuration():
+def load_configuration() -> Dict[str, str] | None:
     """Loads a configuration file (mindmeld.cfg) for the current app. The
     file is located by searching first in the current directory, and in parent
     directories.
@@ -59,11 +60,12 @@ def load_configuration():
             config_dir = os.path.dirname(config_file)
             config["app_path"] = os.path.abspath(os.path.join(config_dir, config["app_path"]))
         return config
-    else:
-        logger.debug("No config file was found.")
+
+    logger.debug("No config file was found.")
+    return None
 
 
-def _find_config_file():
+def _find_config_file() -> str | None:
     prev_dir = None
     current_dir = os.getcwd()
 
@@ -80,7 +82,7 @@ def _find_config_file():
     return None
 
 
-def get_pattern(rule):
+def get_pattern(rule: Dict[str, str]) -> Pattern:
     """Convert a rule represented as a dictionary with the keys "domains", "intents",
     "files" into a regex pattern.
 
@@ -91,10 +93,10 @@ def get_pattern(rule):
         pattern (str): Regex pattern specifying allowed file paths.
     """
     pattern = [rule[x] for x in ["domains", "intents", "files"]]
-    return ".*/" + "/".join(pattern)
+    return r".*/" + r"/".join(pattern)
 
 
-def read_path_queries(filepath):
+def read_path_queries(filepath: str) -> Iterable[str]:
     """Reads queries from given file path.
 
     Args:
@@ -103,12 +105,12 @@ def read_path_queries(filepath):
     Returns:
         queries (list): List of queries.
     """
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         queries = f.readlines()
     return queries
 
 
-def write_to_file(filepath, queries, suffix):
+def write_to_file(filepath, queries: Iterable[str], suffix: str) -> None:
     """Writes queries to a new file in the path with given suffix.
 
     Args:
@@ -117,6 +119,6 @@ def write_to_file(filepath, queries, suffix):
     """
     write_path = filepath.rstrip(".txt") + suffix
 
-    with open(write_path, "w") as outfile:
+    with open(write_path, "w", encoding="utf-8") as outfile:
         for query in queries:
             outfile.write(query.rstrip() + "\n")

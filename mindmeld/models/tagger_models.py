@@ -20,8 +20,8 @@ from typing import Type
 import joblib
 
 from .evaluation import EntityModelEvaluation, EvaluatedExample
+from .labels import get_label_encoder
 from .helpers import (
-    get_label_encoder,
     get_seq_accuracy_scorer,
     get_seq_tag_accuracy_scorer,
     ingest_dynamic_gazetteer,

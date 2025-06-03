@@ -116,8 +116,8 @@ class Blueprint:
         app_path = os.path.abspath(app_path)
 
         local_archive = cls._fetch_archive(name, "app")
-        tarball = tarfile.open(local_archive)
-        tarball.extractall(path=app_path)
+        with tarfile.open(local_archive) as tarball:
+            tarball.extractall(path=app_path)
         logger.info("Created %r app at %r", name, app_path)
         return app_path
 
@@ -152,8 +152,8 @@ class Blueprint:
             return
 
         kb_dir = os.path.join(cache_dir, "kb")
-        tarball = tarfile.open(local_archive)
-        tarball.extractall(path=kb_dir)
+        with tarfile.open(local_archive) as tarball:
+            tarball.extractall(path=kb_dir)
 
         _, _, index_files = next(os.walk(kb_dir))
 
@@ -213,7 +213,7 @@ class Blueprint:
             mindmeld_url=BLUEPRINTS_URL, blueprint=name, filename=filename
         )
 
-        res = requests.head(remote_url)
+        res = requests.head(remote_url, timeout=5)
         if res.status_code == 401:
             # authentication error
             msg = (
@@ -242,7 +242,7 @@ class Blueprint:
             logger.info("Using cached %r %s archive", name, archive_type)
         else:
             logger.info("Fetching %s archive from %r", archive_type, remote_url)
-            res = requests.get(remote_url, stream=True)
+            res = requests.get(remote_url, stream=True, timeout=5)
             if res.status_code == 200:
                 with open(local_archive, "wb") as file_pointer:
                     res.raw.decode_content = True

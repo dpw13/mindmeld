@@ -36,7 +36,7 @@ from tqdm import tqdm
 
 from .active_learning.alp import ActiveLearningPipelineFactory
 
-from .augmentation import AugmentorFactory, register_all_augmentors
+from .augmentor_base import AugmentorFactory
 from .auto_annotator import register_all_annotators
 from . import markup, path
 from .blueprint import blueprint
@@ -74,12 +74,12 @@ CONTEXT_SETTINGS = {
 
 # deprecation warning for python 3.5
 if sys.version_info < (3, 6):
-    deprecation_msg = (
+    DEPRECATION_MSG = (
         "DEPRECATION: Python 3.5 reached end of life on 13 Sept 2020. MindMeld will deprecate"
         " official support for Python 3.5 in the next release. Please consider migrating"
         " your application to Python 3.6 and above."
     )
-    warnings.warn(deprecation_msg)
+    warnings.warn(DEPRECATION_MSG)
 
 DVC_INIT_ERROR_MESSAGE = "you are not inside of a DVC repository"
 DVC_ADD_DOES_NOT_EXIST_MESSAGE = "does not exist"
@@ -135,18 +135,20 @@ def _dvc_add_helper(filepath):
     Returns:
         (tuple) True if no errors, False + error string otherwise
     """
-    p = subprocess.Popen(["dvc", "add", filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # Get DVC error message from standard error
-    _, error = p.communicate()
-    error_string = error.decode("utf-8")
+    with subprocess.Popen(
+        ["dvc", "add", filepath], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as p:
+        # Get DVC error message from standard error
+        _, error = p.communicate()
+        error_string = error.decode("utf-8")
 
-    if DVC_INIT_ERROR_MESSAGE in error_string:
-        return False, DVC_INIT_HELP
-    elif DVC_ADD_DOES_NOT_EXIST_MESSAGE in error_string:
-        return False, DVC_ADD_DOES_NOT_EXIST_HELP.format(dvc_add_path=filepath)
-    elif p.returncode != 0:
-        return False, error_string
-    else:
+        if DVC_INIT_ERROR_MESSAGE in error_string:
+            return False, DVC_INIT_HELP
+        if DVC_ADD_DOES_NOT_EXIST_MESSAGE in error_string:
+            return False, DVC_ADD_DOES_NOT_EXIST_HELP.format(dvc_add_path=filepath)
+        if p.returncode != 0:
+            return False, error_string
+
         return True, None
 
 
@@ -160,14 +162,14 @@ def _bash_helper(command_list):
     Returns:
         (tuple) True if no errors, False + error string otherwise
     """
-    p = subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    _, error = p.communicate()
-    error_string = error.decode("utf-8")
+    with subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
+        _, error = p.communicate()
+        error_string = error.decode("utf-8")
 
-    if p.returncode != 0:
-        return False, error_string
+        if p.returncode != 0:
+            return False, error_string
 
-    return True, None
+        return True, None
 
 
 # pylint: disable=too-many-return-statements
@@ -444,9 +446,7 @@ def converse(ctx, context, verbose):
         if isinstance(context, str):
             context = json.loads(context)
         if app is None:
-            raise ValueError(
-                "No app was given. Run 'python app.py converse' from your app" " folder."
-            )
+            raise ValueError("No app was given. Run 'python app.py converse' from your app folder.")
 
         # make sure num parser is running
         ctx.invoke(num_parser, start=True)
@@ -536,7 +536,7 @@ def evaluate(ctx, verbose):
             nlp.load()
         except MindMeldError:
             logger.error(
-                "You must build the app before running evaluate. " "Try 'python app.py build'."
+                "You must build the app before running evaluate. Try 'python app.py build'."
             )
             ctx.exit(1)
         nlp.evaluate(verbose)
@@ -601,7 +601,7 @@ def predict(
     try:
         nlp.load()
     except MindMeldError:
-        logger.error("You must build the app before running predict. " "Try 'python app.py build'.")
+        logger.error("You must build the app before running predict. Try 'python app.py build'.")
         ctx.exit(1)
 
     markup.bootstrap_query_file(
@@ -710,7 +710,6 @@ def clean(ctx, query_cache, model_cache, days):
 @click.group()
 def shared_cli():
     """Commands for MindMeld module and apps"""
-    pass
 
 
 @shared_cli.command("load-kb", context_settings=CONTEXT_SETTINGS)
@@ -744,12 +743,23 @@ def load_index(ctx, es_host, app_namespace, index_name, data_file, app_path):
         ctx.exit(1)
 
 
-def _find_duckling_os_executable():
+def _find_duckling_os_executable() -> str | None:
     """Returns the correct duckling path for this OS."""
     os_platform_name = "-".join(distro.linux_distribution(full_distribution_name=False)).lower()
-    for os_key in path.DUCKLING_OS_MAPPINGS:
+    for os_key, val in path.DUCKLING_OS_MAPPINGS.items():
         if os_key in os_platform_name:
-            return path.DUCKLING_OS_MAPPINGS[os_key]
+            return val
+
+    return None
+
+
+def _spawn_and_disown(cmd):
+    """Launches the specified command and disowns the process so it continues
+    to run after the script exits."""
+    if not os.fork():
+        # Child process: fork subprocess and exit child
+        subprocess.Popen(cmd, stderr=subprocess.STDOUT)  # pylint: disable=consider-using-with
+        os._exit(os.EX_OK)  # pylint: disable=protected-access
 
 
 @shared_cli.command("num-parse", context_settings=CONTEXT_SETTINGS)
@@ -772,14 +782,15 @@ def num_parser(ctx, start, port):
 
         if not exec_path:
             logger.warning(
-                "OS is incompatible with duckling executable. " "Use docker to install duckling."
+                "OS is incompatible with duckling executable. Use docker to install duckling."
             )
             return
 
         # Download the binary from the cloud if the binary does not already exist OR
         # the binary is out of date.
         if os.path.exists(exec_path):
-            hash_digest = hashlib.sha256(open(exec_path, "rb").read()).hexdigest()
+            with open(exec_path, "rb") as e:
+                hash_digest = hashlib.sha256(e.read()).hexdigest()
             if hash_digest != path.DUCKLING_PATH_TO_SHA_MAPPINGS[exec_path]:
                 os.remove(exec_path)
 
@@ -796,7 +807,7 @@ def num_parser(ctx, start, port):
                 exec_path,
                 url,
             )
-            r = requests.get(url, stream=True)
+            r = requests.get(url, stream=True, timeout=5)
 
             # Total size in bytes.
             total_size = int(r.headers.get("content-length", 0))
@@ -813,7 +824,8 @@ def num_parser(ctx, start, port):
                     f.flush()
 
             # Verify the downloaded file
-            hash_digest = hashlib.sha256(open(exec_path, "rb").read()).hexdigest()
+            with open(exec_path, "rb") as e:
+                hash_digest = hashlib.sha256(e.read()).hexdigest()
             if hash_digest != path.DUCKLING_PATH_TO_SHA_MAPPINGS[exec_path]:
                 os.remove(exec_path)
                 logger.error(
@@ -827,17 +839,11 @@ def num_parser(ctx, start, port):
         os.chmod(exec_path, st.st_mode | stat.S_IEXEC)
 
         # run duckling
-        duckling_service = subprocess.Popen([exec_path, "--port", port], stderr=subprocess.STDOUT)
+        _spawn_and_disown([exec_path, "--port", port])
 
         # duckling takes some time to start so sleep for a bit
-        for _ in range(50):
-            if duckling_service.pid:
-                logger.info(
-                    "Starting numerical parsing service, PID %s",
-                    duckling_service.pid,
-                )
-                return
-            time.sleep(0.1)
+        logger.info("Starting numerical parsing service...")
+        time.sleep(5)
     else:
         for pid in _get_duckling_pid():
             os.kill(int(pid), signal.SIGKILL)
@@ -919,7 +925,6 @@ def _get_auto_annotator_config(app_path, overwrite=False, unannotate_all=False):
 )
 def augment(app_path, language):
     """Runs the data augmentation command."""
-    register_all_augmentors()
     config = get_augmentation_config(app_path=app_path)
     language = language or get_language_config(app_path=app_path)[0]
     resource_loader = ResourceLoader.create_resource_loader(app_path)
@@ -988,7 +993,8 @@ def augment(app_path, language):
     type=str,
     help="Pattern for labeled logs. Will override an unlabeled logs path.",
 )
-def active_learning(  # pylint: disable=R0913
+# pylint: disable=too-many-arguments
+def active_learning(
     app_path,
     batch_size,
     tuning_level,
@@ -1056,7 +1062,6 @@ def active_learning(  # pylint: disable=R0913
 @click.group()
 def module_cli():
     """Commands for MindMeld module only"""
-    pass
 
 
 @module_cli.command("blueprint", context_settings=CONTEXT_SETTINGS)
@@ -1088,6 +1093,7 @@ def setup_blueprint(ctx, es_host, skip_kb, blueprint_name, app_path):
 @click.argument("mindmeld_path", required=False)
 def convert(ctx, df, rs, project_path, mindmeld_path=None):
     """Converts a Rasa or DialogueFlow project to a MindMeld project"""
+    framework = None
     if df:
         framework = "Dialogflow"
     elif rs:

@@ -44,6 +44,7 @@ from sklearn.preprocessing import LabelEncoder as SKLabelEncoder
 
 from ._util import _is_module_available
 from .evaluation import EntityModelEvaluation, StandardModelEvaluation
+from .labels import get_label_encoder
 from .helpers import (
     CHAR_NGRAM_FREQ_RSC,
     ENABLE_STEMMING,
@@ -54,7 +55,6 @@ from .helpers import (
     WORD_FREQ_RSC,
     SENTIMENT_ANALYZER,
     get_feature_extractor,
-    get_label_encoder,
     ingest_dynamic_gazetteer,
 )
 from .nn_utils.helpers import EmbedderType
@@ -226,7 +226,7 @@ class AbstractModel(ABC):
         # Not implemeneted unless overwritten by child class
         raise NotImplementedError
 
-    def register_resources(self, **kwargs):  # pylint: disable=no-self-use
+    def register_resources(self, **kwargs):
         # Resources for feature extractors are not required for deep neural models
         del kwargs
         pass

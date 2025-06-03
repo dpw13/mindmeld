@@ -189,7 +189,9 @@ class SpacyAnnotator(Annotator):
         )
         return [Annotator._item_to_query_entity(entity, processed_query) for entity in entities]
 
-    def _resolve_time_date(self, entity, entity_types=None):
+    def _resolve_time_date(
+        self, entity: Dict[str, Any], entity_types: Iterable[str] = None
+    ) -> Dict[str, Any] | None:
         """Resolves a time related entity. First, an exact match is searched for. If
         not found, the largest substring match is searched for. If the span of the entity
         does not share the exact span match with duckling entities then it is likely that
@@ -210,19 +212,21 @@ class SpacyAnnotator(Annotator):
             entity["body"], language=self.language, locale=self.locale
         )
         if len(candidates) == 0:
-            return
+            return None
         time_entities = ["sys_duration", "sys_interval", "sys_time"]
         if entity_types:
             time_entities = [e for e in time_entities if e in entity_types]
         if SpacyAnnotator._resolve_time_exact_match(entity, candidates, time_entities):
             return entity
-        elif SpacyAnnotator._resolve_largest_substring(
+        if SpacyAnnotator._resolve_largest_substring(
             entity, candidates, entity_types=time_entities, is_time_related=True
         ):
             return entity
 
+        return None
+
     @staticmethod
-    def _get_time_entity_type(candidate):
+    def _get_time_entity_type(candidate: Dict[str, Any]) -> str:
         """Determine the "sys" type given a time-related Duckling candidate dictionary.
 
         Args:
@@ -236,11 +240,14 @@ class SpacyAnnotator(Annotator):
         if candidate["dim"] == "time":
             if candidate["value"]["type"] == "interval":
                 return "sys_interval"
-            else:
-                return "sys_time"
+            return "sys_time"
+
+        raise ValueError(f"Unexpected dimension {candidate['dim']}")
 
     @staticmethod
-    def _resolve_time_exact_match(entity, candidates, time_entities):
+    def _resolve_time_exact_match(
+        entity: Dict[str, Any], candidates: Iterable[Dict[str, Any]], time_entities: Iterable[str]
+    ) -> Dict[str, Any] | None:
         """Resolve a time-related entity given Duckling candidates on the first
         exact match.
 
@@ -259,8 +266,15 @@ class SpacyAnnotator(Annotator):
                 entity["value"] = candidate["value"]
                 return entity
 
+        return None
+
     @staticmethod
-    def _resolve_largest_substring(entity, candidates, entity_types, is_time_related):
+    def _resolve_largest_substring(
+        entity: Dict[str, Any],
+        candidates: Iterable[Dict[str, Any]],
+        entity_types: Iterable[str],
+        is_time_related: bool,
+    ) -> Dict[str, Any] | None:
         """Resolve an entity by the largest substring match given Duckling candidates.
 
         Args:
@@ -301,7 +315,9 @@ class SpacyAnnotator(Annotator):
             entity["dim"] = resolved_entity_type
             return entity
 
-    def _resolve_cardinal(self, entity):
+        return None
+
+    def _resolve_cardinal(self, entity: Dict[str, Any]) -> Dict[str, Any] | None:
         if self._resolve_exact_match(entity):
             return entity
         candidates = self.duckling.get_candidates_for_text(
@@ -314,6 +330,8 @@ class SpacyAnnotator(Annotator):
             is_time_related=False,
         ):
             return entity
+
+        return None
 
     def _resolve_money(self, entity, sentence):
         for symbol in CURRENCY_SYMBOLS:
@@ -330,7 +348,7 @@ class SpacyAnnotator(Annotator):
     def _resolve_ordinal(self, entity):
         return self._resolve_exact_match(entity)
 
-    def _resolve_exact_match(self, entity):
+    def _resolve_exact_match(self, entity: Dict[str, Any]) -> Dict[str, Any] | None:
         """Resolves an entity by exact match and corresponding type.
 
         Args:
@@ -346,13 +364,14 @@ class SpacyAnnotator(Annotator):
         )
 
         if len(candidates) == 0:
-            return
+            return None
         for candidate in candidates:
             if candidate["entity_type"] == entity["dim"] and entity["body"] == candidate["body"]:
                 entity["value"] = candidate["value"]
                 return entity
+        return None
 
-    def _resolve_quantity(self, entity):
+    def _resolve_quantity(self, entity: Dict[str, Any]) -> Dict[str, Any] | None:
         """Resolves a quantity related entity. First looks for an exact match, then
         for the largest substring match. Order of priority is "sys_distance" then "sys_quantity".
         Unresolved entities are labelled as "sys_other-quantity"
@@ -380,11 +399,11 @@ class SpacyAnnotator(Annotator):
             entity, candidates, entity_types=entity_types, is_time_related=False
         ):
             return entity
-        else:
-            entity["dim"] = "sys_other-quantity"
-            return entity
 
-    def _resolve_percent(self, entity):
+        entity["dim"] = "sys_other-quantity"
+        return entity
+
+    def _resolve_percent(self, entity: Dict[str, Any]) -> Dict[str, Any] | None:
         """Resolves an entity related to percentage. Uses a heuristic of finding
         the largest candidate value and dividing by 100. If the candidate value is
         a float, the float value divided by 100 is immediately returned.
@@ -402,7 +421,7 @@ class SpacyAnnotator(Annotator):
         )
 
         if len(candidates) == 0:
-            return
+            return None
         possible_values = []
         for candidate in candidates:
             if candidate["entity_type"] == "sys_number":
@@ -410,12 +429,11 @@ class SpacyAnnotator(Annotator):
                 if isinstance(value, float):
                     entity["value"]["value"] = value / 100
                     return entity
-                else:
-                    possible_values.append(value)
+                possible_values.append(value)
         entity["value"]["value"] = max(possible_values) / 100
         return entity
 
-    def _resolve_person(self, entity):
+    def _resolve_person(self, entity: Dict[str, Any]) -> Dict[str, Any] | None:
         """Resolves a person entity by unlabelling a possessive "'s" from the
         name if it exists.
 
@@ -433,7 +451,7 @@ class SpacyAnnotator(Annotator):
             entity["end"] -= 2
         return entity
 
-    def _is_plural_entity(self, entity):
+    def _is_plural_entity(self, entity: Dict[str, Any]) -> bool:
         """Check if an entity is plural.
 
         Args:
@@ -480,8 +498,8 @@ class BootstrapAnnotator(Annotator):
 
     def parse(
         self,
-        sentence,
-        entity_types: Iterable,
+        sentence: str,
+        entity_types: Iterable[str] | None,
         domain: str,
         intent: str,
         **kwargs,
@@ -518,8 +536,8 @@ class BootstrapAnnotator(Annotator):
         processed_query = load_query(
             sentence,
             query_factory=self._resource_loader.query_factory,
-            domain=kwargs.get("domain"),
-            intent=kwargs.get("intent"),
+            domain=domain,
+            intent=intent,
         )
         return [Annotator._item_to_query_entity(entity, processed_query) for entity in entities]
 
@@ -675,7 +693,7 @@ class TranslationDucklingAnnotator(Annotator):
         translator = kwargs.get("translator")
         if not translator:
             raise AssertionError("'translator' cannot be None.")
-        elif translator == NoOpTranslator.__name__:
+        if translator == NoOpTranslator.__name__:
             raise AssertionError(
                 "The 'translator' for a TranslationDucklingAnnotator cannot "
                 f"be set to {NoOpTranslator.__name__}."

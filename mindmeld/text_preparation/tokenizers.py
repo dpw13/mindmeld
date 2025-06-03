@@ -33,7 +33,6 @@ class Tokenizer(ABC):
 
     def __init__(self):
         """Creates a tokenizer instance."""
-        pass
 
     @abstractmethod
     def tokenize(self, text):
@@ -63,7 +62,6 @@ class NoOpTokenizer(Tokenizer):
 
     def __init__(self):
         """Initialize the NoOpTokenizer."""
-        pass
 
     def tokenize(self, text: str) -> Iterable[str]:
         """Returns the original text as a list.
@@ -80,7 +78,6 @@ class CharacterTokenizer(Tokenizer):
 
     def __init__(self):
         """Initializes the CharacterTokenizer."""
-        pass
 
     def tokenize(self, text: str) -> Iterable[Dict[str, int | str]]:
         """
@@ -108,7 +105,6 @@ class LetterTokenizer(Tokenizer):
 
     def __init__(self):
         """Initializes the LetterTokenizer."""
-        pass
 
     def tokenize(self, text: str) -> Iterable[Dict[str, int | str]]:
         """
@@ -176,6 +172,7 @@ class LetterTokenizer(Tokenizer):
             return []
         tokens = []
         token_text = ""
+        start = 0
         for index, token_num in enumerate(token_num_by_char):
             if not token_num:
                 continue
@@ -195,7 +192,6 @@ class WhiteSpaceTokenizer(Tokenizer):
 
     def __init__(self):
         """Initializes the WhiteSpaceTokenizer."""
-        pass
 
     def tokenize(self, text: str) -> Iterable[Dict[str, int | str]]:
         """
@@ -300,7 +296,8 @@ class TokenizerFactory:
 
     @staticmethod
     def get_default_tokenizer():
-        """Creates the default tokenizer (WhiteSpaceTokenizer) irrespective of the language of the current application.
+        """Creates the default tokenizer (WhiteSpaceTokenizer) irrespective of the language
+        of the current application.
 
         Args:
             language (str, optional): Language as specified using a 639-1/2 code.

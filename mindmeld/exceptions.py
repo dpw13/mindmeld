@@ -13,6 +13,8 @@
 
 """This module contains exceptions used by the mindmeld package."""
 
+from typing import Dict
+
 
 class MindMeldVersionWarning(UserWarning):
     pass
@@ -63,13 +65,9 @@ class ClassifierLoadError(MindMeldError):
 class ProcessorError(MindMeldError):
     """An exception which indicates an error with a processor."""
 
-    pass
-
 
 class ParserTimeout(MindMeldError):
     """An exception for when parsing takes an unexpected length of time"""
-
-    pass
 
 
 class MarkupError(MindMeldError):
@@ -83,20 +81,14 @@ class SystemEntityMarkupError(MarkupError):
 class SystemEntityResolutionError(MindMeldError):
     """An exception representing an error resolving a system entity"""
 
-    pass
-
 
 class KnowledgeBaseError(MindMeldError):
     """An exception for unexpected error from knowledge base."""
-
-    pass
 
 
 class ElasticsearchVersionError(MindMeldError):
     """An exception for when the user would like to use funtionality not
     available with their version of ElasticSearch."""
-
-    pass
 
 
 class ElasticsearchKnowledgeBaseConnectionError(KnowledgeBaseError):
@@ -121,13 +113,12 @@ class ElasticsearchKnowledgeBaseConnectionError(KnowledgeBaseError):
 class EntityResolverError(MindMeldError):
     """An exception for unexpected error from entity resolver."""
 
-    pass
-
 
 class ElasticsearchConnectionError(EntityResolverError):
     """An exception for connection error to Elasticsearch for entity resolver"""
 
-    def __init__(self, es_host):
+    def __init__(self, es_host: Dict):
+        super().__init__()
         self.es_host = es_host
         if (not es_host) or (not es_host[0]):
             self.message = (

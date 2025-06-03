@@ -31,7 +31,6 @@ class Preprocessor(ABC):
         Returns:
             (str)
         """
-        pass
 
     def tojson(self):
         """

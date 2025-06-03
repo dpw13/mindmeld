@@ -123,8 +123,9 @@ class ApplicationManager:
 
         if self.nlp.ready:
             # if we are ready, don't load again
-            return
-        self.nlp.load()
+            return None
+
+        return self.nlp.load()
 
     async def _load_async(self):
         if self.nlp.ready:

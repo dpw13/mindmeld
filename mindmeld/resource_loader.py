@@ -152,23 +152,14 @@ class ProcessedQueryList:
                 self.result_cache = [self.result_cache[i] for i in indices]
 
     class RawQueryIterator(Iterator):
-        def __next__(self) -> str:
-            return super().__next__()
-
         def __getitem__(self, key) -> str:
             return self.source.cache.get_raw_query(self.elements[key])
 
     class QueryIterator(Iterator):
-        def __next__(self) -> Query:
-            return super().__next__()
-
         def __getitem__(self, key) -> Query:
             return self.source.cache.get_query(self.elements[key])
 
     class EntitiesIterator(Iterator):
-        def __next__(self) -> Iterable[Entity]:
-            return super().__next__()
-
         def __getitem__(self, key) -> Iterable[Entity]:
             return self.source.cache.get_entities(self.elements[key])
 
@@ -178,9 +169,6 @@ class ProcessedQueryList:
             cached = not isinstance(source.cache, ProcessedQueryList.MemoryCache)
             super().__init__(source, cached=cached)
 
-        def __next__(self) -> str:
-            return super().__next__()
-
         def __getitem__(self, key) -> str:
             return self.source.cache.get_domain(self.elements[key])
 
@@ -189,9 +177,6 @@ class ProcessedQueryList:
             # Caches the elements in memory if they are backed by sqlite3
             cached = not isinstance(source.cache, ProcessedQueryList.MemoryCache)
             super().__init__(source, cached=cached)
-
-        def __next__(self) -> str:
-            return super().__next__()
 
         def __getitem__(self, key) -> str:
             return self.source.cache.get_intent(self.elements[key])
@@ -205,7 +190,7 @@ class ProcessedQueryList:
         """
 
         def __init__(self, elements):
-            self.source = None
+            super().__init__(source=None)
             self.elements = elements
             self.result_cache = None
             self.iter_idx = -1
@@ -466,7 +451,7 @@ class ResourceLoader:
             json_data = {}
         else:
             try:
-                with open(file_path, "r") as json_file:
+                with open(file_path, "r", encoding="utf-8") as json_file:
                     json_data = json.load(json_file)
             except json.JSONDecodeError as e:
                 raise MindMeldError(
@@ -484,7 +469,8 @@ class ResourceLoader:
         for dir_path, _, file_names in os.walk(cache_path):
             for filename in [f for f in file_names if f.endswith(".hash")]:
                 file_path = os.path.join(dir_path, filename)
-                hash_val = open(file_path, "r").read()
+                with open(file_path, "r", encoding="utf-8") as f:
+                    hash_val = f.read()
                 classifier_file_path = file_path.split(".hash")[0]
                 if not os.path.exists(classifier_file_path):
                     # In some cases, there exists hash file but without a corresponding serialized
@@ -536,7 +522,7 @@ class ResourceLoader:
         except (OSError, IOError):
             # required file doesnt exist -- notify and error out
             logger.warning(
-                "Entity data file not found at %r. " "Proceeding with empty entity data.",
+                "Entity data file not found at %r. Proceeding with empty entity data.",
                 entity_data_path,
             )
 
@@ -551,7 +537,7 @@ class ResourceLoader:
         except (OSError, IOError):
             # required file doesnt exist
             logger.warning(
-                "Entity mapping file not found at %r. " "Proceeding with empty entity data.",
+                "Entity mapping file not found at %r. Proceeding with empty entity data.",
                 mapping_path,
             )
 
@@ -752,9 +738,8 @@ class ResourceLoader:
             self.enable_stemming = enable_stemming
             self.tokens = []
 
-        def add(self, query):
-            for i in range(len(query.normalized_tokens)):
-                tok = query.normalized_tokens[i]
+        def add(self, query: Query):
+            for i, tok in enumerate(query.normalized_tokens):
                 self.tokens.append(mask_numerics(tok))
                 if self.enable_stemming:
                     # We only add stemmed tokens that are not the same
@@ -873,7 +858,7 @@ class ResourceLoader:
 
             return self.query_dict
 
-    def get_sys_entity_types(self, labels):  # pylint: disable=no-self-use
+    def get_sys_entity_types(self, labels):
         """Get all system entity types from the entity labels.
 
         Args:
@@ -899,8 +884,8 @@ class ResourceLoader:
         hash_func = self.RSC_HASH_MAP.get(name)
         if hash_func:
             return hash_func(self)
-        else:
-            raise ValueError("Invalid resource name {!r}.".format(name))
+
+        raise ValueError("Invalid resource name {!r}.".format(name))
 
     def hash_string(self, string):
         """Hashes a string.

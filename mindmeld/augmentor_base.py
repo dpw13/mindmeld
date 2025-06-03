@@ -17,17 +17,16 @@ import logging
 import re
 
 from abc import ABC, abstractmethod
-from tqdm import tqdm
 from typing import Dict, Type, Iterable
+from tqdm import tqdm
 
 from ._util import get_pattern, read_path_queries, write_to_file
+from .core import ProcessedQuery
 from .components._util import _is_module_available
 from .markup import load_query
 from .resource_loader import ResourceLoader
 
 logger = logging.getLogger(__name__)
-
-# pylint: disable=R0201
 
 SUPPORTED_LANGUAGE_CODES = ["en", "es", "fr", "it", "pt", "ro"]
 
@@ -145,11 +144,11 @@ class Augmentor(ABC):
             write_to_file(path, augmented_queries, suffix=self.path_suffix)
 
     @abstractmethod
-    def augment_queries(self, queries):
+    def augment_queries(self, processed_queries: Iterable[ProcessedQuery]) -> Iterable[str]:
         """Generates augmented data given application queries.
 
         Args:
-            queries (list): List of queries.
+            processed_queries (list(ProcessedQuery)): List of queries to augment
 
         Return:
             augmented_queries (list): List of augmented queries.
@@ -157,11 +156,11 @@ class Augmentor(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
-    def _prepare_inputs(self, queries):
+    def _prepare_inputs(self, processed_queries: Iterable[ProcessedQuery]) -> Iterable[str]:
         """Prepare data to be fed to the models as input
 
         Args:
-            queries (list(str)): List of queries to be paraphrased
+            processed_queries (list(ProcessedQuery)): List of queries to convert
 
         Returns:
             formatted queries (list(str))

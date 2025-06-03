@@ -20,8 +20,9 @@ import random
 import os
 import zipfile
 from typing import Iterable, Tuple
-
 from urllib.request import urlretrieve
+
+import torch
 
 from .components._util import _get_module_or_attr
 from .components._config import ENGLISH_LANGUAGE_CODE
@@ -39,13 +40,11 @@ from .models.containers import TqdmUpTo
 
 logger = logging.getLogger(__name__)
 
-# pylint: disable=R0201
-
 SUPPORTED_LANGUAGE_CODES = ["en", "es", "fr", "it", "pt", "ro"]
 EOS_TOKEN = "</s>"
 DEFAULT_NUM_PARAPHRASES = 10
 PARAPHRASER_RETAIN_ENTITIES_URL = (
-    "https://mindmeld-binaries.s3.amazonaws.com/paraphraser" "/paraphrase_retain_entities.zip"
+    "https://mindmeld-binaries.s3.amazonaws.com/paraphraser/paraphrase_retain_entities.zip"
 )
 
 
@@ -83,8 +82,8 @@ class EnglishParaphraser(Augmentor):
             resource_loader=resource_loader,
         )
 
-        PegasusTokenizer = _get_module_or_attr("transformers", "PegasusTokenizer")
-        PegasusForConditionalGeneration = _get_module_or_attr(
+        pegasus_tokenizer = _get_module_or_attr("transformers", "PegasusTokenizer")
+        pegasus_for_conditional_generation = _get_module_or_attr(
             "transformers", "PegasusForConditionalGeneration"
         )
         self.retain_entities = retain_entities
@@ -94,9 +93,9 @@ class EnglishParaphraser(Augmentor):
             model_name = PARAPHRASER_MODEL_PATH
         else:
             model_name = HUGGINGFACE_PARAPHRASER_MODEL_PATH
-        self.torch_device = "cuda" if _get_module_or_attr("torch.cuda", "is_available")() else "cpu"
-        self.tokenizer = PegasusTokenizer.from_pretrained(model_name)
-        self.model = PegasusForConditionalGeneration.from_pretrained(model_name).to(
+        self.torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.tokenizer = pegasus_tokenizer.from_pretrained(model_name)
+        self.model = pegasus_for_conditional_generation.from_pretrained(model_name).to(
             self.torch_device
         )
         self.model.eval()
@@ -319,7 +318,7 @@ class EnglishParaphraser(Augmentor):
                 **self.default_tokenizer_params,
                 return_tensors="pt",
             ).to(self.torch_device)
-            with _get_module_or_attr("torch", "no_grad")():
+            with torch.no_grad():
                 generated = self.model.generate(
                     **batch,
                     **self.default_paraphraser_model_params,
@@ -331,11 +330,11 @@ class EnglishParaphraser(Augmentor):
             all_generated_queries.extend(decoded_queries)
         return all_generated_queries
 
-    def augment_queries(self, queries: Iterable[str], **kwargs):
+    def augment_queries(self, processed_queries: Iterable[str], **kwargs):
         augmented_queries = list(
             set(
                 p.lower()
-                for p in self._generate_paraphrases(queries, **kwargs)
+                for p in self._generate_paraphrases(processed_queries, **kwargs)
                 if self._validate_generated_query(p)
             )
         )
@@ -377,21 +376,21 @@ class MultiLingualParaphraser(Augmentor):
             resource_loader=resource_loader,
         )
 
-        self.torch_device = "cuda" if _get_module_or_attr("torch.cuda", "is_available")() else "cpu"
+        self.torch_device = "cuda" if torch.cuda.is_available() else "cpu"
         self.retain_entities = retain_entities
 
-        MarianTokenizer = _get_module_or_attr("transformers", "MarianTokenizer")
-        MarianMTModel = _get_module_or_attr("transformers", "MarianMTModel")
+        marian_tokenizer = _get_module_or_attr("transformers", "MarianTokenizer")
+        marian_mt_model = _get_module_or_attr("transformers", "MarianMTModel")
 
         en_model_name = "Helsinki-NLP/opus-mt-ROMANCE-en"
-        self.en_tokenizer = MarianTokenizer.from_pretrained(en_model_name)
-        self.en_model = MarianMTModel.from_pretrained(en_model_name)
+        self.en_tokenizer = marian_tokenizer.from_pretrained(en_model_name)
+        self.en_model = marian_mt_model.from_pretrained(en_model_name)
         self.en_model.to(self.torch_device)
         self.en_model.eval()
 
         target_model_name = "Helsinki-NLP/opus-mt-en-ROMANCE"
-        self.target_tokenizer = MarianTokenizer.from_pretrained(target_model_name)
-        self.target_model = MarianMTModel.from_pretrained(target_model_name).to(self.torch_device)
+        self.target_tokenizer = marian_tokenizer.from_pretrained(target_model_name)
+        self.target_model = marian_mt_model.from_pretrained(target_model_name).to(self.torch_device)
         self.target_model.eval()
 
         # Update default params with user model config
@@ -413,7 +412,7 @@ class MultiLingualParaphraser(Augmentor):
             "top_k": 0,
         }
 
-    def _translate(self, *, queries, model, tokenizer, **kwargs):
+    def _translate(self, *, queries: Iterable[str], model, tokenizer, **kwargs) -> Iterable[str]:
         """The core translation step for forward and reverse translation.
 
         Args:
@@ -429,17 +428,17 @@ class MultiLingualParaphraser(Augmentor):
             ).to(self.torch_device)
             for key in encoded:
                 encoded[key] = encoded[key].to(self.torch_device)
-            with _get_module_or_attr("torch", "no_grad")():
+            with torch.no_grad():
                 translated = model.generate(**encoded, **kwargs)
             translated_queries = tokenizer.batch_decode(translated, skip_special_tokens=True)
             all_translated_queries.extend(translated_queries)
         return all_translated_queries
 
-    def _prepare_inputs(self, processed_queries):
+    def _prepare_inputs(self, processed_queries: Iterable[ProcessedQuery]) -> Iterable[str]:
         """Removes any markdown formatting in the query
 
         Args:
-            queries (list(str)): List of queries to be paraphrased
+            queries (list(ProcessedQuery)): List of queries to be paraphrased
 
         Returns:
             unannotated queries (list(str))
@@ -450,7 +449,7 @@ class MultiLingualParaphraser(Augmentor):
         ]
         return unannotated_queries
 
-    def augment_queries(self, processed_queries):
+    def augment_queries(self, processed_queries: Iterable[ProcessedQuery]) -> Iterable[str]:
         translated_queries = self._translate(
             queries=self._prepare_inputs(processed_queries),
             model=self.en_model,
