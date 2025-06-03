@@ -18,6 +18,7 @@ import subprocess
 from typing import Any, Iterable
 
 import spacy
+from spacy.symbols import ORTH, NORM, IS_CURRENCY
 
 from ..constants import (
     SPACY_WEB_TRAINED_LANGUAGES,
@@ -74,6 +75,20 @@ class SpacyModelFactory:
             )
 
     @staticmethod
+    def _add_special_cases(nlp):
+        """Add special cases to the model."""
+        # The default language model only infers currency symbols and not the actual *names*
+        # of currency. The only values included here are words without multiple meanings
+        # as I'm not sure whether the tokenizer special case will end up obscuring other
+        # possible definitions (i.e. "pounds" isn't included)
+        # Also note that internally all currency symbols are normalized to "$" so we are
+        # actually matching the existing SpaCy behavior.
+        for currency in ["euro", "dollar"]:
+            nlp.tokenizer.add_special_case(currency, [{ORTH: currency, NORM: "$"}])
+            currency += "s"
+            nlp.tokenizer.add_special_case(currency, [{ORTH: currency, NORM: "$"}])
+
+    @staticmethod
     def _load_model(spacy_model_name: str, disable: Iterable[str] = ()) -> spacy.Language:
         """Load Spacy English model. Download if needed.
 
@@ -87,12 +102,15 @@ class SpacyModelFactory:
         """
         logger.info("Loading Spacy model %s.", spacy_model_name)
         try:
-            return spacy.load(spacy_model_name, disable=disable)
+            nlp = spacy.load(spacy_model_name, disable=disable)
         except OSError:
             logger.warning("%s not found on disk. Downloading the model.", spacy_model_name)
             SpacyModelFactory._download_spacy_model(spacy_model_name)
             language_module = SpacyModelFactory._import_spacy_model(spacy_model_name)
-            return language_module.load(disable=disable)
+            nlp = language_module.load(disable=disable)
+
+        SpacyModelFactory._add_special_cases(nlp)
+        return nlp
 
     @staticmethod
     def _get_spacy_model_name(language: str, spacy_model_size: str) -> str:

@@ -10,7 +10,7 @@ Tests the ``augmentation`` module.
 
 import pytest
 
-from mindmeld.augmentation import AugmentorFactory, UnsupportedLanguageError
+from mindmeld.augmentor_base import AugmentorFactory, UnsupportedLanguageError
 from mindmeld.components._config import get_augmentation_config
 from mindmeld.resource_loader import ResourceLoader
 from mindmeld.query_factory import QueryFactory

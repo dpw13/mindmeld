@@ -8,6 +8,7 @@ test_auto_annotator
 Tests for `auto_annotator` module
 """
 import pytest
+import logging
 
 from mindmeld.auto_annotator import MultiLingualAnnotator
 from mindmeld._util import get_pattern
@@ -172,7 +173,8 @@ def test_en_person_parse(en_mla, query, value):
         ("$70k", "$", 70000),
     ],
 )
-def test_en_money_parse(en_mla, query, unit, value):
+def test_en_money_parse(en_mla, query, unit, value, caplog):
+    caplog.set_level(logging.DEBUG)
     _check_match(en_mla, query, "sys_amount-of-money", None, value, unit, None)
 
 
@@ -189,7 +191,8 @@ def test_en_money_parse(en_mla, query, unit, value):
         ("3 weeks", "week", 3),
     ],
 )
-def test_en_duration_parse(en_mla, query, unit, value):
+def test_en_duration_parse(en_mla, query, unit, value, caplog):
+    caplog.set_level(logging.DEBUG)
     _check_match(en_mla, query, "sys_duration", None, value, unit, None)
 
 

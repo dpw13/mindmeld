@@ -135,7 +135,11 @@ class SpacyAnnotator(Annotator):
         Returns:
             query_entities (list): List of QueryEntity objects.
         """
+        logger.debug(f"Parsing {sentence} for types {entity_types}")
         doc = self.nlp(sentence)
+        logger.debug(f"NLP produced:")
+        for ent in doc.ents:
+            logger.debug(f"-> {ent.text} ({ent.label_})")
         spacy_entities = [
             {
                 "body": ent.text,
@@ -171,7 +175,9 @@ class SpacyAnnotator(Annotator):
                     params["entity_types"] = entity_types
                 elif entity["dim"] in ["money"]:
                     params["sentence"] = sentence
-                entity = entity_resolution_func_map[entity["dim"]](**params)
+                func = entity_resolution_func_map[entity["dim"]]
+                logger.info(f"Resolving entity {entity} using {func}({params})")
+                entity = func(**params)
             else:
                 entity["dim"] = SYSTEM_ENTITY_PREFIX + entity["dim"].replace("_", "-")
 
@@ -213,6 +219,7 @@ class SpacyAnnotator(Annotator):
         )
         if len(candidates) == 0:
             return None
+        logger.debug(f"Candidates for {entity['body']}: {candidates}")
         time_entities = ["sys_duration", "sys_interval", "sys_time"]
         if entity_types:
             time_entities = [e for e in time_entities if e in entity_types]
@@ -242,7 +249,9 @@ class SpacyAnnotator(Annotator):
                 return "sys_interval"
             return "sys_time"
 
-        raise ValueError(f"Unexpected dimension {candidate['dim']}")
+        # Otherwise just return the unmodified type. This allows us to support
+        # custom time entity types.
+        return candidate["dim"]
 
     @staticmethod
     def _resolve_time_exact_match(
@@ -334,6 +343,7 @@ class SpacyAnnotator(Annotator):
         return None
 
     def _resolve_money(self, entity, sentence):
+        logger.debug(f"Attempting to resolve {entity} as money")
         for symbol in CURRENCY_SYMBOLS:
             if symbol in sentence:
                 start = entity["start"]
@@ -364,6 +374,7 @@ class SpacyAnnotator(Annotator):
         )
 
         if len(candidates) == 0:
+            logger.info(f"No duckling candidates for {entity['body']}; looking for {entity['dim']}")
             return None
         for candidate in candidates:
             if candidate["entity_type"] == entity["dim"] and entity["body"] == candidate["body"]:

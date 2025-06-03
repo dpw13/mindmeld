@@ -118,7 +118,7 @@ class ProcessedQueryList:
     class Iterator:
         def __init__(self, source: "ProcessedQueryList", cached=False):
             self.source = source
-            self.elements = source.elements
+            self.elements = getattr(source, "elements", None)
             self.result_cache: Iterable[Any] = [] if not cached else [None] * len(source)
             self.iter_idx = -1
 
