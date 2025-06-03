@@ -19,16 +19,14 @@ import string
 import random
 import os
 import zipfile
+from typing import Iterable, Tuple
 
-from abc import ABC, abstractmethod
 from urllib.request import urlretrieve
-from tqdm import tqdm
 
-from ._util import get_pattern, read_path_queries, write_to_file
-from .components._util import _is_module_available, _get_module_or_attr
+from .components._util import _get_module_or_attr
 from .components._config import ENGLISH_LANGUAGE_CODE
-from .models.helpers import register_augmentor, AUGMENTATION_MAP
-from .markup import load_query, dump_query
+from .augmentor_base import register_augmentor, Augmentor, UnsupportedLanguageError
+from .markup import dump_query
 from .core import Entity, Span, QueryEntity, ProcessedQuery, _get_overlap
 from .path import (
     EMBEDDINGS_FOLDER_PATH,
@@ -36,6 +34,7 @@ from .path import (
     PARAPHRASER_MODEL_PATH,
     HUGGINGFACE_PARAPHRASER_MODEL_PATH,
 )
+from .resource_loader import ResourceLoader
 from .models.containers import TqdmUpTo
 
 logger = logging.getLogger(__name__)
@@ -50,209 +49,17 @@ PARAPHRASER_RETAIN_ENTITIES_URL = (
 )
 
 
-class UnsupportedLanguageError(Exception):
-    pass
-
-
-class AugmentorFactory:
-    """Creates an Augmentor object.
-
-    Attributes:
-        config (dict): A model configuration.
-        language (str): Language for data augmentation.
-        resource_loader (object): Resource Loader object for the application.
-    """
-
-    def __init__(self, config, language, resource_loader):
-        self.config = config
-        self.language = language
-        self.resource_loader = resource_loader
-
-    def create_augmentor(self):
-        """Creates an augmentor instance using the provided configuration
-
-        Returns:
-            Augmentor: An Augmentor class
-
-        Raises:
-            ValueError: When model configuration is invalid or required key is missing
-        """
-        if "augmentor_class" not in self.config:
-            raise KeyError("Missing required argument in AUGMENTATION_CONFIG: 'augmentor_class'")
-
-        # Validate configuration input
-        batch_size = self.config.get("batch_size", 8)
-        paths = self.config.get(
-            "paths",
-            [
-                {
-                    "domains": ".*",
-                    "intents": ".*",
-                    "files": ".*",
-                }
-            ],
-        )
-        path_suffix = self.config.get("path_suffix", "-augment.txt")
-        retain_entities = self.config.get("retain_entities", False)
-        register_all_augmentors()
-        try:
-            return AUGMENTATION_MAP[self.config["augmentor_class"]](
-                batch_size=batch_size,
-                language=self.language,
-                retain_entities=retain_entities,
-                paths=paths,
-                path_suffix=path_suffix,
-                resource_loader=self.resource_loader,
-            )
-        except KeyError as e:
-            msg = "Invalid model configuration: Unknown model type {!r}"
-            raise ValueError(msg.format(self.config["augmentor_class"])) from e
-
-
-class Augmentor(ABC):
-    """
-    Abstract Augmentor class.
-    """
-
-    def __init__(self, language, paths, path_suffix, resource_loader):
-        """Initializes an augmentor.
-
-        Args:
-            language (str): The language code for paraphrasing
-            paths (list): Path rules for fetching relevant files to Paraphrase.
-            path_suffix (str): Suffix to be added to new augmented files.
-            resource_loader (object): Resource Loader object for the application.
-        """
-        self.language_code = language
-        self.files_to_augment = paths
-        self.path_suffix = path_suffix
-        self._resource_loader = resource_loader
-        self._check_dependencies()
-        self._check_language_support()
-
-    def _check_dependencies(self):
-        """Checks module dependencies."""
-        if not _is_module_available("torch"):
-            raise ModuleNotFoundError(
-                "Library not found: 'torch'. Run 'pip install mindmeld[augment]' to install."
-            )
-
-        if not _is_module_available("transformers"):
-            raise ModuleNotFoundError(
-                "Library not found: 'transformers'. Run 'pip install mindmeld[augment]' to install."
-            )
-
-    def _check_language_support(self):
-        """Checks if language is currently supported for augmentation."""
-        if self.language_code not in SUPPORTED_LANGUAGE_CODES:
-            raise UnsupportedLanguageError(
-                f"'{self.language_code}' is not supported yet. "
-                "English (en), French (fr), and Italian (it), Portuguese (pt), Romanian (ro) "
-                " and Spanish (es) are currently supported."
-            )
-
-    def augment(self, **kwargs):
-        """Augments queries given initial queries in application."""
-        filtered_paths = self._get_files(path_rules=self.files_to_augment)
-
-        for path in tqdm(filtered_paths):
-            queries = self._get_processed_queries_to_paraphrase(path)
-            # To-Do: Use generator to write files incrementally.
-            augmented_queries = self.augment_queries(queries, **kwargs)
-            write_to_file(path, augmented_queries, suffix=self.path_suffix)
-
-    @abstractmethod
-    def augment_queries(self, queries):
-        """Generates augmented data given application queries.
-
-        Args:
-            queries (list): List of queries.
-
-        Return:
-            augmented_queries (list): List of augmented queries.
-        """
-        raise NotImplementedError("Subclasses must implement this method")
-
-    @abstractmethod
-    def _prepare_inputs(self, queries):
-        """Prepare data to be fed to the models as input
-
-        Args:
-            queries (list(str)): List of queries to be paraphrased
-
-        Returns:
-            formatted queries (list(str))
-
-        """
-        raise NotImplementedError("Subclasses must implement this method")
-
-    def _validate_generated_query(self, query):
-        """Validates whether augmented query has atleast one alphanumeric character
-
-        Args:
-            query (str): Generated query to be validated.
-        """
-        pattern = re.compile(r"^.*[a-zA-Z0-9].*$")
-        return pattern.search(query) and True
-
-    def _get_processed_queries_to_paraphrase(self, path):
-        """Returns a list of processed queries for a given file path
-
-        Args:
-            path (str): Path to text file with queries
-
-        Return:
-            Processed queries (list(ProcessedQuery))
-        """
-        queries = read_path_queries(path)
-        processed_queries = []
-        for query in queries:
-            processed_query = load_query(query, query_factory=self._resource_loader.query_factory)
-            processed_queries.append(processed_query)
-        return processed_queries
-
-    def _get_files(self, path_rules=None):
-        """Fetches relevant files given the path rules specified in the config.
-
-        Args:
-            path_rules (list): Path rules for fetching relevant files.
-
-        Return:
-            filtered_paths (list): List of file paths to be augmeted.
-        """
-        all_file_paths = self._resource_loader.get_all_file_paths()
-
-        if not path_rules:
-            logger.warning(
-                """'paths' field is not configured or misconfigured in the `config.py`.
-                 Can't find files to augment."""
-            )
-            return []
-
-        filtered_paths = []
-
-        for rule in path_rules:
-            pattern = get_pattern(rule)
-            compiled_pattern = re.compile(pattern)
-            filtered_paths.extend(
-                self._resource_loader.filter_file_paths(
-                    compiled_pattern=compiled_pattern, file_paths=all_file_paths
-                )
-            )
-        return filtered_paths
-
-
 class EnglishParaphraser(Augmentor):
     """Paraphraser class for generating English paraphrases."""
 
     def __init__(
         self,
-        batch_size,
-        language,
-        retain_entities,
-        paths,
-        path_suffix,
-        resource_loader,
+        batch_size: int,
+        language: str,
+        retain_entities: bool,
+        paths: Iterable[str],
+        path_suffix: str,
+        resource_loader: ResourceLoader,
     ):
         """Initializes an English paraphraser.
 
@@ -337,7 +144,7 @@ class EnglishParaphraser(Augmentor):
         except zipfile.BadZipfile:
             logger.error("Unable to extract zip file. Try downloading the model again.")
 
-    def _prepare_inputs(self, processed_queries):
+    def _prepare_inputs(self, processed_queries: Iterable[ProcessedQuery]):
         """Processes input as expected by the two different English models
         Example:
             The default model requires just <unannotated text>
@@ -364,7 +171,9 @@ class EnglishParaphraser(Augmentor):
                 model_inputs.append(processed_query_text)
         return model_inputs
 
-    def _replace_with_random_gaz_entity(self, paraphrase_text, entity_matches):
+    def _replace_with_random_gaz_entity(
+        self, paraphrase_text: str, entity_matches: Iterable[Tuple[Entity, Span]]
+    ):
         """Replaces values of annotated entities with randomly sampled ones from gazetteers
 
         Args:
@@ -426,7 +235,9 @@ class EnglishParaphraser(Augmentor):
         ]
         return ProcessedQuery(query=processed_query, entities=tuple(final_entities))
 
-    def _annotate_entities(self, paraphrases, processed_queries):
+    def _annotate_entities(
+        self, paraphrases: Iterable[str], processed_queries: Iterable[ProcessedQuery]
+    ):
         """Annotates entities in the generated paraphrases with the entities in the original
         query
 
@@ -478,7 +289,7 @@ class EnglishParaphraser(Augmentor):
         return valid_paraphrases
 
     @staticmethod
-    def _normalize_paraphrases(queries):
+    def _normalize_paraphrases(queries: Iterable[str]) -> Iterable[str]:
         # This function removes punctuations since these generative models
         # have a tendency to repeat them.
         # Since most classifiers use normalized text, this should not be an issue.
@@ -489,7 +300,7 @@ class EnglishParaphraser(Augmentor):
         queries = [" ".join(s.split()) for s in without_puncts if s]
         return queries
 
-    def _generate_paraphrases(self, processed_queries):
+    def _generate_paraphrases(self, processed_queries: Iterable[str]) -> Iterable[str]:
         """Generates paraphrase responses for given query.
 
         Args:
@@ -520,7 +331,7 @@ class EnglishParaphraser(Augmentor):
             all_generated_queries.extend(decoded_queries)
         return all_generated_queries
 
-    def augment_queries(self, queries, **kwargs):
+    def augment_queries(self, queries: Iterable[str], **kwargs):
         augmented_queries = list(
             set(
                 p.lower()
@@ -538,12 +349,12 @@ class MultiLingualParaphraser(Augmentor):
 
     def __init__(
         self,
-        batch_size,
-        language,
-        retain_entities,
-        paths,
-        path_suffix,
-        resource_loader,
+        batch_size: int,
+        language: str,
+        retain_entities: bool,
+        paths: Iterable[str],
+        path_suffix: str,
+        resource_loader: ResourceLoader,
     ):
         """Initializes a multi-lingual paraphraser.
 
@@ -665,6 +476,5 @@ class MultiLingualParaphraser(Augmentor):
         return augmented_queries
 
 
-def register_all_augmentors():
-    register_augmentor("EnglishParaphraser", EnglishParaphraser)
-    register_augmentor("MultiLingualParaphraser", MultiLingualParaphraser)
+register_augmentor("EnglishParaphraser", EnglishParaphraser)
+register_augmentor("MultiLingualParaphraser", MultiLingualParaphraser)

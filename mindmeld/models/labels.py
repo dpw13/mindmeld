@@ -15,10 +15,10 @@
 subpackage."""
 
 import logging
-from typing import Iterable
+from typing import Dict, Iterable, Type
 
 from ..core import Query, QueryEntity
-from .helpers import register_label
+from .model_config import ModelConfig
 from .taggers.taggers import (
     get_entities_from_tags,
     get_tags_from_entities,
@@ -120,6 +120,43 @@ class EntityLabelEncoder(LabelEncoder):
             get_entities_from_tags(queries, tags, SystemEntityRecognizer.get_instance())
             for queries, tags in zip(examples, tags_by_example)
         ]
+
+
+LABEL_MAP: Dict[str, Type[LabelEncoder]] = {}
+
+# Label types
+CLASS_LABEL_TYPE = "class"
+ENTITIES_LABEL_TYPE = "entities"
+
+
+def get_label_encoder(config: "ModelConfig") -> "LabelEncoder":
+    """Gets a label encoder given the label type from the config
+
+    Args:
+        config (ModelConfig): A model configuration
+
+    Returns:
+        LabelEncoder: The appropriate LabelEncoder object for the given config
+    """
+    return LABEL_MAP[config.label_type](config)
+
+
+def register_label(label_type: str, label_encoder: Type[LabelEncoder]) -> None:
+    """Register a label encoder for use with
+    `get_label_encoder()`
+
+    Args:
+        label_type (str): The label type of the label encoder
+        label_encoder (class): The label encoder class to register
+
+    Raises:
+        ValueError: If the label type is already registered
+    """
+    if label_type in LABEL_MAP:
+        msg = "Label encoder for label type {!r} is already registered.".format(label_type)
+        raise ValueError(msg)
+
+    LABEL_MAP[label_type] = label_encoder
 
 
 register_label("class", LabelEncoder)

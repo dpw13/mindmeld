@@ -55,7 +55,7 @@ from .exceptions import (
     KnowledgeBaseError,
     MindMeldError,
 )
-from .models.helpers import create_annotator
+from .annotator_base import create_annotator
 from .path import (
     MODEL_CACHE_PATH,
     QUERY_CACHE_DB_PATH,

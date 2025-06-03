@@ -21,7 +21,7 @@ import re
 from tempfile import mkstemp
 import numpy as np
 from collections.abc import Callable
-from typing import Any, Dict, Iterable, Type, Tuple, Generator
+from typing import Any, Dict, Iterable, Tuple, Generator
 
 import nltk
 from sklearn.metrics import make_scorer
@@ -35,18 +35,10 @@ from ..text_preparation.text_preparation_pipeline import (
 logger = logging.getLogger(__name__)
 
 FEATURE_MAP: Dict[str, Dict[str, Callable]] = {}
-LABEL_MAP: Dict[str, Type[LabelEncoder]] = {}
-EMBEDDER_MAP: Dict[str, Type[Embedder]] = {}
-ANNOTATOR_MAP: Dict[str, Type[Annotator]] = {}
-AUGMENTATION_MAP: Dict[str, Type[Augmentor]] = {}
 
 # Example types
 QUERY_EXAMPLE_TYPE = "query"
 ENTITY_EXAMPLE_TYPE = "entity"
-
-# Label types
-CLASS_LABEL_TYPE = "class"
-ENTITIES_LABEL_TYPE = "entities"
 
 # resource/requirements names
 GAZETTEER_RSC = "gazetteers"
@@ -74,27 +66,6 @@ DEFAULT_SYS_ENTITIES = [
 ]
 
 
-def create_annotator(config: Dict) -> Annotator:
-    """Creates an annotator instance using the provided configuration
-
-    Args:
-        config (dict): A model configuration
-
-    Returns:
-        Annotator: An Annotator class
-
-    Raises:
-        ValueError: When model configuration is invalid or required key is missing
-    """
-    if "annotator_class" not in config:
-        raise KeyError("Missing required argument in AUTO_ANNOTATOR_CONFIG: 'annotator_class'")
-    if config["annotator_class"] in ANNOTATOR_MAP:
-        return ANNOTATOR_MAP[config.pop("annotator_class")](**config)
-    else:
-        msg = "Invalid model configuration: Unknown model type {!r}"
-        raise KeyError(msg.format(config["annotator_class"]))
-
-
 def get_feature_extractor(example_type: str, name: str) -> Callable:
     """Gets a feature extractor given the example type and name
 
@@ -106,53 +77,6 @@ def get_feature_extractor(example_type: str, name: str) -> Callable:
         function: A feature extractor wrapper
     """
     return FEATURE_MAP[example_type][name]
-
-
-def get_label_encoder(config: "ModelConfig") -> "LabelEncoder":
-    """Gets a label encoder given the label type from the config
-
-    Args:
-        config (ModelConfig): A model configuration
-
-    Returns:
-        LabelEncoder: The appropriate LabelEncoder object for the given config
-    """
-    return LABEL_MAP[config.label_type](config)
-
-
-def create_embedder_model(app_path: str, config: Dict[str, Any]) -> "Embedder":
-    """Creates and loads an embedder model
-
-    Args:
-        config (dict): Model settings passed in as a dictionary with
-            'embedder_type' being a required key
-
-    Returns:
-        Embedder: An instance of appropriate embedder class
-
-    Raises:
-        ValueError: When model configuration is invalid or required key is missing
-    """
-
-    if "model_settings" in config and config["model_settings"]:
-        # when config = {"model_settings": {"embedder_type": ..., "..": ...}}
-        embedder_config = config["model_settings"]
-    else:
-        # when config = {"embedder_type": ..., "..": ...}}
-        embedder_config = config
-
-    embedder_type = embedder_config.get("embedder_type")
-    if not embedder_type:
-        raise KeyError(
-            "Missing required argument in config supplied to create embedder model: 'embedder_type'"
-        )
-
-    try:
-        # cache_path for embedder, if required, needs to be included as a key in the embedder_config
-        return EMBEDDER_MAP[embedder_type](app_path=app_path, **embedder_config)
-    except KeyError as e:
-        msg = "Invalid model configuration: Unknown embedder type {!r}"
-        raise ValueError(msg.format(embedder_type)) from e
 
 
 def register_query_feature(feature_name: str) -> Callable:
@@ -179,26 +103,6 @@ def register_entity_feature(feature_name):
     return register_feature(ENTITY_EXAMPLE_TYPE, feature_name=feature_name)
 
 
-def register_annotator(annotator_class_name: str, annotator_class: Type[Annotator]) -> None:
-    """Registers an Annotator class for use with `create_annotator()`
-
-    Args:
-        annotator_class_name (str): The annotator class name as specified in the config
-        model_class (class): The annotator class to register
-    """
-    ANNOTATOR_MAP[annotator_class_name] = annotator_class
-
-
-def register_augmentor(augmentor_name: str, augmentor_class: Type[Augmentor]):
-    """Registers an Annotator class for use with `create_annotator()`
-
-    Args:
-        annotator_class_name (str): The annotator class name as specified in the config
-        model_class (class): The annotator class to register
-    """
-    AUGMENTATION_MAP[augmentor_name] = augmentor_class
-
-
 def register_feature(feature_type: str, feature_name: str) -> Callable:
     """
     Decorator for adding feature extractor mappings to FEATURE_MAP
@@ -223,32 +127,6 @@ def register_feature(feature_type: str, feature_name: str) -> Callable:
         return func
 
     return add_feature
-
-
-def register_label(label_type: str, label_encoder: Type[LabelEncoder]) -> None:
-    """Register a label encoder for use with
-    `get_label_encoder()`
-
-    Args:
-        label_type (str): The label type of the label encoder
-        label_encoder (class): The label encoder class to register
-
-    Raises:
-        ValueError: If the label type is already registered
-    """
-    if label_type in LABEL_MAP:
-        msg = "Label encoder for label type {!r} is already registered.".format(label_type)
-        raise ValueError(msg)
-
-    LABEL_MAP[label_type] = label_encoder
-
-
-def register_embedder(embedder_type: str, embedder: Type[Embedder]) -> None:
-    if embedder_type in EMBEDDER_MAP:
-        msg = "Embedder of type {!r} is already registered.".format(embedder_type)
-        raise ValueError(msg)
-
-    EMBEDDER_MAP[embedder_type] = embedder
 
 
 def mask_numerics(token: str) -> str:
