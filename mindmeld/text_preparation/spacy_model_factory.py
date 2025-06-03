@@ -77,16 +77,18 @@ class SpacyModelFactory:
     @staticmethod
     def _add_special_cases(nlp):
         """Add special cases to the model."""
-        # The default language model only infers currency symbols and not the actual *names*
-        # of currency. The only values included here are words without multiple meanings
-        # as I'm not sure whether the tokenizer special case will end up obscuring other
-        # possible definitions (i.e. "pounds" isn't included)
-        # Also note that internally all currency symbols are normalized to "$" so we are
-        # actually matching the existing SpaCy behavior.
-        for currency in ["euro", "dollar"]:
-            nlp.tokenizer.add_special_case(currency, [{ORTH: currency, NORM: "$"}])
-            currency += "s"
-            nlp.tokenizer.add_special_case(currency, [{ORTH: currency, NORM: "$"}])
+
+        if nlp.lang == "en":
+            # The default language model only infers currency symbols and not the actual *names*
+            # of currency. The only values included here are words without multiple meanings
+            # as I'm not sure whether the tokenizer special case will end up obscuring other
+            # possible definitions (i.e. "pounds" isn't included)
+            # Also note that internally all currency symbols are normalized to "$" so we are
+            # actually matching the existing SpaCy behavior.
+            for currency in ["euro", "dollar"]:
+                nlp.tokenizer.add_special_case(currency, [{ORTH: currency, NORM: "$"}])
+                currency += "s"
+                nlp.tokenizer.add_special_case(currency, [{ORTH: currency, NORM: "$"}])
 
     @staticmethod
     def _load_model(spacy_model_name: str, disable: Iterable[str] = ()) -> spacy.Language:

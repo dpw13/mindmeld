@@ -63,7 +63,7 @@ def test_filter_out_space_text_tokens():
 
 def test_find_mindmeld_annotation_re_matches():
     sentence = "Hello {Lucien|sys_person|employee}. Do you have {1|sys_number} cat?"
-    matches = TextPreparationPipeline.find_mindmeld_annotation_re_matches(sentence)
+    matches = list(TextPreparationPipeline.find_mindmeld_annotation_re_matches(sentence))
     assert len(matches) == 2
     first_match, second_match = matches
     assert first_match.group(1) == "Lucien"

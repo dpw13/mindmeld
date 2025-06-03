@@ -8,6 +8,7 @@ test_core
 Tests for `core` module.
 """
 # pylint: disable=locally-disabled,redefined-outer-name
+import logging
 import pytest
 
 from mindmeld.core import (
@@ -28,8 +29,10 @@ def query(query_factory):
     return query_factory.create_query("Test: One. 2. 3.")
 
 
-def test_query(query_factory):
+def test_query(query_factory, caplog):
     """Tests creation of a query"""
+    caplog.set_level(logging.DEBUG)
+
     text = "Test: 1. 2. 3."
     query = query_factory.create_query(text)
 

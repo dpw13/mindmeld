@@ -111,16 +111,20 @@ class QueryFactory:
             char_maps[(TEXT_FORM_PROCESSED, TEXT_FORM_RAW)] = backward_map
         else:
             preprocessed_text = raw_text
+        logger.debug(f"Preprocessed text: '{preprocessed_text}'")
 
         # Step 2: Tokenization and Step 3: Normalization
         normalized_tokens = self.text_preparation_pipeline.tokenize_and_normalize(preprocessed_text)
 
         normalized_text = " ".join([t["entity"] for t in normalized_tokens])
+        logger.debug(f"Normalized text: '{normalized_text}'")
 
         # Step 4: Stemming
         stemmed_tokens = [
             self.text_preparation_pipeline.stem_word(t["entity"]) for t in normalized_tokens
         ]
+
+        logger.debug(f"Stems: '{stemmed_tokens}'")
 
         # Create Normalized Maps
         (

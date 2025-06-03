@@ -252,11 +252,14 @@ class TextPreparationPipeline:  # pylint: disable=R0904
                     }
         """
         raw_tokens = self.tokenizer.tokenize(text)
+        logger.debug(f"Raw tokens: {raw_tokens}")
+
         normalized_tokens = []
         for i, raw_token in enumerate(raw_tokens):
             if not raw_token["text"]:
                 continue
             normalized_text = self._normalize_text(raw_token["text"])
+            logger.debug(f"Raw token {raw_token['text']} normalized to {normalized_text}")
             # We sub-tokenize the post-norm text and split the entity if possible
             # Ex: normalize("o'clock") -> "o clock" -> ["o", "clock"]
             # Skip sub-tokenization call if characters are not added/removed
@@ -264,6 +267,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
                 normalized_texts = [normalized_text]
             else:
                 normalized_texts = [t["text"] for t in self.tokenize(normalized_text)]
+                logger.debug(f"Retokenized: {normalized_texts}")
 
             if len(normalized_texts) > 0:
                 for token_text in normalized_texts:
@@ -341,7 +345,8 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             matches (List[sre.SRE_Match object]): Regex match objects.
         """
-        return list(MINDMELD_ANNOTATION_PATTERN.finditer(text))
+        logger.debug(f"Checking {text} against {MINDMELD_ANNOTATION_PATTERN}")
+        return MINDMELD_ANNOTATION_PATTERN.finditer(text)
 
     @staticmethod
     def calc_unannotated_spans(text):
@@ -357,6 +362,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
                 class type and markup symbols ("{", "|", "}"). The first element of the
                 tuple is the start index and the second is the ending index + 1.
         """
+        logger.debug(f"Calculating unannotated spans: {text}")
         matches = TextPreparationPipeline.find_mindmeld_annotation_re_matches(text)
         unannotated_spans = []
         prev_entity_end = 0
@@ -426,6 +432,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             tokens (List[dict]): List of tokens represented as dictionaries.
         """
+        logger.debug(f"Tokenizing '{text}' with SpaCy")
         unannotated_spans = TextPreparationPipeline.calc_unannotated_spans(text)
         unannotated_text = "".join([text[i[0] : i[1]] for i in unannotated_spans])
         unannotated_to_annotated_idx_mapping = (
@@ -451,6 +458,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             modified_text (str): Text modified around annotations.
         """
+        logger.debug(f"Modify around annotations: {text}")
         matches = TextPreparationPipeline.find_mindmeld_annotation_re_matches(text)
 
         modified_text = []
@@ -496,12 +504,14 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             tokens (List[dict]): List of tokens represented as dictionaries.
         """
+        logger.debug(f"Tokenizing around mindmeld: {text}")
         matches = TextPreparationPipeline.find_mindmeld_annotation_re_matches(text)
 
         tokens = []
         prev_entity_end = 0
 
         for match in matches:
+            logger.debug(f"Match: {match}")
             entity_start, entity_end = match.span()
             entity_text = match.group(1)
 
@@ -526,13 +536,15 @@ class TextPreparationPipeline:  # pylint: disable=R0904
 
         if prev_entity_end < len(text):
             # Add tokens from the text after the last MindMeld entity
-            tokens_after_last_entity = self.tokenizer.tokenize(text[prev_entity_end])
+            tokens_after_last_entity = self.tokenizer.tokenize(text[prev_entity_end:])
             TextPreparationPipeline.offset_token_start_values(
                 tokens=tokens_after_last_entity, offset=prev_entity_end
             )
             tokens.extend(tokens_after_last_entity)
 
+        logger.debug(f"Tokens before filter: {tokens}")
         tokens = TextPreparationPipeline.filter_out_space_text_tokens(tokens)
+        logger.debug(f"Tokens after filter: {tokens}")
         return tokens
 
     @staticmethod
