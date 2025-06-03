@@ -1,0 +1,120 @@
+[build-system]
+requires = ["setuptools >= 77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mindmeld"
+version = "4.7.0rc2"
+authors = [
+    { name = "Cisco Systems, Inc.", email = "contact@mindmeld.com" }
+]
+description = "A Conversational AI platform."
+keywords = [
+    "mindmeld", "nlp", "ai", "conversational"
+]
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "aiohttp>=3.6.2",
+    "attrs>=18.2",
+    "Click~=7.1",
+    "click-log==0.1.8",
+    "distro~=1.9",
+    "elasticsearch~=7.14",
+    "Flask>=1.1.3,<2",
+    "Flask-Cors~=3.0",
+    "future~=0.18",
+    "pycountry",
+    "nltk~=3.9",
+    "numpy~=2.2",
+    "pip>=9.0.1",
+    "py~=1.11",
+    "python-dateutil~=2.9",
+    "pytz",
+    "scipy>=0.13.3,<2.0",
+    "scikit-learn~=1.6",
+    "requests>=2.20.1,<3.0",
+    "tqdm~=4.67",
+    "immutables~=0.21",
+    "pyyaml>=5.1.1",
+    "spacy~=3.8",
+    "mypy>=0.782",
+    "marshmallow~=3.7.1",
+    "markupsafe==2.0.1",
+    "torch~=2.7",
+    "pytorch-crf~=0.7.2",
+    "protobuf~=6.0",
+]
+
+[project.entry-points."mindmeld"]
+mindmeld-cli = "mindmeld.cli:cli"
+
+[project.optional-dependencies]
+bot = [
+    "ciscosparkapi",
+    "twilio",
+]
+tensorflow = [
+    "tensorflow>=1.13.1,<2.0; python_version >= '3.7'",
+]
+bert = [
+    "torch~=1.10.0; python_version>='3.6'",
+    "transformers~=4.15.0; python_version>='3.6'",
+    "sentence-transformers~=0.3; python_version>='3.6'",
+    "elasticsearch~=7.14",
+]
+examples = [
+    "connexion>=2.7.0; python_version>='3.6'"
+]
+augment = [
+    "torch~=1.10.0; python_version>='3.6'",
+    "transformers~=4.15.0; python_version>='3.6'",
+    "sentencepiece==0.1.91",
+]
+language_annotator = [
+    "google-cloud-translate>=3.0.1"
+]
+elasticsearch = [
+    "elasticsearch~=7.14"
+]
+active_learning = [
+    "matplotlib~=3.3.1"
+]
+dvc = [
+    "pygit2>=1.5.0,<1.7; python_version < '3.7'",
+    "dvc>=1.8.1",
+]
+transformers = [
+    "transformers~=4.15.0; python_version>='3.6'"
+]
+
+[project.urls]
+Github = "https://github.com/cisco/mindmeld"
+
+[tools.bdist_wheel]
+universal = 1
+
+[tool.black]
+line-length = 100
+
+[tool.flake8]
+max-line-length = 100
+ignore = "E203,E231,W503"
+
+[tool.pytest]
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
+
+[aliases]
+test = "pytest"
