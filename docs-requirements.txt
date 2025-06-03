@@ -4,7 +4,6 @@ nbsphinx==0.4
 sphinx-autobuild==0.6.0
 sphinx_rtd_theme==0.4.3
 pandoc==1.0.0b2
-mock==2.0.0
-flake8<3.7
+flake8~=7.2
 pylint>=2.3.1
 pyyaml>=5.1.1

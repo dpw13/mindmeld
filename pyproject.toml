@@ -2,6 +2,11 @@
 requires = ["setuptools >= 77.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = [
+    "mindmeld"
+]
+
 [project]
 name = "mindmeld"
 version = "4.7.0rc2"
@@ -22,8 +27,8 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
-    "License :: OSI Approved :: Apache Software License",
 ]
+license = "Apache-2.0"
 dependencies = [
     "aiohttp>=3.6.2",
     "attrs>=18.2",
