@@ -20,7 +20,7 @@ import copy
 from .components import (
     DialogueManager,
     NaturalLanguageProcessor,
-    QuestionAnswerer,
+    QuestionAnswererFactory,
 )
 from .components._config import get_max_history_len
 from .components.dialogue import DialogueResponder
@@ -84,32 +84,45 @@ class ApplicationManager:
         responder_class=None,
         text_preparation_pipeline=None,
         async_mode=False,
+        app=None,
     ):
+        logger.debug(f"Initializing app manager for {app_path}")
         self.async_mode = async_mode
 
         self._app_path = app_path
         # If NLP or QA were passed in, use the resource loader from there
         if nlp:
-            resource_loader = nlp.resource_loader
+            self.resource_loader = nlp.resource_loader
             if question_answerer:
-                question_answerer.resource_loader = resource_loader
+                question_answerer.resource_loader = self.resource_loader
         elif question_answerer:
-            resource_loader = question_answerer.resource_loader
+            self.resource_loader = question_answerer.resource_loader
         else:
-            resource_loader = ResourceLoader.create_resource_loader(
-                app_path, text_preparation_pipeline=text_preparation_pipeline
+            self.resource_loader = ResourceLoader.create_resource_loader(
+                app_path, text_preparation_pipeline=text_preparation_pipeline, app=app
             )
 
-        self._query_factory = resource_loader.query_factory
+        self._query_factory = self.resource_loader.query_factory
 
-        self.nlp = nlp or NaturalLanguageProcessor(app_path, resource_loader)
-        self.question_answerer = question_answerer or QuestionAnswerer(
-            app_path, resource_loader, es_host
+        self.nlp = nlp or NaturalLanguageProcessor(app_path, self.resource_loader)
+        self.question_answerer = (
+            question_answerer
+            or QuestionAnswererFactory.create_question_answerer(
+                app_path=app_path, resource_loader=self.resource_loader, es_host=es_host
+            )
         )
         self.request_class = request_class or Request
         self.responder_class = responder_class or DialogueResponder
         self.dialogue_manager = DialogueManager(self.responder_class, async_mode=self.async_mode)
         self.max_history_len = get_max_history_len(self._app_path) or self.MAX_HISTORY_LEN
+
+    @property
+    def text_preparation_pipeline(self):
+        """Return the text preparation pipeline from the query factory if it exists"""
+        if getattr(self, "_query_factory", None):
+            return self._query_factory.text_preparation_pipeline
+        else:
+            return None
 
     @property
     def ready(self):
@@ -145,7 +158,7 @@ class ApplicationManager:
             frame=frame,
             form=form,
             params=params,
-            **processed_query
+            **processed_query,
         )
 
         # We reset the current turn's responder's params

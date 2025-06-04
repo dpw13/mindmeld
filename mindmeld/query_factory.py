@@ -57,6 +57,7 @@ class QueryFactory:
         system_entity_recognizer: SystemEntityRecognizer = None,
         duckling=False,
     ):
+        logger.debug("Initializing QueryFactory")
         self.text_preparation_pipeline = text_preparation_pipeline
         self.locale = locale
         self.language = language
@@ -170,6 +171,7 @@ class QueryFactory:
         text_preparation_pipeline: TextPreparationPipeline = None,
         system_entity_recognizer: SystemEntityRecognizer = None,
         duckling=False,
+        app=None,
     ) -> "QueryFactory":
         """Creates a query factory for the application.
 
@@ -182,17 +184,25 @@ class QueryFactory:
             system_entity_recognizer (SystemEntityRecognizer): If not passed, we use either the one
                 from the application's configuration or NoOpSystemEntityRecognizer.
             duckling (bool, optional): if no system entity recognizer is provided,
-                 initialize a new Duckling recognizer instance.
+                initialize a new Duckling recognizer instance.
+            app (Application, optional): If this query factory is for an app or app manager
+                currently being instantiated or previously loaded, set the app here to avoid
+                unnecessary recursion.
 
         Returns:
             QueryFactory: A QueryFactory object that is used to create Query objects.
         """
+        logger.debug(f"Creating QueryFactory for {app_path}")
         language, locale = get_language_config(app_path)
 
         if text_preparation_pipeline is None:
-            text_preparation_pipeline = TextPreparationPipelineFactory.create_from_app_path(
-                app_path
-            )
+            if app is None:
+                text_preparation_pipeline = TextPreparationPipelineFactory.create_from_app_path(
+                    app_path
+                )
+            else:
+                text_preparation_pipeline = TextPreparationPipelineFactory.create_from_app(app)
+        logger.debug("Locating SystemEntityRecognizer for QueryFactory")
         if system_entity_recognizer:
             sys_entity_recognizer = system_entity_recognizer
         elif app_path:

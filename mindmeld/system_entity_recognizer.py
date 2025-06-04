@@ -230,6 +230,7 @@ class DucklingRecognizer(SystemEntityRecognizer):
         Args:
             url (str): Duckling URL
         """
+        logger.debug("Initializing duckling connection")
         if DucklingRecognizer._instance:
             raise SystemEntityError("DucklingRecognizer is a singleton")
 

@@ -209,6 +209,11 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         """
         normalized_text = text
         for normalizer in self.normalizers:
+            # This implementation results in the regex match being called as many times
+            # as there are normalizers. Technically this is required if any of the
+            # normalizers are capable of *producing* new mindmeld annotations. If that
+            # is not the case, the regex can be run once and the normalizers run in
+            # sequence over the initial matches.
             normalized_text = TextPreparationPipeline.modify_around_annotations(
                 text=normalized_text,
                 function=normalizer.normalize,
@@ -259,7 +264,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
             if not raw_token["text"]:
                 continue
             normalized_text = self._normalize_text(raw_token["text"])
-            logger.debug(f"Raw token {raw_token['text']} normalized to {normalized_text}")
+            logger.debug(f"Normalized '{raw_token['text']}' -> '{normalized_text}'")
             # We sub-tokenize the post-norm text and split the entity if possible
             # Ex: normalize("o'clock") -> "o clock" -> ["o", "clock"]
             # Skip sub-tokenization call if characters are not added/removed
@@ -345,7 +350,6 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             matches (List[sre.SRE_Match object]): Regex match objects.
         """
-        logger.debug(f"Checking {text} against {MINDMELD_ANNOTATION_PATTERN}")
         return MINDMELD_ANNOTATION_PATTERN.finditer(text)
 
     @staticmethod
@@ -458,12 +462,13 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             modified_text (str): Text modified around annotations.
         """
-        logger.debug(f"Modify around annotations: {text}")
         matches = TextPreparationPipeline.find_mindmeld_annotation_re_matches(text)
 
         modified_text = []
         prev_entity_end = 0
 
+        # TODO: refactor and split text based on regex, then apply all normalizations
+        # sequentially to relevant components
         for match in matches:
             entity_start, entity_end = match.span()
 
@@ -676,7 +681,7 @@ class TextPreparationPipelineFactory:
     """Creates a TextPreparationPipeline object."""
 
     @staticmethod
-    def create_from_app_path(app_path):
+    def create_from_app_path(app_path) -> TextPreparationPipeline:
         """Static method to create a TextPreparationPipeline instance from an app_path.
         If a custom text_preparation_pipeline is passed into the Application object in the
         app_path/__init__.py file then it will be used. Otherwise, a text_preparation_pipeline
@@ -688,19 +693,36 @@ class TextPreparationPipelineFactory:
         Returns:
             TextPreparationPipeline: A TextPreparationPipeline class.
         """
+        logger.debug(f"Creating TextPreparationPipeline for {app_path}")
         if app_path:
             # Check if a custom TextPreparationPipeline has been created in app.py
             try:
+                logger.debug(f"Checking app for custom text_preparation_pipeline")
                 app = get_app(app_path)
-                if getattr(app, "text_preparation_pipeline", None):
-                    logger.info(
-                        "Using custom text_preparation_pipeline from %s/__init__.py.",
-                        app_path,
-                    )
-                    return app.text_preparation_pipeline
+                logger.debug("App loaded")
+                return TextPreparationPipelineFactory.create_from_app(app)
             except MindMeldImportError:
                 pass
+
         return TextPreparationPipelineFactory.create_from_app_config(app_path)
+
+    @staticmethod
+    def create_from_app(app) -> TextPreparationPipeline | None:
+        """Static method to create a TextPreparationPipeline instance from an app instance.
+        If a custom text_preparation_pipeline is passed into the Application object in the
+        app_path/__init__.py file then it will be used.
+
+        Args:
+            app_path (str): The application path.
+
+        Returns:
+            TextPreparationPipeline: A TextPreparationPipeline class.
+        """
+        if getattr(app, "text_preparation_pipeline", None):
+            logger.debug(f"Using text_preparation_pipeline from {app.import_name}")
+            return app.text_preparation_pipeline
+
+        return TextPreparationPipelineFactory.create_from_app_config(app.app_path)
 
     @staticmethod
     def create_from_app_config(app_path):
@@ -713,6 +735,7 @@ class TextPreparationPipelineFactory:
         Returns:
             TextPreparationPipeline: A TextPreparationPipeline class.
         """
+        logger.debug(f"Creating TextPreparationPipeline from {app_path} config")
         language, _ = get_language_config(app_path)
         text_preparation_config = get_text_preparation_config(app_path)
 
@@ -768,6 +791,15 @@ class TextPreparationPipelineFactory:
         Returns:
             TextPreparationPipeline: A TextPreparationPipeline class.
         """
+        if not preprocessors:
+            preprocessors = ()
+        if not regex_norm_rules:
+            regex_norm_rules = []
+        if not normalizers:
+            normalizers = ()
+        logger.debug(
+            f"Creating {language} TextPreparationPipeline with {len(preprocessors)} preprocessors, {len(regex_norm_rules)} regex norm rules, and {len(normalizers)} normalizers"
+        )
         # Instantiate Preprocessors
         instantiated_preprocessors = (
             TextPreparationPipelineFactory._construct_pipeline_components(

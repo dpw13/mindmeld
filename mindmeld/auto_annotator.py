@@ -135,9 +135,9 @@ class SpacyAnnotator(Annotator):
         Returns:
             query_entities (list): List of QueryEntity objects.
         """
-        logger.debug(f"Parsing {sentence} for types {entity_types}")
+        logger.debug(f"Parsing '{sentence}' for types {entity_types}")
         doc = self.nlp(sentence)
-        logger.debug(f"NLP produced:")
+        logger.debug("SpaCy NLP produced ->")
         for ent in doc.ents:
             logger.debug(f"-> {ent.text} ({ent.label_})")
         spacy_entities = [
@@ -150,6 +150,13 @@ class SpacyAnnotator(Annotator):
             }
             for ent in doc.ents
         ]
+
+        # Check for the trivial case that the doc is empty. We check
+        # whether we found any resolved entities later on and we want to
+        # avoid additional processing if there are no entities to start with.
+        if not spacy_entities:
+            logger.warning(f"No tokens found in '{sentence}'!")
+            return []
 
         entity_resolution_func_map = {
             "time": self._resolve_time_date,
@@ -176,13 +183,25 @@ class SpacyAnnotator(Annotator):
                 elif entity["dim"] in ["money"]:
                     params["sentence"] = sentence
                 func = entity_resolution_func_map[entity["dim"]]
-                logger.info(f"Resolving entity {entity} using {func}({params})")
-                entity = func(**params)
+                logger.info(
+                    f"Resolving entity '{entity['body']}' ({entity['dim']}) using {func.__name__}({params})"
+                )
+                new_entity = func(**params)
             else:
-                entity["dim"] = SYSTEM_ENTITY_PREFIX + entity["dim"].replace("_", "-")
+                new_entity = dict(entity)
+                new_entity["dim"] = SYSTEM_ENTITY_PREFIX + entity["dim"].replace("_", "-")
 
-            if entity:
-                entities.append(entity)
+            if new_entity:
+                entities.append(new_entity)
+            else:
+                # We weren't able to resolve the candidate using the
+                # specified entity_types. This may happen because SpaCy classified
+                # the original entities incorrectly.
+                logger.warning(
+                    f"Entity '{entity['body']}' ({entity['dim']}) was not resolvable as {entity_types}"
+                )
+
+        logger.debug(f"Found {len(entities)} candidates")
 
         if entity_types:
             entities = [e for e in entities if e["dim"] in entity_types]
@@ -214,15 +233,21 @@ class SpacyAnnotator(Annotator):
         Returns:
             entity (dict): A resolved entity dict or None if the entity isn't resolved.
         """
+        time_entities = ["sys_duration", "sys_interval", "sys_time"]
+        if entity_types:
+            time_entities = [e for e in time_entities if e in entity_types]
+        if not time_entities:
+            logger.warning(f"We won't be able to resolve a date or time from {entity_types}")
+            return None
+
         candidates = self.duckling.get_candidates_for_text(
             entity["body"], language=self.language, locale=self.locale
         )
         if len(candidates) == 0:
             return None
-        logger.debug(f"Candidates for {entity['body']}: {candidates}")
-        time_entities = ["sys_duration", "sys_interval", "sys_time"]
-        if entity_types:
-            time_entities = [e for e in time_entities if e in entity_types]
+        logger.debug(f"Candidates for '{entity['body']}':")
+        for candidate in candidates:
+            logger.debug(f"+ {candidate}")
         if SpacyAnnotator._resolve_time_exact_match(entity, candidates, time_entities):
             return entity
         if SpacyAnnotator._resolve_largest_substring(
@@ -327,6 +352,8 @@ class SpacyAnnotator(Annotator):
         return None
 
     def _resolve_cardinal(self, entity: Dict[str, Any]) -> Dict[str, Any] | None:
+        # TODO: Why is the ordering here different? Why do we check for an
+        # exact match before querying duckling and not after?
         if self._resolve_exact_match(entity):
             return entity
         candidates = self.duckling.get_candidates_for_text(
@@ -621,6 +648,7 @@ class NoTranslationDucklingAnnotator(Annotator):
             language=self.language,
             locale=self.locale,
         )
+        logger.debug(f"initial duckling candidates: {duckling_candidates}")
         filtered_candidates = NoTranslationDucklingAnnotator._filter_out_bad_duckling_candidates(
             duckling_candidates
         )
@@ -629,6 +657,7 @@ class NoTranslationDucklingAnnotator(Annotator):
         )
         if entity_types:
             final_candidates = [e for e in final_candidates if e["entity_type"] in entity_types]
+        logger.debug(f"final candidates: {duckling_candidates}")
         query = self._resource_loader.query_factory.create_query(sentence)
         return [duckling_item_to_query_entity(query, candidate) for candidate in final_candidates]
 
@@ -854,7 +883,9 @@ class MultiLingualAnnotator(Annotator):
         if self.language == ENGLISH_LANGUAGE_CODE:
             return self.en_annotator.parse(sentence, entity_types=entity_types)
         non_en_spacy_entities = self.non_en_annotator.parse(sentence, entity_types=entity_types)
+        logging.debug(f"non-English SpaCy entities: {non_en_spacy_entities}")
         duckling_entities = self.duckling_annotator.parse(sentence, entity_types=entity_types)
+        logging.debug(f"non-English duckling entities: {duckling_entities}")
         merged_entities = Annotator._resolve_conflicts(non_en_spacy_entities, duckling_entities)
         return merged_entities
 

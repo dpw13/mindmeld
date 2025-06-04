@@ -236,15 +236,7 @@ class SpacyTokenizer(Tokenizer):
         self.spacy_model = SpacyModelFactory.get_spacy_language_model(
             language,
             spacy_model_size,
-            disable=[
-                "tagger",
-                "parser",
-                "ner",
-                "attribute_ruler",
-                "lemmatizer",
-                "tok2vec",
-                "morphologizer",
-            ],
+            blank=True,
         )
         assert len(self.spacy_model.pipeline) == 0
 

@@ -214,6 +214,7 @@ class BaseQuestionAnswerer(ABC):
                 between the indices of this app and those of other apps. If None, it's value is
                 determined from the app_path.
         """
+        logger.debug(f"Initializing {self.__class__.__name__}")
 
         if not app_path and not app_namespace:
             msg = (

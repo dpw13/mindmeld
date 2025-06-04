@@ -35,6 +35,7 @@ from .core import (
 )
 from .exceptions import MarkupError
 from .query_factory import QueryFactory
+from .path import get_app_if_loaded
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ class Annotator(ABC):
             unannotate_supported_entities_only (bool): Only allow removal of supported entities.
             unannotation_rules (list): List of Annotation rules.
         """
+        logger.debug(f"Creating {language} {self.__class__.__name__} for {app_path}")
         self.app_path = app_path
         self.language = language
         self.locale = locale
@@ -80,8 +82,15 @@ class Annotator(ABC):
         self.annotation_rules = annotation_rules or []
         self.unannotate_supported_entities_only = unannotate_supported_entities_only
         self.unannotation_rules = unannotation_rules or []
-        self._resource_loader = ResourceLoader.create_resource_loader(app_path)
+        self._resource_loader = None
+
+        maybe_app = get_app_if_loaded(app_path)
+        if maybe_app:
+            self._resource_loader = maybe_app.app_manager.resource_loader
+        if not self._resource_loader:
+            self._resource_loader = ResourceLoader.create_resource_loader(app_path)
         self.duckling = DucklingRecognizer.get_instance()
+        logger.debug(f"Done with {language} {self.__class__.__name__} for {app_path}")
 
     def _get_file_entities_map(self, action: AnnotatorAction):
         """Creates a dictionary that maps file paths to entities given

@@ -136,6 +136,7 @@ class Processor(ABC):
             resource_loader (ResourceLoader): An object which can load resources for the processor
             config (dict): A config object with processor settings (e.g. if to use n-best inference)
         """
+        logger.debug(f"Initializing {self.__class__.__name__} for {app_path}")
         self._app_path = app_path
         self.resource_loader = resource_loader or ResourceLoader.create_resource_loader(app_path)
         self.language, self.locale = get_language_config(app_path)
@@ -437,7 +438,6 @@ class NaturalLanguageProcessor(Processor):
         """
         super().__init__(app_path, resource_loader, config)
         self._app_path = app_path
-
         # initialize the system entity recognizer singleton
         SystemEntityRecognizer.set_system_entity_recognizer(app_path=app_path)
         self._system_entity_recognizer = SystemEntityRecognizer.get_instance()

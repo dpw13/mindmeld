@@ -18,7 +18,7 @@ import subprocess
 from typing import Any, Iterable
 
 import spacy
-from spacy.symbols import ORTH, NORM, IS_CURRENCY
+from spacy.symbols import ORTH, NORM
 
 from ..constants import (
     SPACY_WEB_TRAINED_LANGUAGES,
@@ -33,7 +33,9 @@ class SpacyModelFactory:
     """Spacy (Language) Model Factory Class"""
 
     @staticmethod
-    def get_spacy_language_model(language: str, spacy_model_size="lg", disable: Iterable[str] = ()):
+    def get_spacy_language_model(
+        language: str, spacy_model_size="lg", disable: Iterable[str] = (), blank=False
+    ):
         """Get a Spacy Language model.
 
         Args:
@@ -41,12 +43,16 @@ class SpacyModelFactory:
             spacy_model_name (str): Name of the Spacy NER model (Ex: "en_core_web_sm")
             disable (Iterable[str]): Tuple of pipeline elements to disable. ('ner', 'tagger',
                 'parser', etc.)
+            blank (bool): If set to True, will provide a model with an empty pipeline.
 
         Returns:
             nlp: Spacy language model. (Ex: "spacy.lang.es.Spanish")
         """
         SpacyModelFactory.validate_spacy_language(language)
         SpacyModelFactory.validate_spacy_model_size(spacy_model_size)
+        if blank:
+            return SpacyModelFactory._load_blank_model(language)
+
         spacy_model_name = SpacyModelFactory._get_spacy_model_name(language, spacy_model_size)
         return SpacyModelFactory._load_model(spacy_model_name, disable)
 
@@ -91,13 +97,29 @@ class SpacyModelFactory:
                 nlp.tokenizer.add_special_case(currency, [{ORTH: currency, NORM: "$"}])
 
     @staticmethod
+    def _load_blank_model(lang: str):
+        """Load Spacy model. Download if needed.
+
+        Args:
+            lang (str): IETF language tag
+
+        Returns:
+            nlp: Spacy language model. (Ex: "spacy.lang.es.Spanish")
+        """
+        logger.info("Loading Spacy language model %s.", lang)
+        nlp = spacy.blank(lang)
+
+        return nlp
+
+    @staticmethod
     def _load_model(spacy_model_name: str, disable: Iterable[str] = ()) -> spacy.Language:
-        """Load Spacy English model. Download if needed.
+        """Load Spacy model. Download if needed.
 
         Args:
             spacy_model_name (str): Name of the Spacy NER model (Ex: "en_core_web_sm")
             disable (Iterable[str]): Tuple of pipeline elements to disable. ('ner', 'tagger',
                 'parser', etc.)
+            blank (bool): If set to True, will provide a model with an empty pipeline.
 
         Returns:
             nlp: Spacy language model. (Ex: "spacy.lang.es.Spanish")
@@ -110,6 +132,15 @@ class SpacyModelFactory:
             SpacyModelFactory._download_spacy_model(spacy_model_name)
             language_module = SpacyModelFactory._import_spacy_model(spacy_model_name)
             nlp = language_module.load(disable=disable)
+
+        if nlp.get_pipe("lemmatizer").is_trainable:
+            # Switch to deterministic non-trainable rule-based lemmatizer
+            nlp.remove_pipe("lemmatizer")
+            nlp.add_pipe("lemmatizer", config={"mode": "rule"}).initialize()
+
+        logger.debug(
+            f"Loaded model {spacy_model_name} with pipeline {[p[0] for p in nlp.pipeline]}"
+        )
 
         SpacyModelFactory._add_special_cases(nlp)
         return nlp

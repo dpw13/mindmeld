@@ -62,6 +62,7 @@ class Application:  # pylint: disable=R0902
         text_preparation_pipeline=None,
         async_mode=False,
     ):
+        logger.info(f"Initializing {import_name} app")
         self.import_name = import_name
         filename = getattr(sys.modules[import_name], "__file__", None)
         if filename is None:
@@ -93,14 +94,19 @@ class Application:  # pylint: disable=R0902
         """
         if self.app_manager:
             return
+        logger.debug(f"Lazy init ApplicationManager for {self.import_name}")
         self.app_manager = ApplicationManager(
             self.app_path,
-            nlp,
+            nlp=nlp,
             responder_class=self.responder_class,
             request_class=self.request_class,
             text_preparation_pipeline=self.text_preparation_pipeline,
             async_mode=self.async_mode,
+            app=self,
         )
+        if self.text_preparation_pipeline is None:
+            # Update text_preparation_pipeline from the generated one for bookkeeping
+            self.text_preparation_pipeline = self.app_manager.text_preparation_pipeline
         self._server = MindMeldServer(self.app_manager)
 
         # Add any pending dialogue rules

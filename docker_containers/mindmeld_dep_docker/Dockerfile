@@ -8,10 +8,10 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # Pull base image.
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
-ENV ES_PKG_NAME elasticsearch-7.8.0-linux-x86_64
-ENV ES_FOLDER_NAME elasticsearch-7.8.0
+ENV ES_PKG_NAME elasticsearch-7.17.28-linux-x86_64
+ENV ES_FOLDER_NAME elasticsearch-7.17.28
 
 # System packages
 RUN apt-get update && \
@@ -21,18 +21,13 @@ RUN apt-get update && \
 RUN mkdir /root/.pip /root/.mindmeld /data
 
 # Install python pip
-RUN apt-get -y install python-pip python3-pip python-dev build-essential && \
-    apt-get -y install software-properties-common
-
 # Install Java
-RUN apt update
-RUN apt-get update
-RUN apt-get install -y wget
-RUN apt install openjdk-8-jdk -y
+RUN apt-get update && apt-get -y upgrade
+RUN apt-get -y install python-pip python3-pip python-dev build-essential && \
+    apt-get -y install software-properties-common &&
+    apt-get -y install wget openjdk-8-jdk
 
 # Install duckling dependency
-RUN apt-get -y update && \
-    DEBIAN_FRONTEND="noninteractive" apt-get -y upgrade tzdata
 
 # set JAVA_HOME
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
@@ -73,6 +68,7 @@ RUN export LC_ALL=C.UTF-8 && \
 # Expose ports.
 #   - 9200: HTTP
 #   - 9300: transport
+#   - 7151: duckling
 EXPOSE 9200
 EXPOSE 9300
 EXPOSE 7151

@@ -657,6 +657,29 @@ def get_user_config_path():
     return USER_CONFIG_PATH
 
 
+def get_app_if_loaded(app_path):
+    """Get the Application instance for given application path but only if
+    it has already been loaded and initialized.
+
+    Args:
+        app_path (str): The path to an application on disk
+
+    Returns:
+        mindmeld.app.Application: the MindMeld application or None
+
+    Raises:
+        MindMeldImportError: when the application can not be found
+    """
+    package_name = os.path.basename(app_path)
+    if package_name in sys.modules:
+        app = sys.modules[package_name].app
+        # Only return the app if the manager has been loaded
+        if getattr(app, "app_manager", None):
+            return app
+
+    return None
+
+
 def get_app(app_path):
     """Get the Application instance for given application path.
 
@@ -672,13 +695,18 @@ def get_app(app_path):
     app_path = os.path.abspath(app_path)
     package_name = os.path.basename(app_path)
 
+    logger.debug(f"Attempting to get instance of {app_path}.{package_name}")
+
     try:
         # check if package is already imported
         if package_name in sys.modules:
-            logger.warning("The application package %s is already imported.", package_name)
-            mod = __import__(package_name)
+            # Make this info instead of a warning. The stack is built such that there are many
+            # possible entry points, and the application can be loaded from multiple places.
+            logger.info(f"The application package {package_name} is already imported.")
+            mod = sys.modules[package_name]
             return mod.app
         # try to load as package first
+        logger.debug(f"Loading {package_name} from {app_path}/__init__.py")
         loader = SourceFileLoader(package_name, os.path.join(app_path, "__init__.py"))
         return loader.load_module(package_name).app  # pylint: disable=deprecated-method
     except AttributeError:
@@ -696,6 +724,7 @@ def get_app(app_path):
 
     try:
         # try to load 'app.py'
+        logger.debug(f"Loading {package_name} from {app_path}/app.py")
         loader = SourceFileLoader(package_name, get_app_module_path(app_path))
         return loader.load_module(package_name).app  # pylint: disable=deprecated-method
     except (FileNotFoundError, AttributeError) as e:

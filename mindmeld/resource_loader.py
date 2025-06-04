@@ -910,7 +910,9 @@ class ResourceLoader:
         return self._hasher.hash_list(items)
 
     @staticmethod
-    def create_resource_loader(app_path, query_factory=None, text_preparation_pipeline=None):
+    def create_resource_loader(
+        app_path, query_factory=None, text_preparation_pipeline=None, app=None
+    ):
         """Creates the resource loader for the app at app path.
 
         Args:
@@ -918,14 +920,30 @@ class ResourceLoader:
             query_factory (QueryFactory): The app's query factory
             text_preparation_pipeline (TextPreparationPipeline): The app's text preparation
                 pipeline.
+            app (Application, optional): If this resource loader is for an app or app manager
+                currently being instantiated or previously loaded, set the app here to avoid
+                unnecessary recursion.
 
         Returns:
             ResourceLoader: a resource loader
         """
-        query_factory = query_factory or QueryFactory.create_query_factory(
-            app_path, text_preparation_pipeline=text_preparation_pipeline
+
+        if app:
+            app_name = app.import_name
+        else:
+            app_name = app_path
+        logger.debug(
+            f"Creating ResourceLoader for {app_name} with pipeline {text_preparation_pipeline}"
         )
-        return ResourceLoader(app_path, query_factory)
+
+        query_factory = query_factory or QueryFactory.create_query_factory(
+            app_path, text_preparation_pipeline=text_preparation_pipeline, app=app
+        )
+        ret = ResourceLoader(app_path, query_factory)
+        logger.debug(
+            f"Done with ResourceLoader for {app_name} with pipeline {text_preparation_pipeline}"
+        )
+        return ret
 
     RSC_HASH_MAP = {
         GAZETTEER_RSC: get_gazetteers_hash,
