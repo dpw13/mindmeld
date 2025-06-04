@@ -52,7 +52,7 @@ jobs:
 
     - name: Running numerical parser
       run: |
-        mindmeld num-parse
+        python3 -m mindmeld.cli num-parse
 
     - name: Sleep for 30 seconds
       uses: jakejarvis/wait-action@master
