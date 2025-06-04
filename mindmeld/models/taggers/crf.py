@@ -274,14 +274,14 @@ class FeatureBinner:
     def __init__(self):
         self.features = {}
 
-    def fit(self, X_train):
+    def fit(self, train_x):
         """
         Create and fit FeatureMapper for numerical features.
 
         Args:
-            X_train (list of list of dict): training data
+            train_x (list of list of dict): training data
         """
-        for sentence in X_train:
+        for sentence in train_x:
             for word in sentence:
                 for feat_name, feat_value in word.items():
                     self._collect_feature(feat_name, feat_value)
@@ -289,15 +289,15 @@ class FeatureBinner:
         for mapper in self.features.values():
             mapper.fit()
 
-    def transform(self, X_train):
+    def transform(self, train_x):
         """
         Convert numerical values to categorical values.
 
         Args:
-            X_train (list of list of dict): training data
+            train_x (list of list of dict): training data
         """
-        new_X_train = []
-        for sentence in X_train:
+        new_train_x = []
+        for sentence in train_x:
             new_sentence = []
             for word in sentence:
                 new_word = {}
@@ -306,18 +306,18 @@ class FeatureBinner:
                     if new_feats:
                         new_word.update(new_feats)
                 new_sentence.append(new_word)
-            new_X_train.append(new_sentence)
-        return new_X_train
+            new_train_x.append(new_sentence)
+        return new_train_x
 
-    def fit_transform(self, X_train):
+    def fit_transform(self, train_x):
         """
         Run fit and transform at once.
 
         Args:
-            X_train (list of list of dict): training data
+            train_x (list of list of dict): training data
         """
-        self.fit(X_train)
-        return self.transform(X_train)
+        self.fit(train_x)
+        return self.transform(train_x)
 
     def _collect_feature(self, feat_name, feat_value):
         """

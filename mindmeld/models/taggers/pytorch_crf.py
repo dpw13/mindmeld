@@ -617,7 +617,7 @@ class CRFModel(nn.Module):
         # Just for testing
         # check_array(stratify_tuples, input_name="y", ensure_2d=False, dtype=tuple)
         # TODO: Rewrite our own train_test_split function to handle FileBackedList and avoid duplicating unique labels
-        train_X, dev_X, train_y, dev_y = train_test_split(
+        train_x, dev_x, train_y, dev_y = train_test_split(
             X,
             y,
             test_size=self.dev_split_ratio,
@@ -625,11 +625,11 @@ class CRFModel(nn.Module):
             random_state=self.random_state,
         )
 
-        train_dataloader = self.get_dataloader(train_X, train_y, is_train=True)
-        dev_dataloader = self.get_dataloader(dev_X, dev_y, is_train=False)
+        train_dataloader = self.get_dataloader(train_x, train_y, is_train=True)
+        dev_dataloader = self.get_dataloader(dev_x, dev_y, is_train=False)
 
         # desperate attempt to save some memory
-        del X, y, train_X, train_y, dev_X, dev_y, stratify_tuples
+        del X, y, train_x, train_y, dev_x, dev_y, stratify_tuples
         gc.collect()
 
         self.build_params(*self._encoder.get_feats_and_classes())
