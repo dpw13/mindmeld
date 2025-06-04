@@ -58,7 +58,6 @@ jobs:
 
     #- name: Running numerical parser
     #  run: |
-    #    docker run -ti -d -p 0.0.0.0:7151:7151 mindmeldworkbench/duckling:master
     #    python3 -m mindmeld.cli num-parse
 
     - name: Sleep for 30 seconds
@@ -71,13 +70,18 @@ jobs:
       continue-on-error: true
       run: |
         mkdir ~/test-reports
-        pytest --junitxml=~/test-reports/junit.xml --cov-report html --cov=mindmeld --ignore=examples/
+        pytest --junitxml=**/build/test-results/junit-${{ matrix.python-version }}-${{ matrix.mm-extras }}.xml --cov-report html --cov=mindmeld --ignore=examples/
       env:
         MM_EXTRAS: ${{ matrix.mm-extras }}
         MM_SUBPROCESS_COUNT: 0
+
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@v5
+      with:
+        report_paths: '**/build/test-results/junit-${{ matrix.python-version }}-${{ matrix.mm-extras }}.xml'
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: junitxml
-        path: ~/test-reports/junit.xml
+        path: '**/build/test-results/junit-${{ matrix.python-version }}-${{ matrix.mm-extras }}.xml'

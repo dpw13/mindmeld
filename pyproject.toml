@@ -36,8 +36,6 @@ dependencies = [
     "click-log==0.1.8",
     "distro~=1.9",
     "elasticsearch~=7.14",
-    "Flask>=1.1.3,<2",
-    "Flask-Cors~=3.0",
     "future~=0.18",
     "pycountry",
     "nltk~=3.9",
@@ -65,7 +63,12 @@ dependencies = [
 mindmeld-cli = "mindmeld.cli:cli"
 
 [project.optional-dependencies]
+server = [
+    "Flask>=1.1.3,<2",
+    "Flask-Cors~=3.0",
+]
 bot = [
+    "Flask>=1.1.3,<2",
     "ciscosparkapi",
     "twilio",
 ]
