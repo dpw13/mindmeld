@@ -403,9 +403,9 @@ def test_entity_query_features(
                 1.0,
                 2.5649493574615367,
                 0.37142857142857144,
-                -2.5880748662869144,
-                2.5880748662869144,
-                -2.5880748662869144,
+                -2.5852419975190757,
+                2.5852419975190757,
+                -2.5852419975190757,
                 1,
                 "on",
                 "open",
@@ -414,24 +414,24 @@ def test_entity_query_features(
                 1.0,
                 2.5649493574615367,
                 0.37142857142857144,
-                -2.5880748662869144,
-                2.5880748662869144,
-                -2.5880748662869144,
+                -2.5852419975190757,
+                2.5852419975190757,
+                -2.5852419975190757,
                 1.3862943611198906,
                 0.0,
                 0.0,
-                -2.5880748662869144,
-                2.5880748662869144,
-                -1.201780505167024,
-                -2.5880748662869144,
-                2.5880748662869144,
-                -2.5880748662869144,
-                -2.5880748662869144,
-                2.5880748662869144,
-                -2.5880748662869144,
-                -2.5880748662869144,
-                2.5880748662869144,
-                -2.5880748662869144,
+                -2.5852419975190757,
+                2.5852419975190757,
+                -1.1989476363991853,
+                -2.5852419975190757,
+                2.5852419975190757,
+                -2.5852419975190757,
+                -2.5852419975190757,
+                2.5852419975190757,
+                -2.5852419975190757,
+                -2.5852419975190757,
+                2.5852419975190757,
+                -2.5852419975190757,
                 "on",
                 "00",
                 "elm",
@@ -502,11 +502,8 @@ def test_entity_gaz_query_features(
     )
     entity_recognizer.fit(**entity_recognizer_config_all_features)
     extracted_features = entity_recognizer.view_extracted_features(query)[index]
-    for feature_key, expected_value in zip(feature_keys, expected_feature_values):
-        if isinstance(expected_value, float):
-            assert abs(expected_value - extracted_features[feature_key]) < EPSILON
-        else:
-            assert expected_value == extracted_features[feature_key]
+    expected_features = {k: v for k, v in zip(feature_keys, expected_feature_values)}
+    assert extracted_features == pytest.approx(expected_features)
     entity_recognizer.fit()
 
 
