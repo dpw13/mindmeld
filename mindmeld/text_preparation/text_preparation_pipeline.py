@@ -176,8 +176,8 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         Returns:
             has_custom_preprocessors (bool): Whether atleast one custom preprocessor exists.
         """
-        return self.preprocessors and not any(
-            [isinstance(elem, NoOpPreprocessor) for elem in self.preprocessors]
+        return self.preprocessors and any(
+            not isinstance(elem, NoOpPreprocessor) for elem in self.preprocessors
         )
 
     def normalize(self, text, keep_special_chars=None):
@@ -574,7 +574,7 @@ class TextPreparationPipeline:  # pylint: disable=R0904
         filtered_tokens = []
         for token in tokens:
             category_by_char = [unicodedata.category(x) for x in token["text"]]
-            all_characters_are_space = all([c == UNICODE_SPACE_CATEGORY for c in category_by_char])
+            all_characters_are_space = all(c == UNICODE_SPACE_CATEGORY for c in category_by_char)
             if not all_characters_are_space:
                 filtered_tokens.append(token)
         return filtered_tokens
@@ -697,7 +697,7 @@ class TextPreparationPipelineFactory:
         if app_path:
             # Check if a custom TextPreparationPipeline has been created in app.py
             try:
-                logger.debug(f"Checking app for custom text_preparation_pipeline")
+                logger.debug("Checking app for custom text_preparation_pipeline")
                 app = get_app(app_path)
                 logger.debug("App loaded")
                 return TextPreparationPipelineFactory.create_from_app(app)

@@ -535,7 +535,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                         yield doc
 
         def match_regex(string, pattern_list):
-            return any([re.match(pattern, string) for pattern in pattern_list])
+            return any(re.match(pattern, string) for pattern in pattern_list)
 
         all_id2value = {}  # a mapping from id to value(s) for each kb field
         all_ids = {}  # maintained to keep a record of order-preserved-doc-ids of the knowledge base
@@ -978,7 +978,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             return (
                 isinstance(value, (list, set))
                 and len(value) > 0
-                and all([isinstance(val, str) for val in value])
+                and all(isinstance(val, str) for val in value)
             )
 
         @staticmethod
@@ -2344,7 +2344,7 @@ class ElasticsearchQuestionAnswerer(BaseQuestionAnswerer):
 
         def _doc_generator(data_file, embedder_model=None, embedding_fields=None):
             def match_regex(string, pattern_list):
-                return any([re.match(pattern, string) for pattern in pattern_list])
+                return any(re.match(pattern, string) for pattern in pattern_list)
 
             def transform(doc, embedder_model, embedding_fields):
                 if embedder_model and embedding_fields:

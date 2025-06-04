@@ -620,7 +620,7 @@ class BaseEntityResolver(ABC):  # pylint: disable=too-many-instance-attributes
                 uses the provided normalizer
         """
 
-        do_mutate_strings = any([augment_lower_case, augment_title_case, augment_normalized])
+        do_mutate_strings = any(augment_lower_case, augment_title_case, augment_normalized)
         if do_mutate_strings:
             msg = "Adding additional form of the whitelist and cnames to list of possible synonyms"
             logger.info(msg)
@@ -1789,7 +1789,7 @@ class EmbedderCosSimEntityResolver(BaseEntityResolver):
             allowed_syns = [
                 syn
                 for syn, cnames in syn2cnames.items()
-                if any([cname in allowed_cnames for cname in cnames])
+                if any(cname in allowed_cnames for cname in cnames)
             ]
 
         try:
