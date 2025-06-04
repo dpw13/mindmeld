@@ -23,9 +23,9 @@ from .._util import _get_module_or_attr
 from ...core import Bunch
 
 try:
-    is_cuda_available = _get_module_or_attr("torch.cuda", "is_available")()
+    IS_CUDA_AVAILABLE = _get_module_or_attr("torch.cuda", "is_available")()
 except ImportError:
-    is_cuda_available = False
+    IS_CUDA_AVAILABLE = False
     pass
 
 logger = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ SHUFFLE_TRAINING_SEED = 8128
 LABEL_PAD_TOKEN_IDX = -1  # value set based on default label padding idx in pytorch
 
 DEFAULT_TRAINING_INFERENCE_PARAMS = {
-    "device": "cuda" if is_cuda_available else "cpu",
+    "device": "cuda" if IS_CUDA_AVAILABLE else "cpu",
     "number_of_epochs": 100,
     "patience": 7,
     "batch_size": 32,

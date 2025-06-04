@@ -21,7 +21,7 @@ from collections import OrderedDict
 from typing import List
 
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 
 from .classification import BaseClassification

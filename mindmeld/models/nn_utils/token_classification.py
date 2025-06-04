@@ -21,7 +21,7 @@ from collections import OrderedDict
 from typing import List
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 from torchcrf import CRF
 

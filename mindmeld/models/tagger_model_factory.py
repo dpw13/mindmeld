@@ -16,7 +16,7 @@ import logging
 
 from .model import ModelConfig
 from .tagger_models import TaggerModel, PytorchTaggerModel
-from .model_factory import AbstractModelFactory
+from .model import AbstractModelFactory
 
 logger = logging.getLogger(__name__)
 

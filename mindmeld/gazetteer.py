@@ -115,7 +115,7 @@ class Gazetteer:
         self.entities = gaz_data["entities"]
         self.sys_types = gaz_data["sys_types"]
 
-    def _update_entity(self, entity, popularity, keep_max=True):
+    def update_entity(self, entity, popularity, keep_max=True):
         """
         Updates all gazetteer data with an entity and its popularity.
 
@@ -193,7 +193,7 @@ class Gazetteer:
                     line_count += 1
                     entity = normalizer(entity)
                     if pop > popularity_cutoff:
-                        self._update_entity(entity, float(pop))
+                        self.update_entity(entity, float(pop))
                         entities_added += 1
 
             logger.info(
@@ -226,7 +226,7 @@ class Gazetteer:
                 synonym = normalizer(syn)
 
                 if update_if_missing_canonical or tokenized_canonical in self.pop_dict:
-                    self._update_entity(
+                    self.update_entity(
                         synonym,
                         self.pop_dict.get(tokenized_canonical, min_popularity),
                     )

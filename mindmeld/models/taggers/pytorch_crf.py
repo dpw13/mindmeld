@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn
 from sklearn.feature_extraction import DictVectorizer, FeatureHasher
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split

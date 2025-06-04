@@ -195,6 +195,8 @@ good-names=i,
            k,
            ex,
            Run,
+           # Capital X used for feature vectors
+           X,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,
@@ -446,6 +448,13 @@ disable=raw-checker-failed,
         # Low priority: disable these in the future
         duplicate-code,
         missing-docstring,
+        line-too-long,
+        unspecified-encoding,
+        # easy fixes
+        no-else-return,
+        unnecessary-pass,
+        # oops, fix these
+        logging-fstring-interpolation,
 #disable=
 #        attribute-defined-outside-init,
 #        invalid-name,

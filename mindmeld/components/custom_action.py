@@ -6,7 +6,7 @@ import requests
 from typing import Any, Dict, Tuple
 
 from .request import Params
-from ..components import DialogueResponder
+from .dialogue import DialogueResponder
 
 
 logger = logging.getLogger(__name__)

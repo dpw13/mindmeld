@@ -1,3 +1,5 @@
+"""This module contains some helper functions for the models package"""
+
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2015 Cisco Systems, Inc. and others.  All rights reserved.
@@ -10,18 +12,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import annotations
-
-"""This module contains some helper functions for the models package"""
 
 import json
 import logging
 import os
 import re
 from tempfile import mkstemp
-import numpy as np
 from collections.abc import Callable
 from typing import Any, Dict, Iterable, Tuple, Generator
+
+import numpy as np
 
 import nltk
 from sklearn.metrics import make_scorer
@@ -178,10 +178,12 @@ def get_ngrams_upto_n(
         tuple: ngram, (token index start, token index end)
     """
     if n == 0:
-        return []
+        return None
     for length, i in enumerate(range(1, n + 1)):
         for idx, j in enumerate(nltk.ngrams(tokens, i)):
             yield j, (idx, idx + length)
+
+    return None
 
 
 def get_seq_accuracy_scorer() -> Callable:
@@ -301,11 +303,11 @@ def merge_gazetteer_resource(
             if entity_type in dynamic_resource[key]:
                 new_gaz = Gazetteer(entity_type, text_preparation_pipeline)
                 # We deep copy here since shallow copying will also change the
-                # original resource's data during the '_update_entity' op.
+                # original resource's data during the 'update_entity' op.
                 new_gaz.from_dict(resource[key][entity_type])
 
                 for entity in dynamic_resource[key][entity_type]:
-                    new_gaz._update_entity(
+                    new_gaz.update_entity(
                         text_preparation_pipeline.normalize(entity),
                         dynamic_resource[key][entity_type][entity],
                     )
@@ -389,6 +391,7 @@ class FileBackedList:
 
     def append(self, line):
         if self.file_handle is None:
+            # pylint: disable=consider-using-with
             self.file_handle = open(self.filename, "w")
         self.file_handle.write(json.dumps(line, default=np_encoder))
         self.file_handle.write("\n")
@@ -409,6 +412,7 @@ class FileBackedList:
     class Iterator:
         def __init__(self, source: "FileBackedList"):
             self.source = source
+            # pylint: disable=consider-using-with
             self.file_handle = open(source.filename, "r")
 
         def __len__(self):
