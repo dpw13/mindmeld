@@ -51,8 +51,15 @@ jobs:
         ./lintme
 
     - name: Running numerical parser
-      run: |
-        python3 -m mindmeld.cli num-parse
+      uses: addnab/docker-run-action@v3
+      with:
+        image: mindmeldworkbench/duckling:master
+        options: -ti -d -p 0.0.0.0:7151:7151
+
+    #- name: Running numerical parser
+    #  run: |
+    #    docker run -ti -d -p 0.0.0.0:7151:7151 mindmeldworkbench/duckling:master
+    #    python3 -m mindmeld.cli num-parse
 
     - name: Sleep for 30 seconds
       uses: jakejarvis/wait-action@master
