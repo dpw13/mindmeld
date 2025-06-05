@@ -50,7 +50,7 @@ dependencies = [
     "tqdm~=4.67",
     "immutables~=0.21",
     "pyyaml>=5.1.1",
-    "spacy~=3.8",
+    "spacy[ja]~=3.8",
     "mypy>=0.782",
     "marshmallow~=3.7.1",
     "markupsafe==2.0.1",

@@ -1,5 +1,6 @@
 -e .
 -r test-requirements.txt
+spacy[lookups]~=1.0
 bumpversion~=0.5.3
 watchdog~=0.8.3
 
