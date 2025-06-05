@@ -26,16 +26,17 @@ jobs:
         image: mindmeldworkbench/duckling:master
         ports:
           - 7151:7151
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.28
+        ports:
+          - 9200:9200
+          - 9300:9300
+        env:
+          discovery.type: "single-node"
+        options: "-m 2GB"
 
     steps:
     - uses: actions/checkout@v4
-
-    - uses: elastic/elastic-github-actions/elasticsearch@master
-      with:
-        stack-version: ${{ matrix.es_version }}
-        security-enabled: false
-        plugins: "analysis-phonetic"
-        elasticsearch_password: ${{ secrets.ELASTIC_SECRET }}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -66,7 +67,7 @@ jobs:
         pytest --junitxml=~/test-results/junit-${{ matrix.python-version }}-${{ matrix.mm-extras }}.xml --cov-report html --cov=mindmeld --ignore=examples/
       env:
         MM_DUCKLING_HOST: localhost
-        MM_ES_HOST: es
+        MM_ES_HOST: localhost
         MM_EXTRAS: ${{ matrix.mm-extras }}
         MM_SUBPROCESS_COUNT: 0
 
