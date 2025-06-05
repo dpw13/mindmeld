@@ -23,9 +23,9 @@ jobs:
 
     services:
       duckling:
-        image: mindmeldworkbench/duckling:master
+        image: rasa/duckling:master
         ports:
-          - 7151:7151
+          - 7151:8000
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.17.28
         ports:

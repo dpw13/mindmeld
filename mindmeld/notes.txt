@@ -1,5 +1,10 @@
-# Rebuild me for modern OS
-docker pull mindmeldworkbench/duckling:master && docker run -ti -d -p 0.0.0.0:7151:7151 mindmeldworkbench/duckling:master
+# Rebuild me for modern OS or use rasa? or build from rasa or facebook github
+docker run -ti -d -p 0.0.0.0:7151:7151 mindmeldworkbench/duckling:master
+
+# Honestly this version of duckling appears to behave much more intelligently, but several of
+# the formats have changed. Porting mindmeld to use it may not be worth it compared to just
+# using rasa, as it's already up to date with this version
+#docker run -ti -d -p 0.0.0.0:7151:8000 rasa/duckling:latest
 
 # mindmeld_init.sh may do this for us...
 #docker run -d -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.8.0

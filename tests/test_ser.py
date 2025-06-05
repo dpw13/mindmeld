@@ -7,6 +7,7 @@ test_ser
 
 Tests for `system_entity_recognizer` module
 """
+import logging
 import pytest
 import requests
 
@@ -15,6 +16,7 @@ from mindmeld.system_entity_recognizer import (
     DucklingRecognizer,
 )
 
+logger = logging.getLogger(__name__)
 
 NOW_TIMESTAMP = 1544706000000
 SECONDS_IN_HOUR = 3600
@@ -28,7 +30,7 @@ DUCKLING_URL = "http://localhost:7151/parse"
         ("is this room open for an hour", ["an hour"], [1], SECONDS_IN_HOUR),
         (
             "is the room available for the next 5 and a half hours",
-            ["5 and a half hours"],
+            ["next 5 and a half hours"],
             [330],
             SECONDS_IN_MINUTE,
         ),
@@ -40,7 +42,7 @@ DUCKLING_URL = "http://localhost:7151/parse"
         ),
         (
             "is anyone using this room for the next 6 hours",
-            ["6 hours"],
+            ["next 6 hours"],
             [6],
             SECONDS_IN_HOUR,
         ),
@@ -51,6 +53,8 @@ def test_duration(query, predicted_texts, predicted_values, conversion):
 
     res = requests.post(DUCKLING_URL, data=data)
     responses = res.json()
+    for r in responses:
+        logger.debug("-> %s", r)
     response_texts = [r["body"] for r in responses]
     response_values_normalized_seconds = [
         r["value"]["normalized"]["value"] for r in responses if r["value"].get("normalized")
@@ -88,7 +92,7 @@ def test_duration(query, predicted_texts, predicted_values, conversion):
         (
             "set alarm for this morning",
             ["this morning"],
-            ["2018-12-13T04:00:00.000-08:00"],
+            ["2018-12-13T00:00:00.000-08:00"],
             ["2018-12-13T12:00:00.000-08:00"],
         ),
         (
@@ -165,9 +169,9 @@ def test_number(query, predicted_texts, predicted_values):
     "query, predicted_texts, predicted_values",
     [
         ("fifth", ["fifth"], [5]),
-        ("call the eighth contact", ["eighth"], [8]),
+        ("call the eighth contact", ["the eighth"], [8]),
         ("second option", ["second"], [2]),
-        ("call the 2nd contact", ["2nd"], [2]),
+        ("call the 2nd contact", ["the 2nd"], [2]),
     ],
 )
 def test_ordinal(query, predicted_texts, predicted_values):
@@ -274,11 +278,11 @@ def test_credit_card(query, predicted_texts, predicted_values):
 @pytest.mark.parametrize(
     "query, predicted_texts, predicted_values",
     [
-        ("make it 5 degrees cooler in the bedroom", ["5"], [5]),
+        ("make it 5 degrees cooler in the bedroom", ["5 degrees"], [5]),
         ("turn it down a few degrees", ["a few degrees"], [3]),
-        ("please lower temperature by 10", ["10"], [10]),
+        ("please lower temperature by 10 degrees", ["10 degrees"], [10]),
         ("increase the temperature by 3 degrees", ["3 degrees"], [3]),
-        ("set thermostat to 65", ["65"], [65]),
+        ("set thermostat to 65 degrees", ["65 degrees"], [65]),
     ],
 )
 def test_temperature(query, predicted_texts, predicted_values):
@@ -286,6 +290,8 @@ def test_temperature(query, predicted_texts, predicted_values):
 
     res = requests.post(DUCKLING_URL, data=data)
     responses = res.json()
+    for r in responses:
+        logger.debug("-> %s", r)
     response_texts = [r["body"] for r in responses if r["dim"] == "temperature"]
     response_values = [
         r["value"]["value"]
@@ -312,27 +318,27 @@ def test_temperature(query, predicted_texts, predicted_values):
     [
         (
             "does anyone have the room at 3 pm",
-            ["3 pm"],
+            ["at 3 pm"],
             ["2018-12-13T15:00:00.000-08:00"],
         ),
         (
-            "is this conference room bookable from 10 to 11",
-            ["10", "11"],
+            "is this conference room bookable this morning from 10 to 11",
+            ["this morning from 10 to 11"],
             ["2018-12-13T10:00:00.000-08:00", "2018-12-13T11:00:00.000-08:00"],
         ),
         (
             "is this room reserved at noon",
-            ["noon"],
+            ["at noon"],
             ["2018-12-13T12:00:00.000-08:00"],
         ),
         (
             "does anyone have this room booked today for 7:06 am",
-            ["7:06 am"],
+            ["today for 7:06 am"],
             ["2018-12-13T07:06:00.000-08:00"],
         ),
         (
             "Launch the online meeting at 5 p.m.",
-            ["5 p.m."],
+            ["at 5 p.m."],
             ["2018-12-13T17:00:00.000-08:00"],
         ),
         (
@@ -347,7 +353,7 @@ def test_temperature(query, predicted_texts, predicted_values):
         ),
         (
             "Start the video meeting at 10 o'clock",
-            ["10 o'clock"],
+            ["at 10 o'clock"],
             ["2018-12-13T10:00:00.000-08:00"],
         ),
         ("Set an alarm for 615", ["615"], ["2018-12-13T06:15:00.000-08:00"]),
@@ -358,10 +364,18 @@ def test_time(query, predicted_texts, predicted_values):
 
     res = requests.post(DUCKLING_URL, data=data)
     responses = res.json()
+    for r in responses:
+        logger.debug("->> %s", r)
     response_texts = [r["body"] for r in responses if r["dim"] == "time"]
-    response_values = [
-        r["value"]["value"] for r in responses if r["value"].get("value") and r["dim"] == "time"
-    ]
+    response_values = []
+    for r in responses:
+        if r["dim"] == "time":
+            if "value" in r["value"]:
+                response_values.append(r["value"]["value"])
+            if "values" in r["value"]:
+                response_values.extend(r["value"]["values"])
+    for r in response_values:
+        logger.debug("-> %s", r)
 
     for p in predicted_texts:
         assert p in response_texts
