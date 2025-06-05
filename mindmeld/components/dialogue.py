@@ -18,14 +18,16 @@ import json
 import logging
 import random
 import warnings
+from enum import Enum
 from functools import cmp_to_key, partial
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 from marshmallow.exceptions import ValidationError
 import immutables
 
 from .. import path
 from .request import FrozenParams, Params, Request
 from .schemas import DEFAULT_FORM_SCHEMA, DEFAULT_RESPONSE_SCHEMA, ParamsSchema
+from ..query_factory import QueryFactory
 from ..core import Entity, FormEntity
 from ..models import entity_features, query_features
 from ..models.helpers import DEFAULT_SYS_ENTITIES
@@ -33,7 +35,7 @@ from ..models.helpers import DEFAULT_SYS_ENTITIES
 mod_logger = logging.getLogger(__name__)
 
 
-class DirectiveNames:
+class DirectiveNames(Enum):
     """A constants object for directive names."""
 
     LIST = "list"
@@ -58,7 +60,7 @@ class DirectiveNames:
     """A directive to put the client to sleep after a specified number of milliseconds."""
 
 
-class DirectiveTypes:
+class DirectiveTypes(Enum):
     """A constants object for directive types."""
 
     VIEW = "view"
@@ -125,14 +127,12 @@ class DialogueStateRule:
         resolved = {}
         for keys in key_kwargs:
             if len(keys) == 2:
-                (
-                    single,
-                    plural,
-                ) = keys  # pylint: disable=unbalanced-tuple-unpacking
+                # pylint: disable=unbalanced-tuple-unpacking
+                single, plural = keys
                 if single in kwargs and plural in kwargs:
-                    msg = "Only one of {!r} and {!r} can be specified for a dialogue state rule"
-                    raise ValueError(msg.format(single, plural))
-                elif single in kwargs and isinstance(kwargs[single], str):
+                    msg = f"Only one of {single} and {plural} can be specified for a dialogue state rule"
+                    raise ValueError(msg)
+                if single in kwargs and isinstance(kwargs[single], str):
                     resolved[plural] = {kwargs[single]}
                 elif plural in kwargs and isinstance(kwargs[plural], (list, set, tuple)):
                     resolved[plural] = set(kwargs[plural])
@@ -140,7 +140,7 @@ class DialogueStateRule:
                     if single in kwargs:
                         msg = "Invalid argument type {!r} for {!r}"
                         raise ValueError(msg.format(kwargs[single], single))
-                    elif plural in kwargs:
+                    if plural in kwargs:
                         msg = "Invalid argument type {!r} for {!r}"
                         raise ValueError(msg.format(kwargs[plural], plural))
             elif keys[0] in kwargs:
@@ -717,7 +717,7 @@ class AutoEntityFilling:
     _logger = mod_logger.getChild("AutoEntityFilling")
     """Class logger."""
 
-    def __init__(self, handler, form, app):
+    def __init__(self, handler, form: Dict, app):
         """
         Args:
             handler (func): The function to which control is returned after completion of flow.
@@ -741,13 +741,14 @@ class AutoEntityFilling:
                 "dialogue_handler_map": self._app.app_manager.dialogue_manager.handler_map,
             }
         )
+        self._retry_attempts = 0
 
-    def _set_next_turn(self, request, responder):
+    def _set_next_turn(self, request: Request, responder: "DialogueResponder"):
         """Set target dialogue state to the entrance handler's name"""
         responder.params.allowed_intents = tuple(["{}.{}".format(request.domain, request.intent)])
         responder.params.target_dialogue_state = self._handler.__name__
 
-    def _exit_flow(self, responder):
+    def _exit_flow(self, responder: "DialogueResponder"):
         """Exits this flow and clears the related parameter for re-usability"""
         self._prompt_turn = None
         self._local_entity_form = None
@@ -755,7 +756,12 @@ class AutoEntityFilling:
         responder.exit_flow()
 
     def _extract_query_features(
-        self, text, time_zone=None, timestamp=None, locale=None, language=None
+        self,
+        text,
+        time_zone: str = None,
+        timestamp: int = None,
+        locale: str = None,
+        language: str = None,
     ):
         """ Extracts Query object from the user input and converts it into
         appropriate format for entity extraction.
@@ -772,12 +778,12 @@ class AutoEntityFilling:
         Returns:
             Query: A newly constructed query
         """
-        query_factory = self._app.app_manager.nlp.resource_loader.query_factory
+        query_factory: QueryFactory = self._app.app_manager.nlp.resource_loader.query_factory
         query = query_factory.create_query(text, time_zone, timestamp, locale, language)
 
         return query
 
-    def _validate(self, request, slot):
+    def _validate(self, request: Request, slot: FormEntity) -> Tuple[bool, List]:
         """Validates the user input based on the entity type and validation type.
 
         Args:
@@ -869,7 +875,7 @@ class AutoEntityFilling:
         # return True iff user input results in extracted features (i.e. successfully validated)
         return len(extracted_feature) > 0, _resolved_value
 
-    def _initial_fill(self, request):
+    def _initial_fill(self, request: Request):
         """Performs the first pass and fills the entity form with entity values available
         in the initial query.
 
@@ -885,14 +891,14 @@ class AutoEntityFilling:
                         slot.value = dict(entity)
                         break
 
-    def _end_slot_fill(self, request, responder, async_mode):
+    def _end_slot_fill(self, request, responder: "DialogueResponder", async_mode):
         # Returns filled entity objects as request.entities
         # We pass in the previous turn's responder's params to the current request
         request = self._app.app_manager.request_class(
             text=request.text,
             domain=request.domain,
             intent=request.intent,
-            entities=tuple([slot.value for slot in self._local_entity_form]),
+            entities=tuple(slot.value for slot in self._local_entity_form),
             context=request.context or {},
             history=request.history or [],
             frame=responder.frame or {},
@@ -905,13 +911,13 @@ class AutoEntityFilling:
             return self._end_slot_fill_async(request, responder)
         return self._end_slot_fill_sync(request, responder)
 
-    def _end_slot_fill_sync(self, request, responder):
+    def _end_slot_fill_sync(self, request: Request, responder: "DialogueResponder"):
         return self._handler(request, responder)
 
-    async def _end_slot_fill_async(self, request, responder):
+    async def _end_slot_fill_async(self, request: Request, responder: "DialogueResponder"):
         return await self._handler(request, responder)
 
-    def _prompt_slot(self, responder, nlr):
+    def _prompt_slot(self, responder: "DialogueResponder", nlr: str):
         """Prompts user for missing slot.
 
         Args:
@@ -926,7 +932,7 @@ class AutoEntityFilling:
         self._retry_attempts = 0
         self._prompt_turn = False
 
-    def _retry_logic(self, request, responder, nlr):
+    def _retry_logic(self, request: Request, responder: "DialogueResponder", nlr):
         if self._retry_attempts < self._form.max_retries:
             self._retry_attempts += 1
             response_form = copy.deepcopy(self._form)
@@ -956,7 +962,7 @@ class AutoEntityFilling:
             # call intended handler from reprocessed query.
             self._app.app_manager.dialogue_manager.apply_handler(request, responder)
 
-    def __call__(self, request, responder):
+    def __call__(self, request: Request, responder: "DialogueResponder"):
         """
         The iterative call to fill missing slots in the entity form till all slots have been
         filled up or the flow has been exited.
@@ -1028,7 +1034,7 @@ class AutoEntityFilling:
         # Finish slot-filling and return to handler
         return self._end_slot_fill(request, responder, self._app.async_mode)
 
-    async def call_async(self, request, responder):
+    async def call_async(self, request: Request, responder: "DialogueResponder"):
         """The slot-filling call for asynchronous apps
 
         Args:
@@ -1037,7 +1043,7 @@ class AutoEntityFilling:
         """
         self(request, responder)
 
-    def invoke(self, request, responder):
+    def invoke(self, request: Request, responder: "DialogueResponder"):
         """
         Invoke slot-filling as a direct call without requiring a decorator.
         """
@@ -1057,7 +1063,7 @@ class AutoEntityFilling:
         # re-run to continue flow
         self(request, responder)
 
-    async def invoke_async(self, request, responder):
+    async def invoke_async(self, request: Request, responder: "DialogueResponder"):
         """
         Async invoke slot-filling as a direct call without requiring a decorator.
         """

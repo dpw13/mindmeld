@@ -247,7 +247,9 @@ class RoleClassifier(Classifier):
         )
         return self._model.predict([(query, entities, entity_index)])[0]
 
-    def predict_proba(self, query: Query | str, entities, entity_index):  # pylint: disable=arguments-differ
+    def predict_proba(
+        self, query: Query | str, entities, entity_index
+    ):  # pylint: disable=arguments-differ
         """Runs prediction on a given entity and generates multiple role hypotheses and
         associated probabilities using the trained role classification model.
 

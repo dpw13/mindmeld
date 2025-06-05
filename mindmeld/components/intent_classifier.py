@@ -100,12 +100,12 @@ class IntentClassifier(Classifier):
         logger.info("Loading intent classifier: domain=%r", self.domain)
         super().load(*args, **kwargs)
 
-    def inspect(self, query, intent=None, dynamic_resource=None):
+    def inspect(self, query, gold_label=None, dynamic_resource=None):
         """Inspects the query.
 
         Args:
             query (Query): The query to be predicted.
-            intent (str): The expected intent label for this query.
+            gold_label (str): The expected intent label for this query.
             dynamic_resource (dict, optional): A dynamic resource to aid NLP inference.
 
         Returns:
@@ -113,7 +113,7 @@ class IntentClassifier(Classifier):
                 probability.
         """
         return self._model.inspect(
-            example=query, gold_label=intent, dynamic_resource=dynamic_resource
+            example=query, gold_label=gold_label, dynamic_resource=dynamic_resource
         )
 
     def _get_queries_from_label_set(self, label_set=DEFAULT_TRAIN_SET_REGEX):

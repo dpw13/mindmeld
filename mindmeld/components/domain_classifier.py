@@ -86,12 +86,12 @@ class DomainClassifier(Classifier):
         logger.info("Loading domain classifier")
         super().load(*args, **kwargs)
 
-    def inspect(self, query, domain=None, dynamic_resource=None):
+    def inspect(self, query, gold_label=None, dynamic_resource=None):
         """Inspects the query.
 
         Args:
             query (Query): The query to be predicted.
-            domain (str): The expected domain label for this query.
+            gold_label (str): The expected domain label for this query.
             dynamic_resource (dict, optional): A dynamic resource to aid NLP inference.
 
         Returns:
@@ -99,7 +99,7 @@ class DomainClassifier(Classifier):
                 probability.
         """
         return self._model.inspect(
-            example=query, gold_label=domain, dynamic_resource=dynamic_resource
+            example=query, gold_label=gold_label, dynamic_resource=dynamic_resource
         )
 
     def _get_queries_from_label_set(self, label_set=DEFAULT_TRAIN_SET_REGEX):
