@@ -44,7 +44,7 @@ def stratified_random_sample(labels: List) -> List[int]:
     np.random.seed(ACTIVE_LEARNING_RANDOM_SEED)
 
     label_to_indices = _get_labels_to_indices(labels)
-    lowest_label_freq = min([len(indices) for indices in label_to_indices.values()])
+    lowest_label_freq = min(len(indices) for indices in label_to_indices.values())
     avg_label_freq = len(labels) // len(label_to_indices)
     sample_per_label = min(lowest_label_freq, avg_label_freq)
 
@@ -232,7 +232,7 @@ class MarginSampling(ABC):
             ranked_indices (List[int]): Indices corresponding to elements ranked by the heuristic.
         """
         _, element_size = np.array(confidences_2d).shape
-        descending_confidences_per_element = np.partition(confidences_2d, kth=(element_size - 2))
+        descending_confidences_per_element = np.partition(confidences_2d, kth=element_size - 2)
         highest_val_per_element = descending_confidences_per_element[:, -1]
         second_highest_val_per_element = descending_confidences_per_element[:, -2]
         margin_per_element = np.abs(highest_val_per_element - second_highest_val_per_element)

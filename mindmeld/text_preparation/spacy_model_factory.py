@@ -18,6 +18,9 @@ import subprocess
 from typing import Any, Iterable
 
 import spacy
+
+# Spacy symbols are Cython and are visible to the linter
+# pylint: disable=no-name-in-module
 from spacy.symbols import ORTH, NORM
 
 from ..constants import (

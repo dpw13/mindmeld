@@ -34,7 +34,8 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
     """Class that executes the strategy tuning and query selection process for the Active
     Learning Pipeline."""
 
-    def __init__(  # pylint: disable=R0913
+    # pylint: disable=too-many-positional-arguments
+    def __init__(
         self,
         app_path: str,
         train_pattern: str,
@@ -322,8 +323,11 @@ class ActiveLearningPipeline:  # pylint: disable=R0902
                     return self.data_bucket.get_queries(newly_sampled_queries_ids)
 
                 # if unsampled data is exhausted, end iterations for epoch.
-                if not len(self.data_bucket.unsampled_queries):
+                if len(self.data_bucket.unsampled_queries) == 0:
                     break
+
+        logger.warning("Porting: unclear if we should ever be here")
+        return None
 
     def _reset_data_bucket(self):
         """Reset the DataBucket to the initial DataBucket after every epoch."""

@@ -46,7 +46,7 @@ class NoOpStemmer(Stemmer):
 
 class EnglishNLTKStemmer(Stemmer):
     @property
-    def _stemmer(self):
+    def _stemmer(self) -> nltk.stem.PorterStemmer:
         # lazy init the stemmer
         if not hasattr(self, "__stemmer"):
             setattr(self, "__stemmer", nltk.stem.PorterStemmer())
@@ -64,6 +64,7 @@ class EnglishNLTKStemmer(Stemmer):
             # in the published algorithm.
             return word
 
+        # pylint: disable=protected-access
         stem = self._stemmer._step1a(stem)
         stem = self._stemmer._step1b(stem)
         stem = self._stemmer._step1c(stem)

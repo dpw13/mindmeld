@@ -282,7 +282,7 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
         if self.classification_type == ClassificationType.TEXT:
             tokenized_examples = [self._tokenize(example) for example in examples]
 
-            max_curr_len = max([len(ex) for ex in tokenized_examples]) + n_terminals
+            max_curr_len = max(len(ex) for ex in tokenized_examples) + n_terminals
             padding_length_including_terminals = (
                 min(max_curr_len, padding_length) if padding_length else max_curr_len
             )
@@ -318,7 +318,7 @@ class AbstractVocabLookupEncoder(AbstractEncoder):
                 [self._tokenize(word) for word in example.split(split_at)] for example in examples
             ]
 
-            max_curr_len = max([len(sum(t_ex, [])) for t_ex in tokenized_examples]) + n_terminals
+            max_curr_len = max(len(sum(t_ex, [])) for t_ex in tokenized_examples) + n_terminals
             padding_length_including_terminals = (
                 min(max_curr_len, padding_length) if padding_length else max_curr_len
             )
@@ -567,7 +567,7 @@ class WhitespaceAndCharDualEncoder(AbstractVocabLookupEncoder):
         char_seq_ids, char_seq_lengths = [], []
         for _seq_tokens in _examples:
             # compute padding length for character sequences
-            _curr_max = max([len(word) for word in _seq_tokens])
+            _curr_max = max(len(word) for word in _seq_tokens)
             _curr_max = (
                 _curr_max + self.number_of_char_terminal_tokens if char_add_terminals else _curr_max
             )
@@ -997,7 +997,7 @@ class HuggingfacePretrainedEncoder(AbstractEncoder):
                 [self._tokenize(word) for word in example.split(split_at)] for example in examples
             ]
 
-            max_curr_len = max([len(sum(t_ex, [])) for t_ex in tokenized_examples]) + n_terminals
+            max_curr_len = max(len(sum(t_ex, [])) for t_ex in tokenized_examples) + n_terminals
             padding_length_including_terminals = (
                 min(max_curr_len, padding_length) if padding_length else max_curr_len
             )

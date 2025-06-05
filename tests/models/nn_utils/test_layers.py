@@ -242,8 +242,8 @@ def test_splitting_and_pooling_layer():
             torch.randint(1, 4, (n_sub_groups,))
             for n_sub_groups in torch.randint(1, 4, (batch_size,))
         ]
-        max_sum_lengths = max([sum(_x) for _x in span_lengths])
-        max_n_lengths = max([len(_x) for _x in span_lengths])
+        max_sum_lengths = max(sum(_x) for _x in span_lengths)
+        max_n_lengths = max(len(_x) for _x in span_lengths)
 
         # inputs w/ terminal token embeddings
         inputs = torch.randn((batch_size, max_sum_lengths + 2, emb_dim))
@@ -284,8 +284,8 @@ def test_splitting_and_pooling_layer():
             torch.randint(1, 4, (n_sub_groups,))
             for n_sub_groups in torch.randint(1, 4, (batch_size,))
         ]
-        max_sum_lengths = max([sum(_x) for _x in span_lengths])
-        max_n_lengths = max([len(_x) for _x in span_lengths])
+        max_sum_lengths = max(sum(_x) for _x in span_lengths)
+        max_n_lengths = max(len(_x) for _x in span_lengths)
 
         # inputs w/ terminal token embeddings
         inputs = torch.randn((batch_size, max_sum_lengths + 2, emb_dim))

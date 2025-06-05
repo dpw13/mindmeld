@@ -1625,7 +1625,7 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
                 # in cases where there was no training data for resolver, all ids are absent
                 #   in the returned predictions! And then the _best_scores will be empty
                 if _best_scores:
-                    min_best_scores = min([*_best_scores.values()])
+                    min_best_scores = min(*_best_scores.values())
                     for _id in self.id2value.keys():
                         if allowed_ids and _id not in allowed_ids:
                             continue

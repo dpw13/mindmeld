@@ -134,12 +134,12 @@ class PlotManager:
 
         return cls_data, tag_data
 
-    def queries_json_data_has_data(self) -> Dict:
+    def queries_json_data_has_data(self) -> bool:
         """Checks whether queries.json is empty {}.
         Returns:
             has_data (bool): Whether queries.json has data.
         """
-        return self.get_queries_json_data() != {}
+        return bool(self.get_queries_json_data())
 
     # Plotting Meta Functions
     def generate_plots(self):

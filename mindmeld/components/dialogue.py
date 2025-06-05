@@ -159,13 +159,13 @@ class DialogueStateRule:
                     raise ValueError(msg.format(entities))
             self.entity_types = frozenset(entities)
 
-        if self.targeted_only and any(self.domain, self.intent, self.entity_types):
+        if self.targeted_only and any([self.domain, self.intent, self.entity_types]):
             raise ValueError(
                 "For a dialogue state rule, if targeted_only is "
                 "True, domain, intent, and has_entity must be omitted"
             )
 
-        if self.default and any(self.domain, self.intent, self.entity_types, self.targeted_only):
+        if self.default and any([self.domain, self.intent, self.entity_types, self.targeted_only]):
             raise ValueError(
                 "For a dialogue state rule, if default is True, "
                 "domain, intent, has_entity, and targeted_only must be omitted"

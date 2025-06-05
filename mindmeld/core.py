@@ -661,9 +661,10 @@ class Entity:
         return Entity.entity_class_map[entity_class].from_cache(obj)
 
     @staticmethod
+    # pylint: disable=method-hidden
     def is_system_entity(
         entity_type: str,
-    ) -> bool:  # pylint: disable=method-hidden
+    ) -> bool:
         """Checks whether the provided entity type is a MindMeld-recognized system entity.
 
         Args:

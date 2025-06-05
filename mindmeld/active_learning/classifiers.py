@@ -92,7 +92,7 @@ class ALClassifier(ABC):
         return intent2idx, idx2intent, domain_indices
 
     @abstractmethod
-    def train(self):
+    def train(self, data_bucket: DataBucket):
         raise NotImplementedError("Subclasses must implement their classifier's fit method.")
 
 
@@ -124,6 +124,7 @@ class MindMeldALClassifier(ALClassifier):
         self.class_level_statistic = MindMeldALClassifier._validate_class_level_statistic(
             class_level_statistic
         )
+        self.tuning_type = TuningType.CLASSIFIER
 
     @staticmethod
     def _validate_aggregate_statistic(aggregate_statistic):
@@ -428,7 +429,7 @@ class MindMeldALClassifier(ALClassifier):
                     self._update_eval_stats_intent_level(eval_stats, ic_eval_test_dict)
                 confidences_2d = ic_queries_prob_vectors
 
-        else:
+        else:  # tuning_type == TuningType.TAGGER
             # Entity Level
             if TuneLevel.ENTITY.value in self.tuning_level:
                 (er_queries_prob_vectors, er_eval_test_dict,) = self.entity_recognizers_fit_eval(
@@ -441,6 +442,10 @@ class MindMeldALClassifier(ALClassifier):
                 if eval_stats:
                     self._update_eval_stats_entity_level(eval_stats, er_eval_test_dict)
                 confidences_2d = er_queries_prob_vectors
+            else:
+                raise ValueError(
+                    f"Invalid combination of tuning type {self.tuning_type} and tuning level {self.tuning_level}"
+                )
 
         return confidences_2d, eval_stats
 
@@ -614,15 +619,15 @@ class MindMeldALClassifier(ALClassifier):
                             domain
                         )
                     )
-                else:
-                    # In case of missing test files, ic_eval_test object is a NoneType. In that case
-                    # we have no predictions to evaluate the intent level classifiers. Domain
-                    # classifier can have atleast one test file across intents, hence is better
-                    # suited for such applications.
-                    raise ValueError(
-                        "Missing test files in domain '{!s}', use domain level tuning "
-                        "instead.".format(domain)
-                    )
+
+                # In case of missing test files, ic_eval_test object is a NoneType. In that case
+                # we have no predictions to evaluate the intent level classifiers. Domain
+                # classifier can have atleast one test file across intents, hence is better
+                # suited for such applications.
+                raise ValueError(
+                    "Missing test files in domain '{!s}', use domain level tuning "
+                    "instead.".format(domain)
+                )
 
             ic_eval_test_dict[domain] = ic_eval_test
             # Get Probability Vectors

@@ -197,12 +197,12 @@ class ResultsManager:
     ):
         """Update accuracies.json with iteration metrics"""
 
-        AL_ACCURACIES_PATH = (
+        al_accuracies_path = (
             AL_CLASSIFIER_ACCURACIES_PATH
             if tuning_type == TuningType.CLASSIFIER
             else AL_TAGGER_ACCURACIES_PATH
         )
-        self.update_json(AL_ACCURACIES_PATH, strategy, epoch, iteration, eval_stats)
+        self.update_json(al_accuracies_path, strategy, epoch, iteration, eval_stats)
 
     def update_selected_queries_json(
         self,
@@ -214,12 +214,12 @@ class ResultsManager:
     ):
         """Update accuracies.json with iteration metrics"""
         query_dicts = ResultsManager.queries_to_dict(queries)
-        AL_SELECTED_QUERIES_PATH = (
+        al_selected_queries_path = (
             AL_CLASSIFIER_SELECTED_QUERIES_PATH
             if tuning_type == TuningType.CLASSIFIER
             else AL_TAGGER_SELECTED_QUERIES_PATH
         )
-        self.update_json(AL_SELECTED_QUERIES_PATH, strategy, epoch, iteration, query_dicts)
+        self.update_json(al_selected_queries_path, strategy, epoch, iteration, query_dicts)
 
     def write_log_selected_queries_json(self, strategy: str, queries, tuning_type):
         """Update accuracies.json with iteration metrics"""
