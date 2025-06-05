@@ -116,6 +116,7 @@ class ConversationClient:
                 "frame": internal_frame,
                 "params": internal_params,
             },
+            timeout=5,
         ).json()
 
         self.history = response["history"]

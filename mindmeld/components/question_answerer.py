@@ -63,6 +63,8 @@ from ..text_preparation.text_preparation_pipeline import (
 )
 from ..text_preparation.tokenizers import WhiteSpaceTokenizer
 
+# See comment in entity_resolver regarding the same pylint disable
+# pylint: disable=possibly-used-before-assignment
 if _is_module_available("elasticsearch"):
     from ._elasticsearch_helpers import (
         DOC_TYPE,
@@ -169,17 +171,17 @@ class QuestionAnswererFactory:
                 raise ValueError(
                     "Could not find `query_type` in `model_settings` of question answerer"
                 )
-            else:
-                msg = (
-                    "Using deprecated config format for Question Answerer. "
-                    "See https://www.mindmeld.com/docs/userguide/kb.html for more details."
-                )
-                warnings.warn(msg, DeprecationWarning)
-                config = copy.deepcopy(config)
-                model_settings = config.get("model_settings", {})
-                model_settings.update({"query_type": model_type})
-                config["model_settings"] = model_settings
-                config["model_type"] = "elasticsearch"
+
+            msg = (
+                "Using deprecated config format for Question Answerer. "
+                "See https://www.mindmeld.com/docs/userguide/kb.html for more details."
+            )
+            warnings.warn(msg, DeprecationWarning)
+            config = copy.deepcopy(config)
+            model_settings = config.get("model_settings", {})
+            model_settings.update({"query_type": model_type})
+            config["model_settings"] = model_settings
+            config["model_type"] = "elasticsearch"
         return config
 
     @staticmethod
@@ -1729,15 +1731,15 @@ class NativeQuestionAnswerer(BaseQuestionAnswerer):
             self._do_filter_validation(filter_text, gt, gte, lt, lte, et, boolean)
 
             def _is_valid(value):
-                if gt and not (value > gt):
+                if gt and not value > gt:
                     return False
-                if gte and not (value >= gte):
+                if gte and not value >= gte:
                     return False
-                if lt and not (value < lt):
+                if lt and not value < lt:
                     return False
-                if lte and not (value <= lte):
+                if lte and not value <= lte:
                     return False
-                if et and not (value != et):
+                if et and not value != et:
                     return False
                 return True
 

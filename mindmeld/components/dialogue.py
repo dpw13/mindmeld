@@ -984,7 +984,7 @@ class AutoEntityFilling:
             responder.reply(self._form.exit_msg)
             responder.speak(self._form.exit_msg)
             self._exit_flow(responder)
-            return
+            return None
 
         self._set_next_turn(request, responder)
 
@@ -1009,7 +1009,7 @@ class AutoEntityFilling:
                 if self._prompt_turn:
                     self._prompt_slot(responder, slot.responses)
                     responder.listen()
-                    return
+                    return None
 
                 # If already prompted,
                 # validate the user response and retry if invalid response
@@ -1019,7 +1019,7 @@ class AutoEntityFilling:
                     # retry logic
                     self._retry_logic(request, responder, slot.retry_response)
                     responder.listen()
-                    return
+                    return None
 
                 slot.value = Entity(
                     text=request.text,

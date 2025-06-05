@@ -72,12 +72,12 @@ from ..system_entity_recognizer import SystemEntityRecognizer
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
 SUBPROCESS_WAIT_TIME = 0.5
-default_num_workers = 0
+DEFAULT_NUM_WORKERS = 0
 if sys.version_info > (3, 0):
-    default_num_workers = cpu_count() + 1
+    DEFAULT_NUM_WORKERS = cpu_count() + 1
 
 logger = logging.getLogger(__name__)
-num_workers = int(os.environ.get("MM_SUBPROCESS_COUNT", default_num_workers))
+num_workers = int(os.environ.get("MM_SUBPROCESS_COUNT", DEFAULT_NUM_WORKERS))
 executor = ProcessPoolExecutor(max_workers=num_workers) if num_workers > 0 else None
 
 
@@ -336,6 +336,10 @@ class Processor(ABC):
         Returns:
             (tuple): Results of the processing.
         """
+
+        class ProcessPoolError(Exception):
+            pass
+
         if executor:
             try:
                 results = list(items)
@@ -352,17 +356,17 @@ class Processor(ABC):
                     future_to_idx_map[future] = idx
                 tasks = wait(future_to_idx_map, timeout=SUBPROCESS_WAIT_TIME)
                 if tasks.not_done:
-                    raise Exception()
+                    raise ProcessPoolError()
                 for future in tasks.done:
                     item = future.result()
                     item_idx = future_to_idx_map[future]
                     results[item_idx] = item
                 return tuple(results)
-            except (Exception, SystemExit):  # pylint: disable=broad-except
+            except (ProcessPoolError, SystemExit):
                 # process pool is broken, restart it and process current request in series
                 restart_subprocesses()
         # process the list in series
-        return tuple([getattr(self, func)(itm, *args, **kwargs) for itm in items])
+        return tuple(getattr(self, func)(itm, *args, **kwargs) for itm in items)
 
     def create_query(
         self,
@@ -735,7 +739,7 @@ class NaturalLanguageProcessor(Processor):
         if domain:
             print("Inspecting domain classification")
             domain_inspection = self.domain_classifier.inspect(
-                query, domain=domain, dynamic_resource=dynamic_resource
+                query, gold_label=domain, dynamic_resource=dynamic_resource
             )
             self.print_inspect_stats(domain_inspection)
 
@@ -743,13 +747,14 @@ class NaturalLanguageProcessor(Processor):
             print("Inspecting intent classification")
             domain, _ = self._process_domain(query, dynamic_resource=dynamic_resource)
             intent_inspection = self.domains[domain].inspect(
-                query, intent=intent, dynamic_resource=dynamic_resource
+                query, gold_label=intent, dynamic_resource=dynamic_resource
             )
             self.print_inspect_stats(intent_inspection)
 
-    def process(  # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,arguments-renamed
+    def process(
         self,
-        query_text,  # pylint: disable=arguments-differ
+        query_text,
         allowed_nlp_classes=None,
         allowed_intents=None,
         allow_nlp=None,
@@ -1110,7 +1115,7 @@ class DomainProcessor(Processor):
              probability
         """
         return self.intent_classifier.inspect(
-            query, intent=intent, dynamic_resource=dynamic_resource
+            query, gold_label=intent, dynamic_resource=dynamic_resource
         )
 
 
@@ -1538,6 +1543,7 @@ class IntentProcessor(Processor):
             return entity_confidence, [_pred_entities]
         return entity_confidence, entities
 
+    # pylint: disable=arguments-renamed
     def process_query(
         self,
         query,
