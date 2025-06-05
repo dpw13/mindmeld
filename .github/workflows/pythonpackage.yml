@@ -21,6 +21,12 @@ jobs:
         mm-extras: ["false"] # Extras are all broken for now
         es_version: [ "7.17.28" ]
 
+    services:
+      duckling:
+        image: mindmeldworkbench/duckling:master
+        ports:
+          - 7151:7151
+
     steps:
     - uses: actions/checkout@v4
 
@@ -52,21 +58,6 @@ jobs:
       run: |
         ./lintme
 
-    - name: Running numerical parser
-      uses: addnab/docker-run-action@v3
-      with:
-        image: mindmeldworkbench/duckling:master
-        options: -ti -d -p 0.0.0.0:7151:7151
-
-    #- name: Running numerical parser
-    #  run: |
-    #    python3 -m mindmeld.cli num-parse
-
-    - name: Sleep for 30 seconds
-      uses: jakejarvis/wait-action@master
-      with:
-        time: '30s'
-
     - name: Test with pytest
       # We want to upload test results whether they pass or not
       continue-on-error: true
@@ -74,6 +65,7 @@ jobs:
         mkdir ~/test-reports
         pytest --junitxml=~/test-results/junit-${{ matrix.python-version }}-${{ matrix.mm-extras }}.xml --cov-report html --cov=mindmeld --ignore=examples/
       env:
+        MM_DUCKLING_HOST: localhost
         MM_ES_HOST: es1
         MM_EXTRAS: ${{ matrix.mm-extras }}
         MM_SUBPROCESS_COUNT: 0

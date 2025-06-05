@@ -42,6 +42,10 @@ from ..exceptions import ElasticsearchConnectionError, EntityResolverError
 from ..models import create_embedder_model
 from ..resource_loader import ResourceLoader, Hasher
 
+# The changes below to dynamically load ES may have allowed some modules to be
+# used without ES, but it causes a lot of problems for the linter. Besides that
+# it doesn't seem like the best solution. Leaving the pylint disable for now.
+# pylint: disable=possibly-used-before-assignment
 if _is_module_available("elasticsearch"):
     from ._elasticsearch_helpers import (
         INDEX_TYPE_KB,
@@ -95,18 +99,18 @@ class EntityResolverFactory:
                 raise ValueError(
                     "Could not find `resolver_type` in `model_settings` of entity resolver"
                 )
-            else:
-                msg = (
-                    "Using deprecated config format for Entity Resolver. "
-                    "See https://www.mindmeld.com/docs/userguide/entity_resolver.html "
-                    "for more details."
-                )
-                warnings.warn(msg, DeprecationWarning)
-                er_config = copy.deepcopy(er_config)
-                model_settings = er_config.get("model_settings", {})
-                model_settings.update({"resolver_type": model_type})
-                er_config["model_settings"] = model_settings
-                er_config["model_type"] = "resolver"
+
+            msg = (
+                "Using deprecated config format for Entity Resolver. "
+                "See https://www.mindmeld.com/docs/userguide/entity_resolver.html "
+                "for more details."
+            )
+            warnings.warn(msg, DeprecationWarning)
+            er_config = copy.deepcopy(er_config)
+            model_settings = er_config.get("model_settings", {})
+            model_settings.update({"resolver_type": model_type})
+            er_config["model_settings"] = model_settings
+            er_config["model_type"] = "resolver"
 
         return er_config
 
@@ -324,7 +328,7 @@ class BaseEntityResolver(ABC):  # pylint: disable=too-many-instance-attributes
             nbest_entities = tuple([nbest_entities])
 
         nbest_entities = tuple(
-            [Entity(e, self.type) if isinstance(e, str) else e for e in nbest_entities]
+            Entity(e, self.type) if isinstance(e, str) else e for e in nbest_entities
         )
 
         if self._is_system_entity:
@@ -547,7 +551,7 @@ class BaseEntityResolver(ABC):  # pylint: disable=too-many-instance-attributes
                 f"Unable to load entity mapping data for "
                 f"entity type: {self.type} in app_path: {self.app_path}"
             )
-            raise Exception(msg) from e
+            raise EntityResolverError(msg) from e
 
     @staticmethod
     def _format_entity_map(entities_data):
@@ -574,7 +578,7 @@ class BaseEntityResolver(ABC):  # pylint: disable=too-many-instance-attributes
                     f"The observed KB entity object is: {ent_object}"
                 )
                 raise ValueError(msg)
-            elif cname is None and len(whitelist):
+            if cname is None and len(whitelist) > 0:
                 cname = whitelist[0]
                 whitelist = whitelist[1:]
             if _id in all_ids:
@@ -1043,7 +1047,7 @@ class ElasticsearchEntityResolver(BaseEntityResolver):
                 )
             if entities and not entities[0].get("id"):
                 raise ValueError(
-                    "Knowledge base index and field cannot be specified for entities " "without ID."
+                    "Knowledge base index and field cannot be specified for entities without ID."
                 )
             logger.info("Importing synonym data to knowledge base index '%s'", kb_index)
             ElasticsearchEntityResolver.ingest_synonym(
@@ -1244,34 +1248,34 @@ class ElasticsearchEntityResolver(BaseEntityResolver):
             ) from ex
         except _getattr("elasticsearch", "ElasticsearchException") as ex:
             raise EntityResolverError from ex
-        else:
-            hits = response["hits"]["hits"]
 
-            results = []
-            for hit in hits:
-                if self._use_double_metaphone and len(nbest_entities) > 1:
-                    if hit["_score"] < 0.5 * len(nbest_entities):
-                        continue
+        hits = response["hits"]["hits"]
 
-                top_synonym = None
-                synonym_hits = hit["inner_hits"]["whitelist"]["hits"]["hits"]
-                if synonym_hits:
-                    top_synonym = synonym_hits[0]["_source"]["name"]
-                result = {
-                    "cname": hit["_source"]["cname"],
-                    "score": hit["_score"],
-                    "top_synonym": top_synonym,
-                }
+        results = []
+        for hit in hits:
+            if self._use_double_metaphone and len(nbest_entities) > 1:
+                if hit["_score"] < 0.5 * len(nbest_entities):
+                    continue
 
-                if hit["_source"].get("id"):
-                    result["id"] = hit["_source"].get("id")
+            top_synonym = None
+            synonym_hits = hit["inner_hits"]["whitelist"]["hits"]["hits"]
+            if synonym_hits:
+                top_synonym = synonym_hits[0]["_source"]["name"]
+            result = {
+                "cname": hit["_source"]["cname"],
+                "score": hit["_score"],
+                "top_synonym": top_synonym,
+            }
 
-                if hit["_source"].get("sort_factor"):
-                    result["sort_factor"] = hit["_source"].get("sort_factor")
+            if hit["_source"].get("id"):
+                result["id"] = hit["_source"].get("id")
 
-                results.append(result)
+            if hit["_source"].get("sort_factor"):
+                result["sort_factor"] = hit["_source"].get("sort_factor")
 
-            return results
+            results.append(result)
+
+        return results
 
     def _load(self, path, entity_map):
         del path

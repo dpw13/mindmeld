@@ -26,7 +26,9 @@ from .. import path
 logger = logging.getLogger(__name__)
 
 DUCKLING_SERVICE_NAME = "duckling"
-DEFAULT_DUCKLING_URL = "http://localhost:7151/parse"
+DUCKLING_HOST = os.environ.get("MM_DUCKLING_HOST", "localhost")
+DUCKLING_PORT = os.environ.get("MM_DUCKLING_PORT", 7151)
+DEFAULT_DUCKLING_URL = f"http://{DUCKLING_HOST}:{DUCKLING_PORT}/parse"
 
 CONFIG_DEPRECATION_MAPPING = {
     "DOMAIN_CLASSIFIER_CONFIG": "DOMAIN_MODEL_CONFIG",

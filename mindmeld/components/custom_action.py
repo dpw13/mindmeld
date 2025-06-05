@@ -1,9 +1,10 @@
 import logging
 
 import ssl
+from typing import Any, Dict, Tuple
+
 import aiohttp
 import requests
-from typing import Any, Dict, Tuple
 
 from .request import Params
 from .dialogue import DialogueResponder
@@ -146,11 +147,12 @@ class CustomAction:
                 url=self.url,
                 json=json_data,
                 cert=(self._public_key, self._private_key),
+                timeout=5,
             )
         elif self._public_key:
-            result = requests.post(url=self.url, json=json_data, cert=self._public_key)
+            result = requests.post(url=self.url, json=json_data, cert=self._public_key, timeout=5)
         else:
-            result = requests.post(url=self.url, json=json_data)
+            result = requests.post(url=self.url, json=json_data, timeout=5)
         if result.status_code == 200:
             return 200, result.json()
         else:

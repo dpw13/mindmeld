@@ -399,8 +399,7 @@ class Classifier(ABC):
             )
         return self._model.view_extracted_features(query, dynamic_resource)
 
-    @staticmethod
-    def _get_model_config(loaded_config=None, **kwargs) -> ModelConfig:
+    def _get_model_config(self, loaded_config=None, **kwargs) -> ModelConfig:
         """Updates the loaded configuration with runtime specified options, and creates a model
         configuration object with the final configuration dictionary. If an application config
         exists it should be passed in, if not the default config should be passed in.

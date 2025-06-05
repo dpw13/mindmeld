@@ -15,7 +15,7 @@
 This module contains classes used to load queries for the Active Learning Pipeline.
 """
 
-from typing import Dict, List
+from typing import Any, Dict, List, Set
 import logging
 
 from .heuristics import Heuristic, stratified_random_sample, EntropySampling
@@ -33,20 +33,22 @@ logger = logging.getLogger(__name__)
 class LabelMap:
     """Class that handles label encoding and mapping."""
 
-    def __init__(self, query_tree: Dict):
+    def __init__(self, query_tree: Dict[str, Dict[str, Any]]):
         """
         Args:
             query_tree (dict): Nested Dictionary containing queries.
                 Has the format: {"domain":{"intent":[Query List]}}.
         """
-        self.domain_to_intents = LabelMap.get_domain_to_intents(query_tree)
+        self.domain_to_intents = LabelMap._get_domain_to_intents(query_tree)
         self.domain2id = LabelMap._get_domain_mappings(self.domain_to_intents)
         self.id2domain = LabelMap._reverse_dict(self.domain2id)
         self.domain_to_intent2id = LabelMap._get_intent_mappings(self.domain_to_intents)
         self.id2intent = LabelMap._reverse_nested_dict(self.domain_to_intent2id)
+        self.entity2id: Dict[str, int] = {}
+        self.id2entity: Dict[int, str] = {}
 
     @staticmethod
-    def get_domain_to_intents(query_tree: Dict) -> Dict:
+    def _get_domain_to_intents(query_tree: Dict[str, Dict[str, Any]]) -> Dict[str, List[Any]]:
         """
         Args:
             query_tree (dict): Nested Dictionary containing queries.
@@ -56,12 +58,12 @@ class LabelMap:
             domain_to_intents (dict): Dict mapping domains to a list of intents.
         """
         domain_to_intents = {}
-        for domain in query_tree:
-            domain_to_intents[domain] = list(query_tree[domain])
+        for domain, tree in query_tree.items():
+            domain_to_intents[domain] = list(tree)
         return domain_to_intents
 
     @staticmethod
-    def _get_domain_mappings(domain_to_intents: Dict) -> Dict:
+    def _get_domain_mappings(domain_to_intents: Dict[str, List[Any]]) -> Dict[str, int]:
         """Creates a dictionary that maps domains to encoded ids.
 
         Args:
@@ -77,7 +79,7 @@ class LabelMap:
         return domain2id
 
     @staticmethod
-    def _get_intent_mappings(domain_to_intents: Dict) -> Dict:
+    def _get_intent_mappings(domain_to_intents: Dict[str, List[str]]) -> Dict[str, Dict[int, str]]:
         """Creates a dictionary that maps intents to encoded ids.
 
         Args:
@@ -87,9 +89,9 @@ class LabelMap:
             domain_to_intent2id (dict): dict with intent to id mappings.
         """
         domain_to_intent2id = {}
-        for domain in domain_to_intents:
+        for domain, intents in domain_to_intents.items():
             intent_labels = {}
-            for index, intent in enumerate(domain_to_intents[domain]):
+            for index, intent in enumerate(intents):
                 intent_labels[intent] = index
             domain_to_intent2id[domain] = intent_labels
         return domain_to_intent2id
@@ -104,7 +106,7 @@ class LabelMap:
         return reversed_dict
 
     @staticmethod
-    def _reverse_nested_dict(dictionary: Dict[str, Dict[str, int]]):
+    def _reverse_nested_dict(dictionary: Dict[str, Dict[str, int]]) -> Dict[int, str]:
         """
         Returns:
             reversed_dict (dict): Reversed dictionary.
@@ -115,8 +117,20 @@ class LabelMap:
             reversed_dict[parent_key] = LabelMap._reverse_dict(parent_value)
         return reversed_dict
 
+    def calc_entity_mappings(self, query_list: ProcessedQueryList) -> Dict:
+        """
+        Generates index mapping for entity labels in an application.
+        Supports both BIO  and BIOES tag schemes. Sets the forward and
+        reverse dictionary mapping index to entity labels.
+
+        Args:
+            query_list (ProcessedQueryList): Data structure containing a list of processed queries.
+        """
+        self.entity2id = LabelMap._get_entity_mappings(query_list)
+        self.id2entity = LabelMap._reverse_dict(self.entity2id)
+
     @staticmethod
-    def _get_entity_mappings(query_list: ProcessedQueryList) -> Dict:
+    def _get_entity_mappings(query_list: ProcessedQueryList) -> Dict[str, int]:
         """
         Generates index mapping for entity labels in an application.
         Supports both BIO  and BIOES tag schemes.
@@ -127,7 +141,7 @@ class LabelMap:
         Returns:
             Dictionary mapping entity tags to index in entity vector.
         """
-        entity_labels = set()
+        entity_labels: Set[str] = set()
         logger.info("Generating Entity Labels...")
         for d, i, entities in zip(
             query_list.domains(), query_list.intents(), query_list.entities()
@@ -164,7 +178,7 @@ class LabelMap:
             return [f"{d}" for d in query_list.domains()]
 
     @staticmethod
-    def create_label_map(app_path, file_pattern):
+    def create_label_map(app_path: str, file_pattern: str) -> "LabelMap":
         """Creates a label map.
 
         Args:
@@ -399,8 +413,7 @@ class DataBucketFactory:
         train_query_list = resource_loader.get_flattened_label_set(label_set=train_pattern)
 
         if TuneLevel.ENTITY.value in tuning_level:
-            label_map.entity2id = LabelMap._get_entity_mappings(train_query_list)
-            label_map.id2entity = LabelMap._reverse_dict(label_map.entity2id)
+            label_map.calc_entity_mappings(train_query_list)
 
         train_class_labels = LabelMap.get_class_labels(tuning_level, train_query_list)
         ranked_indices = stratified_random_sample(train_class_labels)
@@ -451,8 +464,7 @@ class DataBucketFactory:
         train_query_list = resource_loader.get_flattened_label_set(label_set=train_pattern)
 
         if TuneLevel.ENTITY.value in tuning_level:
-            label_map.entity2id = LabelMap._get_entity_mappings(train_query_list)
-            label_map.id2entity = LabelMap._reverse_dict(label_map.entity2id)
+            label_map.calc_entity_mappings(train_query_list)
 
         if labeled_logs_pattern:
             log_query_list = resource_loader.get_flattened_label_set(label_set=labeled_logs_pattern)

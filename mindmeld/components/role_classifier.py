@@ -16,6 +16,7 @@ This module contains the role classifier component of the MindMeld natural langu
 """
 import logging
 import pickle
+from typing import Iterable, Dict
 
 import joblib
 
@@ -161,7 +162,8 @@ class RoleClassifier(Classifier):
 
     def _dump(self, path):
         rc_data = {"roles": self.roles}
-        pickle.dump(rc_data, open(self._get_classifier_resources_save_path(path), "wb"))
+        with open(self._get_classifier_resources_save_path(path), "wb") as f:
+            pickle.dump(rc_data, f)
 
     def unload(self):
         self._model = None
@@ -186,8 +188,9 @@ class RoleClassifier(Classifier):
 
         # classifier specific load
         try:
-            rc_data = pickle.load(open(self._get_classifier_resources_save_path(model_path), "rb"))
-        except (FileNotFoundError):  # backwards compatability for previous version's saved models
+            with open(self._get_classifier_resources_save_path(model_path), "rb") as f:
+                rc_data = pickle.load(f)
+        except FileNotFoundError:  # backwards compatability for previous version's saved models
             rc_data = joblib.load(model_path)
         self.roles = rc_data["roles"]
 
@@ -218,7 +221,8 @@ class RoleClassifier(Classifier):
         self.ready = True
         self.dirty = False
 
-    def predict(self, query, entities, entity_index):  # pylint: disable=arguments-differ
+    # pylint: disable=arguments-differ
+    def predict(self, query: Query | str, entities: Iterable[Dict], entity_index: int) -> str:
         """Predicts a role for the given entity using the trained role classification model.
 
         Args:
@@ -230,8 +234,7 @@ class RoleClassifier(Classifier):
             str: The predicted role for the provided entity
         """
         if not self._model:
-            logger.error("You must fit or load the model before running predict")
-            return
+            raise ClassifierLoadError("You must fit or load the model before running predict")
         if len(self.roles) == 1:
             return list(self.roles)[0]
         if not isinstance(query, Query):
@@ -244,7 +247,7 @@ class RoleClassifier(Classifier):
         )
         return self._model.predict([(query, entities, entity_index)])[0]
 
-    def predict_proba(self, query, entities, entity_index):  # pylint: disable=arguments-differ
+    def predict_proba(self, query: Query | str, entities, entity_index):  # pylint: disable=arguments-differ
         """Runs prediction on a given entity and generates multiple role hypotheses and
         associated probabilities using the trained role classification model.
 
@@ -257,8 +260,7 @@ class RoleClassifier(Classifier):
             list: a list of tuples of the form (str, float) grouping roles and their probabilities
         """
         if not self._model:
-            logger.error("You must fit or load the model before running predict")
-            return
+            raise ClassifierLoadError("You must fit or load the model before running predict")
         if len(self.roles) == 1:
             return [(list(self.roles)[0], 1.0)]
         if not isinstance(query, Query):
@@ -274,7 +276,7 @@ class RoleClassifier(Classifier):
         return sorted(class_proba_tuples, key=lambda x: x[1], reverse=True)
 
     # pylint: disable=arguments-differ
-    def view_extracted_features(self, query, entities, entity_index):
+    def view_extracted_features(self, query: Query | str, entities, entity_index):
         """
         Extracts features for a given entity for role classification.
 
@@ -287,8 +289,7 @@ class RoleClassifier(Classifier):
             dict: The extracted features from the given input
         """
         if not self._model:
-            logger.error("You must fit or load the model to initialize resources")
-            return
+            raise ClassifierLoadError("You must fit or load the model to initialize resources")
         if not isinstance(query, Query):
             query = self._resource_loader.query_factory.create_query(query)
         gazetteers = self._resource_loader.get_gazetteers()
