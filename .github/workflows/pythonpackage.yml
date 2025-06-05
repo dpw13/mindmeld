@@ -19,7 +19,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
         mm-extras: ["false"] # Extras are all broken for now
-        es_version: [7.17.28]
+        es_version: [ "7.17.28" ]
 
     steps:
     - uses: actions/checkout@v4
@@ -28,6 +28,8 @@ jobs:
       with:
         stack-version: ${{ matrix.es_version }}
         security-enabled: false
+        plugins: "analysis-phonetic"
+        elasticsearch_password: ${{ secrets.ELASTIC_SECRET }}
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -72,6 +74,7 @@ jobs:
         mkdir ~/test-reports
         pytest --junitxml=**/build/test-results/junit-${{ matrix.python-version }}-${{ matrix.mm-extras }}.xml --cov-report html --cov=mindmeld --ignore=examples/
       env:
+        MM_ES_HOST: es1
         MM_EXTRAS: ${{ matrix.mm-extras }}
         MM_SUBPROCESS_COUNT: 0
 

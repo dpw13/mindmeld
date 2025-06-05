@@ -57,16 +57,14 @@ dependencies = [
     "torch~=2.7",
     "pytorch-crf~=0.7.2",
     "protobuf~=6.0",
+    "Flask>=1.1.3,<2",
+    "Flask-Cors~=3.0",
 ]
 
 [project.entry-points."mindmeld"]
 mindmeld-cli = "mindmeld.cli:cli"
 
 [project.optional-dependencies]
-server = [
-    "Flask>=1.1.3,<2",
-    "Flask-Cors~=3.0",
-]
 bot = [
     "Flask>=1.1.3,<2",
     "ciscosparkapi",
