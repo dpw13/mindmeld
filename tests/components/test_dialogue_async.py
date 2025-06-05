@@ -15,7 +15,7 @@ import asyncio
 import pytest
 
 from mindmeld.components import Conversation, DialogueManager
-from mindmeld.components.dialogue import DialogueResponder
+from mindmeld.components.dialogue import DialogueResponder, DirectiveNames
 from mindmeld.components.request import Params
 
 from .test_dialogue import create_request, create_responder
@@ -229,7 +229,7 @@ async def test_async_handler(dm):
     assert dm.called_async_handler
     assert result.dialogue_state == "async_handler"
     assert len(result.directives) == 1
-    assert result.directives[0]["name"] == "reply"
+    assert result.directives[0]["name"] == DirectiveNames.REPLY
     assert result.directives[0]["payload"] == {"text": "this is the async handler"}
 
 

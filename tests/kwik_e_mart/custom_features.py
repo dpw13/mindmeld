@@ -17,7 +17,7 @@ def extract_average_token_length(**args):
     # pylint: disable=locally-disabled,unused-argument
     def _extractor(query, resources):
         tokens = query.normalized_tokens
-        average_token_length = sum([len(t) for t in tokens]) / len(tokens)
+        average_token_length = sum(len(t) for t in tokens) / len(tokens)
         return {"average_token_length": average_token_length}
 
     return _extractor

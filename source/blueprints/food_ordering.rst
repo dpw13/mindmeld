@@ -167,7 +167,7 @@ We can illustrate this with a simplistic implementation of the ``build_order`` h
         # Respond with a preview of the current basket and prompt for order confirmation.
         responder.slots['restaurant_name'] = selected_restaurant['name']
         responder.slots['dish_names'] = ', '.join([dish['name'] for dish in selected_dishes])
-        responder.slots['price'] = sum([dish['price'] for dish in selected_dishes])
+        responder.slots['price'] = sum(dish['price'] for dish in selected_dishes)
         responder.reply('Sure, I got {dish_names} from {restaurant_name} for a total '
                         'price of ${price:.2f}. Would you like to place the order?')
         responder.listen()

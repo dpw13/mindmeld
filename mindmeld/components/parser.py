@@ -155,7 +155,7 @@ class Parser:
             entity_dict[entity_id] = entity
             tokens.append(entity_id)
 
-        logger.debug("Parsing sentential form: " + " ".join(tokens))
+        logger.debug("Parsing sentential form: %s", " ".join(tokens))
         start_time = time.time()
         parses = []
         for parse in self._parser.parse(tokens):

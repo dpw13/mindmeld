@@ -90,14 +90,14 @@ def deserialize_to_list_immutable_maps(value):
     """Custom attrs converter. Converts a list of elements into a list of immutables.Map
     objects.
     """
-    return tuple([immutables.Map(i) for i in value])
+    return tuple(immutables.Map(i) for i in value)
 
 
 def deserialize_to_lists_of_list_of_immutable_maps(values):
     """Custom attrs converter. Converts a list of elements into a list of immutables.Map
     objects.
     """
-    return tuple([deserialize_to_list_immutable_maps(value) for value in values])
+    return tuple(deserialize_to_list_immutable_maps(value) for value in values)
 
 
 # pylint: disable=too-many-instance-attributes

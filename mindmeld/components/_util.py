@@ -57,12 +57,12 @@ class MaskState(enum.Enum):
         deny: state when the user has explicitly denied a node.
     """
 
-    unset = enum.auto()
-    allow = enum.auto()
-    deny = enum.auto()
+    UNSET = enum.auto()
+    ALLOW = enum.auto()
+    DENY = enum.auto()
 
     def __bool__(self):
-        return self == self.allow
+        return self == self.ALLOW
 
 
 class TreeNode:
@@ -97,7 +97,7 @@ class TreeNlp:
     or denied based on user input
     """
 
-    def __init__(self, nlp, mask_state=MaskState.unset):
+    def __init__(self, nlp, mask_state=MaskState.UNSET):
         # root
         self.root = TreeNode("root", mask_state=mask_state)
         # construct NLP tree
@@ -261,15 +261,15 @@ class TreeNlp:
             intents = self.get_intent_nodes(domain)
             for intent in intents:
                 # sync down
-                if domain.mask_state != MaskState.unset and intent.mask_state == MaskState.unset:
+                if domain.mask_state != MaskState.UNSET and intent.mask_state == MaskState.UNSET:
                     intent.mask_state = domain.mask_state
 
                 entities = self.get_entity_nodes(domain, intent)
                 for entity in entities:
                     # sync down
                     if (
-                        intent.mask_state != MaskState.unset
-                        and entity.mask_state == MaskState.unset
+                        intent.mask_state != MaskState.UNSET
+                        and entity.mask_state == MaskState.UNSET
                     ):
                         entity.mask_state = intent.mask_state
 
@@ -277,14 +277,14 @@ class TreeNlp:
                     for role in roles:
                         # sync down
                         if (
-                            entity.mask_state != MaskState.unset
-                            and role.mask_state == MaskState.unset
+                            entity.mask_state != MaskState.UNSET
+                            and role.mask_state == MaskState.UNSET
                         ):
                             role.mask_state = entity.mask_state
 
                     # sync up entity-role
-                    if roles and all(role.mask_state == MaskState.deny for role in roles):
-                        entity.mask_state = MaskState.deny
+                    if roles and all(role.mask_state == MaskState.DENY for role in roles):
+                        entity.mask_state = MaskState.DENY
 
                 # We do not perform sync ups for entities since tagger models cannot
                 # deny their parent text classification models. For example,
@@ -292,8 +292,8 @@ class TreeNlp:
                 # intent, doesn't mean the intent should be denied as well.
 
             # sync up domain-intent
-            if intents and all(intent.mask_state == MaskState.deny for intent in intents):
-                domain.mask_state = MaskState.deny
+            if intents and all(intent.mask_state == MaskState.DENY for intent in intents):
+                domain.mask_state = MaskState.DENY
 
     def _default_to_regular(self, d):
         if isinstance(d, defaultdict):

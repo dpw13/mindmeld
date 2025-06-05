@@ -182,7 +182,8 @@ class EntityRecognizer(Classifier):
                     "c_ngram_freq": self._model.get_resource("c_ngram_freq"),
                 }
             )
-        pickle.dump(er_data, open(self._get_classifier_resources_save_path(path), "wb"))
+        with open(self._get_classifier_resources_save_path(path), "wb") as f:
+            pickle.dump(er_data, f)
 
     def unload(self):
         logger.info(
@@ -212,8 +213,9 @@ class EntityRecognizer(Classifier):
 
         # classifier specific load
         try:
-            er_data = pickle.load(open(self._get_classifier_resources_save_path(model_path), "rb"))
-        except (FileNotFoundError):  # backwards compatability for previous version's saved models
+            with open(self._get_classifier_resources_save_path(model_path), "rb") as f:
+                er_data = pickle.load(f)
+        except FileNotFoundError:  # backwards compatability for previous version's saved models
             er_data = joblib.load(model_path)
         self.entity_types = er_data["entity_types"]
         self._model_config: ModelConfig = er_data["model_config"]

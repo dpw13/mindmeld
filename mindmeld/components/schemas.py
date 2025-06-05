@@ -224,14 +224,14 @@ def deserialize_to_list_immutable_maps(value):
     """Custom attrs converter. Converts a list of elements into a list of immutables.Map
     objects.
     """
-    return tuple([immutables.Map(i) for i in value])
+    return tuple(immutables.Map(i) for i in value)
 
 
 def deserialize_to_lists_of_list_of_immutable_maps(values):
     """Custom attrs converter. Converts a list of elements into a list of immutables.Map
     objects.
     """
-    return tuple([deserialize_to_list_immutable_maps(value) for value in values])
+    return tuple(deserialize_to_list_immutable_maps(value) for value in values)
 
 
 def serialize_to_list_of_dicts(values):
@@ -252,18 +252,18 @@ class LanguageCodeField(fields.String):
     def _serialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         obj,  # pylint: disable=unused-argument
         **kwargs,
     ):
         if value is None:
-            return
+            return None
         return str(value)
 
     def _deserialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         data,  # pylint: disable=unused-argument
         **kwargs,
     ):
@@ -279,7 +279,7 @@ class LocaleCodeField(fields.String):
     def _serialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         obj,  # pylint: disable=unused-argument
         **kwargs,
     ):
@@ -290,7 +290,7 @@ class LocaleCodeField(fields.String):
     def _deserialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         data,  # pylint: disable=unused-argument
         **kwargs,
     ):
@@ -307,18 +307,18 @@ class TimeZoneField(fields.String):
     def _serialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         obj,  # pylint: disable=unused-argument
         **kwargs,
     ):
         if value is None:
-            return
+            return None
         return str(value)
 
     def _deserialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         data,  # pylint: disable=unused-argument
         **kwargs,
     ):
@@ -338,18 +338,18 @@ class TimestampField(fields.Integer):
     def _serialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         obj,  # pylint: disable=unused-argument
         **kwargs,
     ):
         if value is None:
-            return
+            return None
         return str(value)
 
     def _deserialize(
         self,
         value,
-        attribute,  # pylint: disable=unused-argument
+        attr,  # pylint: disable=unused-argument
         data,  # pylint: disable=unused-argument
         **kwargs,
     ):

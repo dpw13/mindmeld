@@ -679,14 +679,14 @@ class NaturalLanguageProcessor(Processor):
         # ALL nlp components
         allow_nlp_components_list = allow_nlp_components_list or list(self.domains.keys())
         deny_nlp_components_list = deny_nlp_components_list or []
-        nlp_tree = TreeNlp(self, MaskState.unset)
+        nlp_tree = TreeNlp(self, MaskState.UNSET)
         (
             allow_nlp_components_list,
             deny_nlp_components_list,
         ) = _validate_mask_nlp(self, allow_nlp_components_list, deny_nlp_components_list)
         user_defined_masks = [
-            [allow_nlp_components_list, MaskState.allow],
-            [deny_nlp_components_list, MaskState.deny],
+            [allow_nlp_components_list, MaskState.ALLOW],
+            [deny_nlp_components_list, MaskState.DENY],
         ]
         for user_defined_mask, action in user_defined_masks:
             for nlp_components in user_defined_mask:

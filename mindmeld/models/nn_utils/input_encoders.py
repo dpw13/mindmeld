@@ -172,7 +172,7 @@ def _trim_a_list_of_sub_token_groups(
             number of all sub-words inputted, it is clipped to number of all sub-words.
         y: Labels accompanying each group in x
     """
-    max_len = min(max_len, sum([len(_x) for _x in x]))
+    max_len = min(max_len, sum(len(_x) for _x in x))
     curr_len = 0
     if y:
         new_x, new_y = [], []

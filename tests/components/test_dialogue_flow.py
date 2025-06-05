@@ -1,6 +1,7 @@
 import pytest
 
 from mindmeld.components import Conversation
+from mindmeld.components.dialogue import DirectiveNames
 
 
 def assert_reply(directives, templates, *, start_index=0, slots=None):
@@ -20,7 +21,7 @@ def assert_reply(directives, templates, *, start_index=0, slots=None):
     texts = set(map(lambda x: x.format(**slots), templates))
 
     assert len(directives) >= start_index + 1
-    assert directives[start_index]["name"] == "reply"
+    assert directives[start_index]["name"] == DirectiveNames.REPLY
     assert directives[start_index]["payload"]["text"] in texts
 
 

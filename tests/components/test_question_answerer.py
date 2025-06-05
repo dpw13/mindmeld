@@ -12,10 +12,8 @@ import os
 # pylint: disable=locally-disabled,redefined-outer-name
 import pytest
 from mindmeld.components._elasticsearch_helpers import create_es_client
-from mindmeld.components.question_answerer import (
-    QuestionAnswerer,
-    NativeQuestionAnswerer,
-)
+from mindmeld.components.question_answerer_base import QuestionAnswerer
+from mindmeld.components.question_answerer_native import NativeQuestionAnswerer
 
 ENTITY_TYPE = "store_name"
 STORE_DATA_FILE_PATH = os.path.dirname(__file__) + "/../kwik_e_mart/data/stores.json"

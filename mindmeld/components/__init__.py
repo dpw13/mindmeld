@@ -15,7 +15,7 @@
 from .dialogue import Conversation, DialogueManager, DialogueResponder
 from .entity_resolver import EntityResolver, EntityResolverFactory
 from .nlp import NaturalLanguageProcessor
-from .question_answerer import QuestionAnswerer, QuestionAnswererFactory
+from .question_answerer_base import QuestionAnswerer, QuestionAnswererFactory
 from .request import Request
 from .custom_action import (
     CustomAction,
@@ -23,6 +23,8 @@ from .custom_action import (
     invoke_custom_action,
     invoke_custom_action_async,
 )
+from .question_answerer_es import ElasticsearchQuestionAnswerer
+from .question_answerer_native import NativeQuestionAnswerer
 
 __all__ = [
     "Conversation",

@@ -51,10 +51,10 @@ def extract_in_gaz_span_features(**kwargs):
             feature_sequence = [{} for _ in tokens]
 
             pop = all_gazes[current_gaz.gaz_name]["pop_dict"][current_gaz.token_ngram]
-            p_total = math.log(sum([g["total_entities"] for g in all_gazes.values()]) + 1) / 2
+            p_total = math.log(sum(g["total_entities"] for g in all_gazes.values()) + 1) / 2
             p_entity_type = math.log(all_gazes[current_gaz.gaz_name]["total_entities"] + 1)
             p_entity = math.log(
-                sum([len(g["index"][current_gaz.raw_ngram]) for g in all_gazes.values()]) + 1
+                sum(len(g["index"][current_gaz.raw_ngram]) for g in all_gazes.values()) + 1
             )
             p_joint = math.log(
                 len(all_gazes[current_gaz.gaz_name]["index"][current_gaz.raw_ngram]) + 1
@@ -253,7 +253,7 @@ def extract_in_gaz_ngram_features(**kwargs):
                 feat_prefix = "in_gaz|type:{}|ngram".format(entity_type)
 
                 # entity PMI and conditional prob
-                p_total = math.log(sum([g["total_entities"] for g in gazes.values()]) + 1) / 2
+                p_total = math.log(sum(g["total_entities"] for g in gazes.values()) + 1) / 2
                 p_entity_type = math.log(gazes[entity_type]["total_entities"] + 1)
 
                 features = {
@@ -277,7 +277,7 @@ def extract_in_gaz_ngram_features(**kwargs):
                         "length": 1,
                         "position": 0,
                         "p_ngram": math.log(
-                            sum([len(g["index"][get_ngram(tokens, i, 1)]) for g in gazes.values()])
+                            sum(len(g["index"][get_ngram(tokens, i, 1)]) for g in gazes.values())
                             + 1
                         ),
                         "p_joint": math.log(
@@ -304,7 +304,7 @@ def extract_in_gaz_ngram_features(**kwargs):
                         "length": 2,
                         "position": 1,
                         "p_ngram": math.log(
-                            sum([len(g["index"][get_ngram(tokens, i, 2)]) for g in gazes.values()])
+                            sum(len(g["index"][get_ngram(tokens, i, 2)]) for g in gazes.values())
                             + 1
                         ),
                         "p_joint": math.log(
